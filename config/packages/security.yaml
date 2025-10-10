@@ -22,14 +22,22 @@ security:
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
 
+        register:
+            pattern: ^/api/register
+            stateless: true
+            security: false   # rend cette route publique
+
         api:
             pattern: ^/api
             stateless: true
             jwt: ~
 
     access_control:
+        # Autoriser login et register sans token
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
-        - { path: ^/api,       roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/api/register, roles: PUBLIC_ACCESS }
+        # Tout le reste de /api/** nécessite un JWT
+        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 # security:
 #     # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords

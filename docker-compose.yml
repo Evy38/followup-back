@@ -1,0 +1,46 @@
+services:
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: followup-php
+    volumes:
+      - ./:/var/www/html
+      - ./docker/php/vhost.conf:/etc/apache2/sites-available/000-default.conf
+    ports:
+      - "8080:80" # accès Symfony via http://localhost:8080
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    container_name: followup-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-followup_db}
+      MYSQL_USER: ${MYSQL_USER:-follow_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-root}
+      TZ: ${TZ:-Europe/Paris}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./docker/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+
+  pma:
+    image: phpmyadmin:5
+    container_name: followup-pma
+    environment:
+      PMA_HOST: ${PMA_HOST:-db}
+      PMA_USER: ${PMA_USER:-root}
+      PMA_PASSWORD: ${PMA_PASSWORD:-root}
+    ports:
+      - "8081:80" # accès phpMyAdmin via http://localhost:8081
+    depends_on:
+      - db
+    restart: unless-stopped
+
+volumes:
+  db_data:

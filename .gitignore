@@ -1,4 +1,3 @@
-
 ###> symfony/framework-bundle ###
 /.env.local
 /.env.local.php
@@ -25,3 +24,58 @@
 ###> lexik/jwt-authentication-bundle ###
 /config/jwt/*.pem
 ###< lexik/jwt-authentication-bundle ###
+
+/docker/db
+
+# IDEs
+/.idea/
+/.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Node / front
+/node_modules/
+/npm-debug.log*
+/yarn-error.log
+/.parcel-cache
+/dist/
+/build/
+
+# Docker overrides & local compose files
+docker-compose.override.yml
+.env.*.local
+*.env.local
+docker-compose.*.local.yml
+
+# Composer / PHP tooling
+/composer.lock
+/composer.phar
+/.php_cs.cache
+/.phpunit.result.cache
+
+# Logs and runtime
+*.log
+/php-errors.log
+/.sass-cache/
+
+# Symfony / application runtime (double check custom paths)
+var/*
+!var/.gitkeep
+
+# Uploaded files, user content
+/public/uploads/
+/storage/
+
+# Secrets and keys (extra safety)
+*.pem
+*.key
+*.crt
+
+# Misc
+.idea/
+*.swp
+*~
+.project
