@@ -1,0 +1,28 @@
+# ...existing code...
+# Normalisation texte/binaire
+* text=auto
+
+# Forcer LF dans les fichiers sources (git stocke LF en repo)
+*.php     text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.sh      text eol=lf
+*.js      text eol=lf
+*.css     text eol=lf
+*.html    text eol=lf
+*.twig    text eol=lf
+*.md      text eol=lf
+
+# Ne pas toucher aux fichiers binaires
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.ico     binary
+*.pdf     binary
+*.zip     binary
+
+# Ne pas normaliser les clés / certificats (important)
+*.pem     -text
+*.key     -text
+*.crt     -text
