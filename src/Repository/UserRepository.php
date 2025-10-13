@@ -3,7 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\User;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;   # Methodes doctrine standard (find, findAll, findBy, findOneBy...)
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -33,28 +33,48 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $this->getEntityManager()->flush();
     }
 
-    //    /**
-    //     * @return User[] Returns an array of User objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('u')
-    //            ->andWhere('u.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('u.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+     /**
+     * Retourne tous les utilisateurs
+     */
+    public function findAllUsers(): array
+    {
+        return $this->findAll(); // méthode héritée de Doctrine
+    }
 
-    //    public function findOneBySomeField($value): ?User
-    //    {
-    //        return $this->createQueryBuilder('u')
-    //            ->andWhere('u.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    /**
+     * Trouve un utilisateur par son ID
+     */
+    public function findUserById(int $id): ?User
+    {
+        return $this->find($id);
+    }
+
+    /**
+     * Ajoute un utilisateur en base
+     */
+    public function addUser(User $user): void
+    {
+        $em = $this->getEntityManager();
+        $em->persist($user);
+        $em->flush();
+    }
+
+    /**
+     * Met à jour un utilisateur existant
+     */
+    public function updateUser(User $user): void
+    {
+        $em = $this->getEntityManager();
+        $em->flush(); // Doctrine détecte les changements
+    }
+
+    /**
+     * Supprime un utilisateur
+     */
+    public function deleteUser(User $user): void
+    {
+        $em = $this->getEntityManager();
+        $em->remove($user);
+        $em->flush();
+    }
 }
