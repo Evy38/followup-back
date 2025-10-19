@@ -9,6 +9,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert; 
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
@@ -21,20 +22,34 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $id = null;
 
     #[ORM\Column(length: 180)]
+    #[Assert\NotBlank(message: "L'email est obligatoire.")]
+    #[Assert\Email(message: "Email invalide.")]
+    #[Assert\Length(max: 180, maxMessage: "Email trop long.")]
     #[Groups(['user:read', 'user:write'])]
     private ?string $email = null;
+
 
     /**
      * @var list<string> The user roles
      */
     #[ORM\Column]
+    #[Assert\All([
+        new Assert\Choice(choices: ['ROLE_USER', 'ROLE_ADMIN'], message: 'Rôle invalide')
+    ])]
     #[Groups(['user:read', 'user:write'])]
     private array $roles = [];
+
 
     /**
      * @var string The hashed password
      */
     #[ORM\Column]
+    #[Assert\NotBlank(groups: ['create'], message: "Mot de passe obligatoire à la création.")]
+    #[Assert\Length(min: 8, minMessage: "8 caractères minimum.")]
+    #[Assert\Regex(
+        pattern: "/^(?=.*[A-Z])(?=.*\d).{8,}$/",
+        message: "Le mot de passe doit contenir au moins 8 caractères, une majuscule et un chiffre."
+    )]
     private ?string $password = null;
 
     /**
@@ -60,10 +75,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function setEmail(string $email): static
     {
-        $this->email = $email;
-
+        $this->email = strtolower(trim($email));
         return $this;
     }
+
 
     /**
      * A visual identifier that represents this user.
@@ -92,10 +107,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public function setRoles(array $roles): static
     {
-        $this->roles = $roles;
-
+        $allowedRoles = ['ROLE_USER', 'ROLE_ADMIN']; // ajout d'un filtrage pour éviter toute injection de rôle
+        $this->roles = array_values(array_intersect($roles, $allowedRoles));
         return $this;
     }
+
 
     /**
      * @see PasswordAuthenticatedUserInterface
@@ -118,12 +134,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function __serialize(): array
     {
         $data = (array) $this;
-        $data["\0".self::class."\0password"] = hash('crc32c', $this->password);
+        $data["\0" . self::class . "\0password"] = hash('crc32c', $this->password);
 
         return $data;
     }
 
-    #[\Deprecated]
+    #[\Deprecated(reason: 'Méthode obsolète, conservée pour compatibilité Symfony 7.x')]
     public function eraseCredentials(): void
     {
         // @deprecated, to be removed when upgrading to Symfony 8

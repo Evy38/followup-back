@@ -14,9 +14,14 @@ use App\Entity\Relance;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Faker\Factory;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class AppFixtures extends Fixture
 {
+    public function __construct(
+        private UserPasswordHasherInterface $passwordHasher
+    ) {}
+
     public function load(ObjectManager $manager): void
     {
         $faker = Factory::create('fr_FR');
@@ -25,12 +30,9 @@ class AppFixtures extends Fixture
         $villes = [];
         for ($i = 0; $i < 10; $i++) {
             $ville = new Ville();
-            $city = $faker->city();
-
-            // entity Ville uses setNomVille()
-            if (method_exists($ville, 'setNomVille')) {
-                $ville->setNomVille($city);
-            }
+            $ville->setNomVille($faker->city());
+            $ville->setPays('France');
+            $ville->setCodePostal($faker->postcode());
 
             $manager->persist($ville);
             $villes[] = $ville;
@@ -56,15 +58,21 @@ class AppFixtures extends Fixture
 
         // === 3️⃣ Utilisateurs ===
         $users = [];
-        for ($i = 0; $i < 5; $i++) {
+        
+        // Créer un utilisateur de test avec email/mot de passe connus
+        $testUser = new User();
+        $testUser->setEmail('test@example.com');
+        $testUser->setPassword($this->passwordHasher->hashPassword($testUser, 'test1234'));
+        $testUser->setRoles(['ROLE_USER']);
+        $manager->persist($testUser);
+        $users[] = $testUser;
+        
+        // Créer d'autres utilisateurs aléatoirement
+        for ($i = 0; $i < 4; $i++) {
             $user = new User();
-            if (method_exists($user, 'setEmail')) {
-                $user->setEmail($faker->unique()->safeEmail());
-            }
-            if (method_exists($user, 'setPassword')) {
-                $user->setPassword(password_hash('test1234', PASSWORD_BCRYPT));
-            }
-            // other profile fields are not present on User entity by default
+            $user->setEmail($faker->unique()->safeEmail());
+            $user->setPassword($this->passwordHasher->hashPassword($user, 'test1234'));
+            $user->setRoles(['ROLE_USER']);
             $manager->persist($user);
             $users[] = $user;
         }

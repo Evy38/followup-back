@@ -3,14 +3,15 @@
 namespace App\Repository;
 
 use App\Entity\User;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;   # Methodes doctrine standard (find, findAll, findBy, findOneBy...)
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 
 /**
- * @extends ServiceEntityRepository<User>
+ * Repository = couche d’accès aux données
+ * Permet de manipuler la base de données sans écrire de SQL.
  */
 class UserRepository extends ServiceEntityRepository implements PasswordUpgraderInterface
 {
@@ -20,12 +21,12 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     }
 
     /**
-     * Used to upgrade (rehash) the user's password automatically over time.
+     * 🔁 Méthode Symfony : met à jour le hash du mot de passe si nécessaire.
      */
     public function upgradePassword(PasswordAuthenticatedUserInterface $user, string $newHashedPassword): void
     {
         if (!$user instanceof User) {
-            throw new UnsupportedUserException(sprintf('Instances of "%s" are not supported.', $user::class));
+            throw new UnsupportedUserException(sprintf('Instances of "%s" non supportées.', $user::class));
         }
 
         $user->setPassword($newHashedPassword);
@@ -33,48 +34,57 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $this->getEntityManager()->flush();
     }
 
-     /**
-     * Retourne tous les utilisateurs
+    /**
+     * ✅ Méthode générique : sauvegarde (création ou mise à jour)
+     * $flush = true => exécute tout de suite la requête SQL
+     * $flush = false => enregistre dans le cache Doctrine, mais n’envoie pas encore à la BDD
      */
-    public function findAllUsers(): array
+    public function save(object $entity, bool $flush = false): void
     {
-        return $this->findAll(); // méthode héritée de Doctrine
+        $this->getEntityManager()->persist($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
     }
 
     /**
-     * Trouve un utilisateur par son ID
+     * ✅ Supprime un utilisateur
      */
-    public function findUserById(int $id): ?User
+    public function remove(object $entity, bool $flush = false): void
     {
-        return $this->find($id);
+        $this->getEntityManager()->remove($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
     }
 
     /**
-     * Ajoute un utilisateur en base
+     * 🔍 Trouve un utilisateur par son email
      */
-    public function addUser(User $user): void
+    public function findByEmail(string $email): ?User
     {
-        $em = $this->getEntityManager();
-        $em->persist($user);
-        $em->flush();
+        return $this->findOneBy(['email' => $email]);
     }
 
     /**
-     * Met à jour un utilisateur existant
+     * 🧩 Vérifie si un email existe déjà dans la BDD
+     * Si $excludeId est donné → ignore cet utilisateur (utile en mode "update")
      */
-    public function updateUser(User $user): void
+    public function existsByEmail(string $email, ?int $excludeId = null): bool
     {
-        $em = $this->getEntityManager();
-        $em->flush(); // Doctrine détecte les changements
-    }
+        $qb = $this->createQueryBuilder('u')
+            ->select('COUNT(u.id)')
+            ->andWhere('u.email = :email')
+            ->setParameter('email', $email);
 
-    /**
-     * Supprime un utilisateur
-     */
-    public function deleteUser(User $user): void
-    {
-        $em = $this->getEntityManager();
-        $em->remove($user);
-        $em->flush();
+        if ($excludeId) {
+            $qb->andWhere('u.id != :id')
+               ->setParameter('id', $excludeId);
+        }
+
+        // getSingleScalarResult() renvoie un nombre → on le convertit en booléen
+        return (int) $qb->getQuery()->getSingleScalarResult() > 0;
     }
 }
