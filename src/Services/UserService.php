@@ -1,5 +1,5 @@
 <?php
-#Centralise la logique metier, validations, transactions
+
 namespace App\Services;
 
 use App\Entity\User;
@@ -9,25 +9,29 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
+use Doctrine\DBAL\Exception as DBALException;
+use Doctrine\ORM\Exception\ORMException;
 
 class UserService
 {
-    private UserRepository $repository;
-    private UserPasswordHasherInterface $passwordHasher; #fourni par symfony pour créer des hashs sécurisés
-    private EntityManagerInterface $em; # pour exécuter persist(), flush(), remove()
+    // 💡 Dépendances nécessaires au fonctionnement du service
+    private UserRepository $repository;              // pour accéder à la BDD via Doctrine
+    private UserPasswordHasherInterface $hasher;     // pour chiffrer les mots de passe
+    private EntityManagerInterface $em;              // pour persister, supprimer, flusher
 
+    // 💡 Symfony injecte automatiquement ces dépendances au moment où le service est créé
     public function __construct(
         UserRepository $repository,
-        UserPasswordHasherInterface $passwordHasher,
+        UserPasswordHasherInterface $hasher,
         EntityManagerInterface $em
     ) {
         $this->repository = $repository;
-        $this->passwordHasher = $passwordHasher;
+        $this->hasher = $hasher;
         $this->em = $em;
     }
 
     /**
-     * Récupère tous les utilisateurs
+     * 📋 Récupère tous les utilisateurs
      */
     public function getAll(): array
     {
@@ -35,7 +39,7 @@ class UserService
     }
 
     /**
-     * Récupère un utilisateur par son ID
+     * 🔍 Récupère un utilisateur par ID (ou erreur 404 s’il n’existe pas)
      */
     public function getById(int $id): User
     {
@@ -47,62 +51,79 @@ class UserService
 
         return $user;
     }
+
     /**
-     * Crée un nouvel utilisateur avec vérification d’unicité et hash du mot de passe
+     * ➕ Crée un nouvel utilisateur
      */
     public function create(User $user): User
     {
-        // Vérif : email déjà existant ?
-        $existing = $this->repository->findOneBy(['email' => $user->getEmail()]);
-        if ($existing) {
+        // Vérifie si l’email existe déjà
+        if ($this->repository->existsByEmail($user->getEmail())) {
             throw new ConflictHttpException("Cet email est déjà utilisé.");
         }
 
-        // Hash du mot de passe
-        $hashed = $this->passwordHasher->hashPassword($user, $user->getPassword());
+        // Hash du mot de passe (jamais stocké en clair)
+        $hashed = $this->hasher->hashPassword($user, $user->getPassword());
         $user->setPassword($hashed);
 
-        $this->em->persist($user);
-        $this->em->flush();
+        // Essaye d’enregistrer le user dans la base
+        try {
+            $this->repository->save($user, true); // true = flush immédiat
+        } catch (DBALException|ORMException $e) {
+            // Si Doctrine échoue, on renvoie une erreur claire
+            throw new BadRequestHttpException("Erreur lors de l’enregistrement du nouvel utilisateur.");
+        }
 
         return $user;
     }
 
-/**
-     * Met à jour un utilisateur existant
+    /**
+     * ♻️ Met à jour un utilisateur existant
      */
     public function update(int $id, User $data): User
     {
-        $user = $this->getById($id);
+        $user = $this->getById($id); // on récupère l’utilisateur existant
 
+        // Vérifie s’il y a un nouvel email et s’il est déjà pris
         if ($data->getEmail()) {
-            $existing = $this->repository->findOneBy(['email' => $data->getEmail()]);
-            if ($existing && $existing->getId() !== $id) {
+            if ($this->repository->existsByEmail($data->getEmail(), $id)) {
                 throw new ConflictHttpException("Cet email est déjà utilisé.");
             }
             $user->setEmail($data->getEmail());
         }
 
+        // Met à jour les rôles si fournis
         if ($data->getRoles()) {
             $user->setRoles($data->getRoles());
         }
 
+        // Met à jour le mot de passe si fourni
         if ($data->getPassword()) {
-            $hashed = $this->passwordHasher->hashPassword($user, $data->getPassword());
+            $hashed = $this->hasher->hashPassword($user, $data->getPassword());
             $user->setPassword($hashed);
         }
 
-        $this->em->flush();
+        // On essaye d’enregistrer les changements
+        try {
+            $this->repository->save($user, true);
+        } catch (DBALException|ORMException $e) {
+            throw new BadRequestHttpException("Erreur lors de la mise à jour de l’utilisateur.");
+        }
+
         return $user;
     }
 
- /**
-     * Supprime un utilisateur existant
+    /**
+     * ❌ Supprime un utilisateur
      */
     public function delete(int $id): void
     {
-        $user = $this->getById($id);
-        $this->em->remove($user);
-        $this->em->flush();
+        $user = $this->getById($id); // 404 si introuvable
+
+        try {
+            $this->repository->remove($user, true);
+        } catch (DBALException|ORMException $e) {
+            throw new BadRequestHttpException("Impossible de supprimer cet utilisateur pour le moment.");
+        }
     }
 }
