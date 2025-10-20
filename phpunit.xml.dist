@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- =========================================================
+     ⚙️ CONFIGURATION PHPUnit pour Symfony 7 + Doctrine + JWT
+     Projet : FollowUp (CDA)
+     ---------------------------------------------------------
+     Ce fichier indique :
+       - L’environnement à utiliser (test)
+       - Les dossiers à scanner pour les tests
+       - Les variables d’environnement (ex: base test)
+       - Les options de couverture et d’isolation
+   ========================================================= -->
+
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd"
+         colors="true"
+         bootstrap="vendor/autoload.php"
+         executionOrder="depends,defects"
+         beStrictAboutTestsThatDoNotTestAnything="false"
+         beStrictAboutOutputDuringTests="true"
+         convertDeprecationsToExceptions="true"
+         stopOnFailure="false"
+         cacheDirectory=".phpunit.cache"
+>
+
+    <!-- 🔍 Dossier contenant les classes de test -->
+    <testsuites>
+        <testsuite name="Application Test Suite">
+            <directory>tests</directory>
+        </testsuite>
+    </testsuites>
+
+    <!-- 🧱 Paramètres d’exécution -->
+    <php>
+        <!-- Active l’environnement test -->
+        <env name="APP_ENV" value="test"/>
+        <env name="APP_DEBUG" value="1"/>
+
+        <!-- Chemin du kernel Symfony -->
+        <env name="KERNEL_CLASS" value="App\Kernel"/>
+
+        <!-- URL de la base MySQL de test -->
+        <env name="DATABASE_URL" value="mysql://follow_user:root@db:3306/followup_test"/>
+
+        <!-- Variables JWT (si nécessaires pour les tests API) -->
+        <env name="JWT_SECRET_KEY" value="%kernel.project_dir%/config/jwt/private.pem"/>
+        <env name="JWT_PUBLIC_KEY" value="%kernel.project_dir%/config/jwt/public.pem"/>
+        <env name="JWT_PASSPHRASE" value="mapassphrase"/>
+
+        <!-- Empêche l’envoi d’e-mails ou de notifications -->
+        <env name="MAILER_DSN" value="null://localhost"/>
+
+        <!-- Active les assertions PHPUnit dans Symfony -->
+        <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled"/>
+    </php>
+
+    <!-- 🧠 Couverture de code (désactivée ici, utile pour la CDA si tu veux l’activer) -->
+    <!--
+    <coverage processUncoveredFiles="true">
+        <include>
+            <directory suffix=".php">src</directory>
+        </include>
+    </coverage>
+    -->
+
+    <!-- 🔒 Exclusions pour éviter les faux positifs -->
+    <source>
+        <include>
+            <directory suffix=".php">src</directory>
+        </include>
+        <exclude>
+            <directory>src/Kernel.php</directory>
+            <directory>src/DependencyInjection</directory>
+            <directory>src/DataFixtures</directory>
+        </exclude>
+    </source>
+</phpunit>
