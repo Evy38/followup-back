@@ -6,8 +6,10 @@ use App\Repository\MotCleRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use ApiPlatform\Metadata\ApiResource;
 
 #[ORM\Entity(repositoryClass: MotCleRepository::class)]
+#[ApiResource]
 class MotCle
 {
     #[ORM\Id]
@@ -30,14 +32,42 @@ class MotCle
     #[ORM\ManyToMany(targetEntity: Reponse::class, mappedBy: 'motsCles')]
     private Collection $reponses;
 
+    #[ORM\ManyToMany(targetEntity: Candidature::class, mappedBy: 'motsCles')]
+    private Collection $candidatures;
+
 
     public function __construct()
     {
         $this->relances = new ArrayCollection();
         $this->reponses = new ArrayCollection();
+        $this->candidatures = new ArrayCollection();
     }
 
     // --- Getters / Setters ---
+
+    /**
+     * @return Collection<int, Candidature>
+     */
+    public function getCandidatures(): Collection
+    {
+        return $this->candidatures;
+    }
+
+    public function addCandidature(Candidature $candidature): static
+    {
+        if (!$this->candidatures->contains($candidature)) {
+            $this->candidatures->add($candidature);
+        }
+
+        return $this;
+    }
+
+    public function removeCandidature(Candidature $candidature): static
+    {
+        $this->candidatures->removeElement($candidature);
+        return $this;
+    }
+
 
     public function getId(): ?int
     {
