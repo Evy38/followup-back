@@ -10,6 +10,13 @@ security:
                 property: email
 
     firewalls:
+
+        # 🔓 Swagger public
+        swagger:
+            pattern: ^/api/docs
+            stateless: true
+            security: false
+            
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false

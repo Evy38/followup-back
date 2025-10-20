@@ -7,8 +7,10 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use ApiPlatform\Metadata\ApiResource;
 
 #[ORM\Entity(repositoryClass: CandidatureRepository::class)]
+#[ApiResource]
 class Candidature
 {
     #[ORM\Id]
@@ -45,6 +47,18 @@ class Candidature
     #[ORM\ManyToOne(inversedBy: 'candidatures')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Statut $statut = null;
+    /**
+     * @var Collection<int, Reponse>
+     */
+    #[ORM\OneToMany(mappedBy: 'candidature', targetEntity: Reponse::class, orphanRemoval: true)]
+    private Collection $reponses;
+    /**
+     * @var Collection<int, MotCle>
+     */
+    #[ORM\ManyToMany(targetEntity: MotCle::class, inversedBy: 'candidatures')]
+    private Collection $motsCles;
+
+
 
     /**
      * @var Collection<int, Relance>
@@ -55,6 +69,55 @@ class Candidature
     public function __construct()
     {
         $this->relances = new ArrayCollection();
+        $this->reponses = new ArrayCollection();
+        $this->motsCles = new ArrayCollection();
+    }
+
+    public function getMotsCles(): Collection
+    {
+        return $this->motsCles;
+    }
+
+    public function addMotCle(MotCle $motCle): static
+    {
+        if (!$this->motsCles->contains($motCle)) {
+            $this->motsCles->add($motCle);
+        }
+
+        return $this;
+    }
+
+    public function removeMotCle(MotCle $motCle): static
+    {
+        $this->motsCles->removeElement($motCle);
+        return $this;
+    }
+
+
+    public function getReponses(): Collection
+    {
+        return $this->reponses;
+    }
+
+    public function addReponse(Reponse $reponse): static
+    {
+        if (!$this->reponses->contains($reponse)) {
+            $this->reponses->add($reponse);
+            $reponse->setCandidature($this);
+        }
+
+        return $this;
+    }
+
+    public function removeReponse(Reponse $reponse): static
+    {
+        if ($this->reponses->removeElement($reponse)) {
+            if ($reponse->getCandidature() === $this) {
+                $reponse->setCandidature(null);
+            }
+        }
+
+        return $this;
     }
 
     public function getId(): ?int
