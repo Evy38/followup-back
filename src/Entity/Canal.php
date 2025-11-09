@@ -7,17 +7,28 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: CanalRepository::class)]
-#[ApiResource]
+#[ApiResource(
+    operations: [
+        new GetCollection(normalizationContext: ['groups' => ['canal:read']]),
+        new Get(normalizationContext: ['groups' => ['canal:read']])
+    ],
+    security: "is_granted('ROLE_USER')"
+)]
 class Canal
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['canal:read', 'candidature:read', 'candidature:write'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 100)]
+    #[Groups(['canal:read', 'candidature:read', 'candidature:write'])]
     private ?string $libelle = null;
 
     /**
@@ -30,6 +41,8 @@ class Canal
     {
         $this->candidatures = new ArrayCollection();
     }
+
+    // --- GETTERS / SETTERS ---
 
     public function getId(): ?int
     {
@@ -44,7 +57,6 @@ class Canal
     public function setLibelle(string $libelle): static
     {
         $this->libelle = $libelle;
-
         return $this;
     }
 
@@ -62,19 +74,14 @@ class Canal
             $this->candidatures->add($candidature);
             $candidature->setCanal($this);
         }
-
         return $this;
     }
 
     public function removeCandidature(Candidature $candidature): static
     {
-        if ($this->candidatures->removeElement($candidature)) {
-            // set the owning side to null (unless already changed)
-            if ($candidature->getCanal() === $this) {
-                $candidature->setCanal(null);
-            }
+        if ($this->candidatures->removeElement($candidature) && $candidature->getCanal() === $this) {
+            $candidature->setCanal(null);
         }
-
         return $this;
     }
 }

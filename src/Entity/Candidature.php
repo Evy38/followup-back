@@ -2,15 +2,43 @@
 
 namespace App\Entity;
 
+use Symfony\Component\Serializer\Annotation\Groups;
 use App\Repository\CandidatureRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
+use ApiPlatform\Metadata\Delete;
 
 #[ORM\Entity(repositoryClass: CandidatureRepository::class)]
-#[ApiResource]
+#[ApiResource(
+    operations: [
+        new Get(
+            security: "object.getUser() == user or is_granted('ROLE_ADMIN')"
+        ),
+        new GetCollection(
+            security: "is_granted('ROLE_USER')"
+        ),
+        new Post(
+            securityPostDenormalize: "object.getUser() == user or is_granted('ROLE_ADMIN')"
+        ),
+        new Put(
+            security: "object.getUser() == user or is_granted('ROLE_ADMIN')"
+        ),
+        new Delete(
+            security: "object.getUser() == user or is_granted('ROLE_ADMIN')"
+        )
+    ],
+    normalizationContext: ['groups' => ['candidature:read']],
+    denormalizationContext: ['groups' => ['candidature:write']]
+)]
+
+
 class Candidature
 {
     #[ORM\Id]
@@ -18,35 +46,45 @@ class Candidature
     #[ORM\Column]
     private ?int $id = null;
 
+    #[Groups(['candidature:read', 'candidature:write'])]
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     private ?\DateTime $dateCandidature = null;
 
+    #[Groups(['candidature:read', 'candidature:write'])]
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $mode = null;
 
+    #[Groups(['candidature:read', 'candidature:write'])]
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $lienAnnonce = null;
 
+    #[Groups(['candidature:read', 'candidature:write'])]
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $commentaire = null;
 
+    #[Groups(['candidature:read'])]
     #[ORM\ManyToOne(inversedBy: 'candidatures')]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $user = null;
 
+    #[Groups(['candidature:read', 'candidature:write'])]
     #[ORM\ManyToOne(inversedBy: 'candidatures')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Entreprise $entreprise = null;
 
+    #[Groups(['candidature:read', 'candidature:write'])]
     #[ORM\ManyToOne(inversedBy: 'candidatures')]
     private ?Ville $ville = null;
 
+    #[Groups(['candidature:read', 'candidature:write'])]
     #[ORM\ManyToOne(inversedBy: 'candidatures')]
     private ?Canal $canal = null;
 
+    #[Groups(['candidature:read', 'candidature:write'])]
     #[ORM\ManyToOne(inversedBy: 'candidatures')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Statut $statut = null;
+
     /**
      * @var Collection<int, Reponse>
      */
