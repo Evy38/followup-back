@@ -17,7 +17,7 @@ class UserRepositoryTest extends KernelTestCase
         self::bootKernel(); // Démarre Symfony en mode test
 
         $this->em = static::getContainer()->get(EntityManagerInterface::class);
-        $this->repository = $this->em->getRepository(User::class);
+        $this->repository = static::getContainer()->get(UserRepository::class);
     }
 
     public function testSaveUser(): void

@@ -7,23 +7,39 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
+use ApiPlatform\Metadata\Delete;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: EntrepriseRepository::class)]
-#[ApiResource]
+#[ApiResource(
+    operations: [
+        new Get(normalizationContext: ['groups' => ['entreprise:read']]),
+        new GetCollection(normalizationContext: ['groups' => ['entreprise:read']])
+    ],
+    security: "is_granted('ROLE_USER')"
+)]
 class Entreprise
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['entreprise:read', 'candidature:read', 'candidature:write'])]
     private ?int $id = null;
 
-    #[ORM\Column(length: 150)]
+    #[ORM\Column(length: 100)]
+    #[Groups(['entreprise:read', 'entreprise:write', 'candidature:read', 'candidature:write'])]
     private ?string $nom = null;
 
     #[ORM\Column(length: 100, nullable: true)]
+    #[Groups(['entreprise:read', 'entreprise:write'])]
     private ?string $secteur = null;
 
-    #[ORM\Column(length: 200, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['entreprise:read', 'entreprise:write'])]
     private ?string $siteWeb = null;
 
     /**
@@ -37,74 +53,15 @@ class Entreprise
         $this->candidatures = new ArrayCollection();
     }
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+    // --- GETTERS / SETTERS ---
 
-    public function getNom(): ?string
-    {
-        return $this->nom;
-    }
+    public function getId(): ?int { return $this->id; }
+    public function getNom(): ?string { return $this->nom; }
+    public function setNom(string $nom): static { $this->nom = $nom; return $this; }
+    public function getSecteur(): ?string { return $this->secteur; }
+    public function setSecteur(?string $secteur): static { $this->secteur = $secteur; return $this; }
+    public function getSiteWeb(): ?string { return $this->siteWeb; }
+    public function setSiteWeb(?string $siteWeb): static { $this->siteWeb = $siteWeb; return $this; }
 
-    public function setNom(string $nom): static
-    {
-        $this->nom = $nom;
-
-        return $this;
-    }
-
-    public function getSecteur(): ?string
-    {
-        return $this->secteur;
-    }
-
-    public function setSecteur(?string $secteur): static
-    {
-        $this->secteur = $secteur;
-
-        return $this;
-    }
-
-    public function getSiteWeb(): ?string
-    {
-        return $this->siteWeb;
-    }
-
-    public function setSiteWeb(?string $siteWeb): static
-    {
-        $this->siteWeb = $siteWeb;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Candidature>
-     */
-    public function getCandidatures(): Collection
-    {
-        return $this->candidatures;
-    }
-
-    public function addCandidature(Candidature $candidature): static
-    {
-        if (!$this->candidatures->contains($candidature)) {
-            $this->candidatures->add($candidature);
-            $candidature->setEntreprise($this);
-        }
-
-        return $this;
-    }
-
-    public function removeCandidature(Candidature $candidature): static
-    {
-        if ($this->candidatures->removeElement($candidature)) {
-            // set the owning side to null (unless already changed)
-            if ($candidature->getEntreprise() === $this) {
-                $candidature->setEntreprise(null);
-            }
-        }
-
-        return $this;
-    }
+    public function getCandidatures(): Collection { return $this->candidatures; }
 }

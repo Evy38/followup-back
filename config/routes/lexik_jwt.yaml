@@ -1,2 +1,6 @@
 api_login_check:
     path: /api/login_check
+
+# LexikAuthenticationBundle 
+# Route automatique qui lit directement les identifiants envoyés par le front et les compare avec la BDD (User+mdpHasher) 
+#si tout est ok il envoi un JWT grace aux privete.pem et public.pem

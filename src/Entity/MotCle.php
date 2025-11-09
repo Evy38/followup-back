@@ -7,17 +7,34 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
+use ApiPlatform\Metadata\Delete;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: MotCleRepository::class)]
-#[ApiResource]
+#[ApiResource(
+    operations: [
+        new Get(normalizationContext: ['groups' => ['motcle:read']]),
+        new GetCollection(normalizationContext: ['groups' => ['motcle:read']]),
+        new Post(denormalizationContext: ['groups' => ['motcle:write']]),
+        new Put(denormalizationContext: ['groups' => ['motcle:write']]),
+        new Delete()
+    ],
+    security: "is_granted('ROLE_USER')"
+)]
 class MotCle
 {
-    #[ORM\Id]
+       #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['motcle:read', 'candidature:read', 'candidature:write'])]
     private ?int $id = null;
 
-    #[ORM\Column(length: 50, unique: true)]
+    #[ORM\Column(length: 100)]
+    #[Groups(['motcle:read', 'motcle:write', 'candidature:read', 'candidature:write'])]
     private ?string $libelle = null;
 
     /**
