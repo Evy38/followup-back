@@ -1,78 +1,336 @@
-# followup-back
+# FollowUp Backend 🎯
 
-Petit backend Symfony pour FollowUp — instructions d'installation et d'usage (focalisé Docker / dev local).
+**Application de suivi de candidatures d'emploi** - API REST avec Symfony 7.3
 
-## Prérequis
-- Docker Desktop installé (Windows / Mac / Linux)
-- Docker Compose (fourni avec Docker Desktop)
-- (Optionnel) client MySQL si tu veux te connecter depuis l'hôte
+## 📋 Vue d'ensemble
 
-## Structure importante
-- `docker-compose.yml` : définit les services `php`, `db` et `pma`.
-- `docker/php/Dockerfile` : image PHP/Apache pour Symfony.
-- `docker/db/init.sql` : script d'initialisation de la base de données (création des DB et de l'utilisateur).
-- `.env.example` : exemple de variables d'environnement à copier en `.env`.
+FollowUp Backend est une API REST complète permettant de gérer et suivre ses candidatures d'emploi. L'application offre un système complet de gestion des candidatures, entreprises, relances et réponses avec authentification JWT sécurisée.
 
-## Installer et démarrer (en local)
-1. Copier l'exemple d'environnement et personnaliser si besoin :
+### 🎯 Fonctionnalités principales
 
-```cmd
-copy .env.example .env
+- ✅ **Gestion des candidatures** : Création, suivi et mise à jour
+- ✅ **Suivi des relances** : Planification et historique des relances
+- ✅ **Gestion des réponses** : Enregistrement des retours recruteurs
+- ✅ **Base entreprises** : Référentiel des entreprises ciblées
+- ✅ **Authentification JWT** : Sécurité par tokens
+- ✅ **API documentée** : Documentation Swagger intégrée
+- ✅ **Multi-utilisateurs** : Isolation des données par utilisateur
+
+## 🛠️ Stack technique
+
+| Technologie | Version | Usage |
+|-------------|---------|-------|
+| **PHP** | 8.2+ | Langage backend |
+| **Symfony** | 7.3 | Framework web |
+| **MySQL** | 8.0 | Base de données |
+| **Doctrine** | - | ORM |
+| **API Platform** | - | API REST + docs |
+| **JWT** | - | Authentification |
+| **Docker** | - | Conteneurisation |
+| **PHPUnit** | - | Tests unitaires |
+
+## 🚀 Installation
+
+### Prérequis
+- Docker & Docker Compose
+- Git
+
+### 🔧 Setup rapide
+
+```bash
+# Cloner le projet
+git clone [URL_REPO]
+cd followup-back
+
+# Démarrer l'environnement Docker
+docker-compose up -d
+
+# Installation des dépendances
+docker-compose exec app composer install
+
+# Configuration JWT (générer les clés)
+docker-compose exec app php bin/console lexik:jwt:generate-keypair
+
+# Migrations & données de test
+docker-compose exec app php bin/console doctrine:migrations:migrate -n
+docker-compose exec app php bin/console doctrine:fixtures:load -n
 ```
 
-2. Construire et lancer les services (en background) :
+### 🌐 Accès aux services
 
-```cmd
-docker compose up -d --build
-```
+| Service | URL | Description |
+|---------|-----|-------------|
+| **API** | http://localhost:8080 | API REST |
+| **Swagger** | http://localhost:8080/api/docs | Documentation API |
+| **phpMyAdmin** | http://localhost:8081 | Interface DB |
 
-3. Vérifier l'état des services :
+**Base de données :**
+- Host: `localhost:3306`
+- Database: `followup`
+- User: `followup`
+- Password: `followup123`
 
-```cmd
-docker compose ps
-docker compose logs -f db
-```
+## 📊 Modèle de données
 
-4. Accéder à l'application
-- Symfony (via le service `php`) : http://localhost:8080
-- phpMyAdmin : http://localhost:8081 (utilisateur/mot de passe défini dans `.env` / `docker-compose.yml`)
-
-## Fichier `.env` et variables importantes
-- Le projet fournit `.env.example`. Copie‑le en `.env` et garde tes vrais secrets hors du dépôt.
-- Variables utiles :
-	- `MYSQL_ROOT_PASSWORD` : mot de passe root MySQL (dev)
-	- `MYSQL_USER` / `MYSQL_PASSWORD` : utilisateur et mot de passe créés pour l'app
-	- `DATABASE_URL` : connexion utilisée par Symfony
-
-Exemple de `DATABASE_URL` dans `.env` pour ce setup :
+### 🏗️ Entités principales
 
 ```
-DATABASE_URL=mysql://follow_user:root@db:3306/followup_db
+User
+├── Candidature (1:N)
+    ├── Entreprise (N:1)
+    ├── Ville (N:1)
+    ├── Canal (N:1)
+    ├── Statut (N:1)
+    ├── Reponse (1:N)
+    ├── Relance (1:N)
+    └── MotCle (N:N)
 ```
 
-## Dépannage rapide
-- Erreur MySQL « data directory has files in it » :
-	- Sur Windows, préfère un volume Docker nommé pour `/var/lib/mysql` (déjà configuré). Si tu as un dossier `./docker/db` avec des fichiers, supprime-le avant de recréer le conteneur ou utilise `docker volume rm` pour supprimer le volume Docker.
-- Problèmes de permissions Symfony (cache / logs) :
-	- Exécute `docker compose exec php bash` puis `chown -R www-data:www-data var/` ou installe les dépendances (`composer install`) à l’intérieur du conteneur.
-- Vérifier les logs :
-	- `docker compose logs -f php` ou `docker compose logs -f db`
+### 📝 Entités détaillées
 
-## Commandes utiles
-- Démarrer (build) : `docker compose up -d --build`
-- Arrêter : `docker compose down`
-- Recréer uniquement la DB (suppression du container + volume) :
+- **User** : Utilisateurs avec authentification
+- **Candidature** : Candidatures d'emploi (cœur métier)
+- **Entreprise** : Base des entreprises ciblées
+- **Ville** : Localisation des postes
+- **Statut** : États des candidatures (En attente, Refusé, etc.)
+- **Canal** : Sources de candidature (LinkedIn, Indeed, Site...)
+- **Reponse** : Réponses reçues des recruteurs
+- **Relance** : Relances effectuées
+- **MotCle** : Tags pour catégoriser
 
-```cmd
-docker compose stop db
-docker compose rm -f db
-docker volume rm followup-back_db_data
-docker compose up -d db
+## 🔐 Authentification
+
+### JWT Configuration
+
+```bash
+# Générer les clés JWT
+docker-compose exec app php bin/console lexik:jwt:generate-keypair
 ```
 
-## Sécurité (notes importantes)
-- Ne commite jamais de secrets (mot de passe, clé privée) dans le dépôt public.
-- En production, n'expose pas le port MySQL sur l'hôte et utilise un gestionnaire de secrets.
+### 📡 Endpoints d'authentification
 
-## Aide — contact
-Si tu veux que j'ajoute des scripts pour fixer automatiquement les permissions, ou que je replace les variables par défaut par des variables d'environnement dans `docker-compose.yml` (déjà fait), dis‑moi et je le fais.
+```http
+POST /api/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "motdepasse"
+}
+```
+
+```http
+POST /api/login_check
+Content-Type: application/json
+
+{
+  "username": "user@example.com", 
+  "password": "motdepasse"
+}
+```
+
+### 🔒 Utilisation du token
+
+```http
+GET /api/candidatures
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+## 📚 API Documentation
+
+### 🌍 Accès Swagger
+- **URL** : http://localhost:8080/api/docs
+- **Format** : OpenAPI 3.0
+- **Interactif** : Tests directs des endpoints
+
+### 🎯 Endpoints principaux
+
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| `GET` | `/api/candidatures` | Liste des candidatures |
+| `POST` | `/api/candidatures` | Créer une candidature |
+| `GET` | `/api/candidatures/{id}` | Détail candidature |
+| `PUT` | `/api/candidatures/{id}` | Modifier candidature |
+| `DELETE` | `/api/candidatures/{id}` | Supprimer candidature |
+| `GET` | `/api/entreprises` | Liste des entreprises |
+| `GET` | `/api/relances` | Liste des relances |
+
+## 🧪 Tests
+
+### Lancer les tests
+
+```bash
+# Tests unitaires complets
+docker-compose exec app php bin/phpunit
+
+# Tests avec couverture
+docker-compose exec app php bin/phpunit --coverage-html coverage
+
+# Tests spécifiques
+docker-compose exec app php bin/phpunit tests/Service/UserServiceTest.php
+```
+
+### 📈 Couverture actuelle
+- ✅ **UserService** : Création, modification, suppression
+- ✅ **UserRepository** : Accès données et requêtes
+- ✅ **Validation** : Contraintes métier et sécurité
+- ✅ **Base de données** : Tests d'isolation
+
+## 🗃️ Données de test
+
+### Compte de test
+
+```json
+{
+  "email": "test@example.com",
+  "password": "test1234"
+}
+```
+
+### Générer des données
+
+```bash
+# Charger les fixtures (données de démonstration)
+docker-compose exec app php bin/console doctrine:fixtures:load -n
+```
+
+**Contenu généré :**
+- 👤 5 utilisateurs de test
+- 🏢 20 entreprises avec secteurs variés
+- 📍 15 villes françaises
+- 📋 50+ candidatures réalistes
+- 📞 Relances et réponses associées
+
+## 🔧 Configuration
+
+### Variables d'environnement
+
+```bash
+# .env.local
+DATABASE_URL="mysql://followup:followup123@db:3306/followup"
+JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
+JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
+JWT_PASSPHRASE=your_passphrase
+```
+
+### CORS (pour frontend)
+
+```yaml
+# config/packages/nelmio_cors.yaml
+nelmio_cors:
+    defaults:
+        origin_regex: true
+        allow_origin: ['^http://localhost:[0-9]+']
+        allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
+        allow_headers: ['Content-Type', 'Authorization']
+```
+
+## 🐳 Docker Services
+
+```yaml
+services:
+  app:      # PHP 8.2 + Apache + Symfony
+  db:       # MySQL 8.0
+  pma:      # phpMyAdmin
+```
+
+### Commandes Docker utiles
+
+```bash
+# Logs en temps réel
+docker-compose logs -f
+
+# Accéder au conteneur PHP
+docker-compose exec app bash
+
+# Redémarrer un service
+docker-compose restart app
+
+# Nettoyer et reconstruire
+docker-compose down -v
+docker-compose up --build
+```
+
+## 🚧 Développement
+
+### Structure du projet
+
+```
+src/
+├── Controller/       # Contrôleurs API
+├── Entity/          # Entités Doctrine
+├── Repository/      # Repositories personnalisés
+├── Services/        # Logique métier
+└── DataFixtures/    # Données de test
+
+tests/
+├── Service/         # Tests services
+├── Repository/      # Tests repositories
+└── DatabaseTestCase.php  # Classe de base tests DB
+```
+
+### Commandes utiles
+
+```bash
+# Créer une entité
+docker-compose exec app php bin/console make:entity
+
+# Créer une migration
+docker-compose exec app php bin/console make:migration
+
+# Appliquer les migrations
+docker-compose exec app php bin/console doctrine:migrations:migrate
+
+# Cache clear
+docker-compose exec app php bin/console cache:clear
+```
+
+## 🎯 Roadmap
+
+### ✅ Réalisé
+- [x] API REST complète
+- [x] Authentification JWT
+- [x] Tests unitaires
+- [x] Documentation Swagger
+- [x] Docker setup
+- [x] Fixtures réalistes
+
+### 🚀 À venir
+- [ ] Tests d'intégration API
+- [ ] Filtrage avancé des candidatures
+- [ ] Notifications email automatiques
+- [ ] Export des données (CSV/PDF)
+- [ ] Dashboard analytics
+- [ ] Interface d'administration
+- [ ] CI/CD Pipeline
+
+## 🤝 Contribution
+
+### Workflow
+1. Fork le projet
+2. Créer une branche feature (`git checkout -b feature/nouvelle-fonctionnalite`)
+3. Commit (`git commit -m 'Ajout nouvelle fonctionnalité'`)
+4. Push (`git push origin feature/nouvelle-fonctionnalite`)
+5. Créer une Pull Request
+
+### Standards
+- **PSR-12** : Style de code PHP
+- **Tests** : Couverture obligatoire pour nouvelles features
+- **Documentation** : Mise à jour du README si nécessaire
+
+## 📄 Licence
+
+Ce projet est sous licence **MIT** - voir le fichier [LICENSE](LICENSE) pour plus de détails.
+
+## 👥 Auteurs
+
+- **Développeur Principal** - Cécile
+
+---
+
+> **Note :** Ce projet est conçu pour s'interfacer avec un frontend Angular. L'API est prête pour la production avec toutes les fonctionnalités de sécurité et de performance nécessaires.
+
+**🔗 Liens utiles :**
+- [Documentation Symfony](https://symfony.com/doc)
+- [API Platform](https://api-platform.com/docs)
+- [JWT Bundle](https://github.com/lexik/LexikJWTAuthenticationBundle)

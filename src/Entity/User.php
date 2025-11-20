@@ -31,6 +31,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['user:read', 'user:write'])]
     private ?string $email = null;
 
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $firstName = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $lastName = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $googleId = null;
+
 
     /**
      * @var list<string> The user roles
@@ -46,13 +55,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @var string The hashed password
      */
-    #[ORM\Column]
-    #[Assert\NotBlank(groups: ['create'], message: "Mot de passe obligatoire à la création.")]
-    #[Assert\Length(min: 8, minMessage: "8 caractères minimum.")]
-    #[Assert\Regex(
-        pattern: "/^(?=.*[A-Z])(?=.*\d).{8,}$/",
-        message: "Le mot de passe doit contenir au moins 8 caractères, une majuscule et un chiffre."
-    )]
+    #[ORM\Column(nullable: true)]
+    #[Assert\NotBlank(groups: ['manual'])]
+    #[Assert\Length(min: 8, groups: ['manual'])]
+    #[Assert\Regex(pattern: "/^(?=.*[A-Z])(?=.*\d).{8,}$/", groups: ['manual'])]
     private ?string $password = null;
 
     /**
@@ -124,12 +130,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->password;
     }
 
-    public function setPassword(string $password): static
+    public function setPassword(?string $password): static
     {
         $this->password = $password;
-
         return $this;
     }
+
 
     /**
      * Ensure the session doesn't contain actual password hashes by CRC32C-hashing them, as supported since Symfony 7.3.
@@ -177,4 +183,38 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
         return $this;
     }
+
+    public function getFirstName(): ?string
+    {
+        return $this->firstName;
+    }
+
+    public function setFirstName(?string $firstName): self
+    {
+        $this->firstName = $firstName;
+        return $this;
+    }
+
+    public function getLastName(): ?string
+    {
+        return $this->lastName;
+    }
+
+    public function setLastName(?string $lastName): self
+    {
+        $this->lastName = $lastName;
+        return $this;
+    }
+
+    public function getGoogleId(): ?string
+    {
+        return $this->googleId;
+    }
+
+    public function setGoogleId(?string $googleId): self
+    {
+        $this->googleId = $googleId;
+        return $this;
+    }
+
 }

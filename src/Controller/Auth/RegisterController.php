@@ -1,6 +1,6 @@
-<?php
+<php
 
-namespace App\Controller\Api\Auth;
+namespace App\Controller\Auth;
 
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
@@ -21,7 +21,6 @@ class RegisterController extends AbstractController
         UserPasswordHasherInterface $passwordHasher,
         ValidatorInterface $validator
     ): JsonResponse {
-        // 1️⃣ Lecture du JSON
         $data = json_decode($request->getContent(), true);
 
         if (!isset($data['email'], $data['password'])) {
@@ -30,15 +29,29 @@ class RegisterController extends AbstractController
             ], Response::HTTP_BAD_REQUEST);
         }
 
-        // 2️⃣ Création utilisateur
+        $email = strtolower(trim($data['email']));
+
+        if (!str_ends_with($email, '@gmail.com')) {
+            return new JsonResponse([
+                'error' => "Pour FollowUp, l'email doit être une adresse Gmail dédiée (ex : monjob.followup@gmail.com)."
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
         $user = new User();
-        $user->setEmail($data['email']);
+        $user->setEmail($email);
+
+        // Optionnel : prénom / nom si tu les envoies déjà depuis le front
+        if (!empty($data['firstName'] ?? null)) {
+            $user->setFirstName($data['firstName']);
+        }
+        if (!empty($data['lastName'] ?? null)) {
+            $user->setLastName($data['lastName']);
+        }
 
         $hashedPassword = $passwordHasher->hashPassword($user, $data['password']);
         $user->setPassword($hashedPassword);
         $user->setRoles(['ROLE_USER']);
 
-        // 3️⃣ Validation
         $errors = $validator->validate($user);
         if (count($errors) > 0) {
             $errorMessages = [];
@@ -49,13 +62,11 @@ class RegisterController extends AbstractController
             return new JsonResponse($errorMessages, Response::HTTP_BAD_REQUEST);
         }
 
-        // 4️⃣ Enregistrement
         $em->persist($user);
         $em->flush();
 
-        // 5️⃣ Réponse
         return new JsonResponse([
-            'message' => 'Utilisateur créé avec succès 🎉',
+            'message' => 'Utilisateur créé avec succès',
             'user' => [
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
