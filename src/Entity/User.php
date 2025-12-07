@@ -61,6 +61,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\Regex(pattern: "/^(?=.*[A-Z])(?=.*\d).{8,}$/", groups: ['manual'])]
     private ?string $password = null;
 
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $resetPasswordToken = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $resetPasswordTokenExpiresAt = null;
+
     /**
      * @var Collection<int, Candidature>
      */
@@ -215,6 +221,37 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->googleId = $googleId;
         return $this;
+    }
+
+    public function getResetPasswordToken(): ?string
+    {
+        return $this->resetPasswordToken;
+    }
+
+    public function setResetPasswordToken(?string $resetPasswordToken): self
+    {
+        $this->resetPasswordToken = $resetPasswordToken;
+        return $this;
+    }
+
+    public function getResetPasswordTokenExpiresAt(): ?\DateTimeImmutable
+    {
+        return $this->resetPasswordTokenExpiresAt;
+    }
+
+    public function setResetPasswordTokenExpiresAt(?\DateTimeImmutable $resetPasswordTokenExpiresAt): self
+    {
+        $this->resetPasswordTokenExpiresAt = $resetPasswordTokenExpiresAt;
+        return $this;
+    }
+
+    public function isResetPasswordTokenValid(): bool
+    {
+        if ($this->resetPasswordToken === null || $this->resetPasswordTokenExpiresAt === null) {
+            return false;
+        }
+
+        return $this->resetPasswordTokenExpiresAt > new \DateTimeImmutable();
     }
 
 }
