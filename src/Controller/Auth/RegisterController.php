@@ -1,4 +1,4 @@
-<php
+<?php
 
 namespace App\Controller\Auth;
 
@@ -31,16 +31,16 @@ class RegisterController extends AbstractController
 
         $email = strtolower(trim($data['email']));
 
+        // 🔒 V1 FollowUp : adresse GMAIL obligatoire
         if (!str_ends_with($email, '@gmail.com')) {
             return new JsonResponse([
-                'error' => "Pour FollowUp, l'email doit être une adresse Gmail dédiée (ex : monjob.followup@gmail.com)."
+                'error' => "Pour FollowUp, l'email doit être une adresse Gmail (ex : monjob.followup@gmail.com)."
             ], Response::HTTP_BAD_REQUEST);
         }
 
         $user = new User();
         $user->setEmail($email);
 
-        // Optionnel : prénom / nom si tu les envoies déjà depuis le front
         if (!empty($data['firstName'] ?? null)) {
             $user->setFirstName($data['firstName']);
         }

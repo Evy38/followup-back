@@ -31,6 +31,12 @@ security:
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
 
+        # 🔓 Routes publiques pour mot de passe oublié
+        password_reset:
+            pattern: ^/api/password
+            stateless: true
+            security: false
+
         api:
             pattern: ^/api
             stateless: true
@@ -39,4 +45,7 @@ security:
     access_control:
         - { path: ^/api/register, roles: PUBLIC_ACCESS }
         - { path: ^/api/login_check, roles: PUBLIC_ACCESS }
+        - { path: ^/api/password/forgot, roles: PUBLIC_ACCESS }
+        - { path: ^/api/password/request, roles: PUBLIC_ACCESS }
+        - { path: ^/api/password/reset, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }

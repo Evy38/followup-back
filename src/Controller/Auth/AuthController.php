@@ -35,18 +35,17 @@ class AuthController extends AbstractController
     ): RedirectResponse {
 
         $client = $googleAuthService->getClient();
-
         $code = $request->query->get('code');
 
         if (!$code) {
-            return $this->redirect('http://localhost:4200/#/auth/register-choice-gmail?error=no_code');
+            return $this->redirect('http://localhost:4200/login?error=no_code');
         }
 
         // Récupération du token Google
         $token = $client->fetchAccessTokenWithAuthCode($code);
 
         if (isset($token['error'])) {
-            return $this->redirect('http://localhost:4200/#/auth/register-choice-gmail?error=token');
+            return $this->redirect('http://localhost:4200/login?error=token');
         }
 
         // Infos user via Google
@@ -79,7 +78,7 @@ class AuthController extends AbstractController
         $jwt = $jwtManager->create($user);
 
         // Rediriger vers Angular avec le JWT dans l’URL
-        return $this->redirect("http://localhost:4200/#/dashboard?token=$jwt");
+        return $this->redirect("http://localhost:4200/dashboard?token=$jwt");
     }
 
 }
