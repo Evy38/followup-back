@@ -16,6 +16,7 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class ForgotPasswordController extends AbstractController
 {
+
     /**
      * Demande de réinitialisation de mot de passe - envoie un email avec un lien
      */

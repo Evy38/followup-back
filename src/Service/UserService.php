@@ -62,6 +62,11 @@ class UserService
             throw new ConflictHttpException("Cet email est déjà utilisé.");
         }
 
+        // Règle métier : email Gmail obligatoire
+        if (!str_ends_with($user->getEmail(), '@gmail.com')) {
+            throw new BadRequestHttpException("Pour FollowUp, l'email doit être une adresse Gmail (ex : monjob.followup@gmail.com).");
+        }
+
         // Hash du mot de passe (jamais stocké en clair)
         $hashed = $this->hasher->hashPassword($user, $user->getPassword());
         $user->setPassword($hashed);

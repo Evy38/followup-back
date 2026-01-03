@@ -14,39 +14,49 @@ class UserRepositoryTest extends KernelTestCase
 
     protected function setUp(): void
     {
-        self::bootKernel(); // Démarre Symfony en mode test
-
+        self::bootKernel();
         $this->em = static::getContainer()->get(EntityManagerInterface::class);
         $this->repository = static::getContainer()->get(UserRepository::class);
+        // Nettoyage complet de la table user avant chaque test (FK safe)
+        $connection = $this->em->getConnection();
+        $connection->executeStatement('SET FOREIGN_KEY_CHECKS=0');
+        $connection->executeStatement('DELETE FROM user');
+        $connection->executeStatement('SET FOREIGN_KEY_CHECKS=1');
     }
 
     public function testSaveUser(): void
     {
         $user = new User();
-        $user->setEmail('test@example.com');
+        $user->setEmail('saveuser@example.com');
         $user->setPassword('Azerty123');
         $user->setRoles(['ROLE_USER']);
-
-        // Persiste
         $this->repository->save($user, true);
-
-        // Vérifie que l'ID a bien été généré (donc sauvegardé)
         $this->assertNotNull($user->getId());
     }
 
     public function testFindUserByEmail(): void
     {
-        $user = $this->repository->findByEmail('test@example.com');
-        $this->assertInstanceOf(User::class, $user);
-        $this->assertSame('test@example.com', $user->getEmail());
+        $user = new User();
+        $user->setEmail('finduser@example.com');
+        $user->setPassword('Azerty123');
+        $user->setRoles(['ROLE_USER']);
+        $this->repository->save($user, true);
+
+        $found = $this->repository->findByEmail('finduser@example.com');
+        $this->assertInstanceOf(User::class, $found);
+        $this->assertSame('finduser@example.com', $found->getEmail());
     }
 
     public function testRemoveUser(): void
     {
-        $user = $this->repository->findByEmail('test@example.com');
-        $this->repository->remove($user, true);
+        $user = new User();
+        $user->setEmail('removeuser@example.com');
+        $user->setPassword('Azerty123');
+        $user->setRoles(['ROLE_USER']);
+        $this->repository->save($user, true);
 
-        $deleted = $this->repository->findByEmail('test@example.com');
+        $this->repository->remove($user, true);
+        $deleted = $this->repository->findByEmail('removeuser@example.com');
         $this->assertNull($deleted);
     }
 }
