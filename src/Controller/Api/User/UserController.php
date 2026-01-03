@@ -3,7 +3,7 @@
 namespace App\Controller\Api\User;
 
 use App\Entity\User;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Service\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,21 +22,37 @@ class UserController extends AbstractController
 
     // Modifier le profil
     #[Route('/profile', name: 'api_user_update_profile', methods: ['PUT'])]
-    public function updateProfile(Request $request, EntityManagerInterface $em): JsonResponse
+    public function updateProfile(Request $request, UserService $userService): JsonResponse
     {
         $user = $this->getUser();
         $data = json_decode($request->getContent(), true);
-        
-        // Logique de mise à jour
-        
-        return $this->json($user);
+        $userData = new User();
+
+        if (!$user instanceof User) {
+            throw $this->createAccessDeniedException();
+        }
+        if (isset($data['email'])) {
+            $userData->setEmail($data['email']);
+        }
+        if (isset($data['firstName'])) {
+            $userData->setFirstName($data['firstName']);
+        }
+        if (isset($data['lastName'])) {
+            $userData->setLastName($data['lastName']);
+        }
+        if (isset($data['password'])) {
+            $userData->setPassword($data['password']);
+        }
+        $updatedUser = $userService->update($user->getId(), $userData);
+        return $this->json($updatedUser, context: ['groups' => ['user:read']]);
     }
 
     // Liste des utilisateurs (admin uniquement)
     #[Route('', name: 'api_users_list', methods: ['GET'])]
     #[IsGranted('ROLE_ADMIN')]
-    public function list(): JsonResponse
+    public function list(UserService $userService): JsonResponse
     {
-        // Logique pour lister les utilisateurs
+        $users = $userService->getAll();
+        return $this->json($users);
     }
 }

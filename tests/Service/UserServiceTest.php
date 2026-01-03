@@ -4,7 +4,7 @@ namespace App\Tests\Service;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
-use App\Services\UserService;
+use App\Service\UserService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -29,14 +29,18 @@ class UserServiceTest extends KernelTestCase
         $this->service = new UserService($this->repository, $hasher, $this->em);
 
         // 🧹 Nettoyage complet de la table user avant chaque test
+        // On désactive temporairement les contraintes FK pour éviter les erreurs si d'autres tables référencent user
         $connection = $this->em->getConnection();
+        $connection->executeStatement('SET FOREIGN_KEY_CHECKS=0');
         $connection->executeStatement('DELETE FROM user');
+        $connection->executeStatement('SET FOREIGN_KEY_CHECKS=1');
+        // On peut aussi utiliser truncate si besoin, mais DELETE est plus sûr pour la compatibilité FK
     }
 
     public function testCreateUser(): void
     {
         $user = new User();
-        $user->setEmail('testservice@example.com');
+        $user->setEmail('testservice@gmail.com');
         $user->setPassword('Azerty123');
         $user->setRoles(['ROLE_USER']);
 
@@ -51,12 +55,12 @@ class UserServiceTest extends KernelTestCase
         $this->expectException(ConflictHttpException::class);
 
         $user1 = new User();
-        $user1->setEmail('dup@example.com');
+        $user1->setEmail('dup@gmail.com');
         $user1->setPassword('Azerty123');
         $this->service->create($user1);
 
         $user2 = new User();
-        $user2->setEmail('dup@example.com');
+        $user2->setEmail('dup@gmail.com');
         $user2->setPassword('Azerty123');
         $this->service->create($user2); // doit lever une exception
     }
@@ -64,25 +68,25 @@ class UserServiceTest extends KernelTestCase
     public function testUpdateUser(): void
     {
         $user = new User();
-        $user->setEmail('update@example.com');
+        $user->setEmail('update@gmail.com');
         $user->setPassword('Azerty123');
         $user->setRoles(['ROLE_USER']);
         $this->service->create($user);
 
         $updatedData = new User();
-        $updatedData->setEmail('updated@example.com');
+        $updatedData->setEmail('updated@gmail.com');
         $updatedData->setPassword('NewPass123');
 
         $updated = $this->service->update($user->getId(), $updatedData);
 
-        $this->assertSame('updated@example.com', $updated->getEmail());
+        $this->assertSame('updated@gmail.com', $updated->getEmail());
         $this->assertNotEquals('NewPass123', $updated->getPassword(), "Le mot de passe doit être hashé");
     }
 
     public function testDeleteUser(): void
     {
         $user = new User();
-        $user->setEmail('delete@example.com');
+        $user->setEmail('delete@gmail.com');
         $user->setPassword('Azerty123');
         $this->service->create($user);
 
@@ -96,7 +100,7 @@ class UserServiceTest extends KernelTestCase
         public function testPasswordIsHashedUsingSymfonyHasher(): void
     {
         $user = new User();
-        $user->setEmail('secure@example.com');
+        $user->setEmail('secure@gmail.com');
         $user->setPassword('Azerty123');
 
         $created = $this->service->create($user);

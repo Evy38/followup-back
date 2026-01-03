@@ -2,15 +2,14 @@
 
 namespace App\Controller\Auth;
 
-use App\Entity\User;
-use App\Repository\UserRepository;
+use App\Service\OAuthUserService;
 use App\Service\GoogleAuthService;
-use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpFoundation\Cookie;
 
 class AuthController extends AbstractController
 {
@@ -29,8 +28,7 @@ class AuthController extends AbstractController
     public function googleCallback(
         Request $request,
         GoogleAuthService $googleAuthService,
-        UserRepository $userRepository,
-        EntityManagerInterface $em,
+        OAuthUserService $oauthUserService,
         JWTTokenManagerInterface $jwtManager,
     ): RedirectResponse {
 
@@ -58,27 +56,30 @@ class AuthController extends AbstractController
         $googleId = $googleUser->id;
 
         // Chercher user existant
-        $user = $userRepository->findOneBy(['email' => $email]);
 
-        if (!$user) {
-            // Créer le user
-            $user = new User();
-            $user->setEmail($email);
-            $user->setFirstName($firstName);
-            $user->setLastName($lastName);
-            $user->setGoogleId($googleId);
-            $user->setRoles(['ROLE_USER']);
-            $user->setPassword(null); // OAuth = pas de mot de passe
-
-            $em->persist($user);
-            $em->flush();
-        }
+        // Délégation à OAuthUserService pour la gestion utilisateur OAuth
+        $user = $oauthUserService->getOrCreateFromGoogle($email, $firstName, $lastName, $googleId);
 
         // Générer JWT FollowUp
         $jwt = $jwtManager->create($user);
 
-        // Rediriger vers Angular avec le JWT dans l’URL
-        return $this->redirect("http://localhost:4200/dashboard?token=$jwt");
+        // Créer un cookie HTTP-only sécurisé pour le JWT
+        // En production, mettre 'secure' à true
+        $cookie = new Cookie(
+            'AUTH_TOKEN',
+            $jwt,
+            0, // session cookie
+            '/',
+            null,
+            false, // secure: false en dev, true en prod
+            true, // httpOnly
+            false,
+            'lax'
+        );
+
+        $response = $this->redirect('http://localhost:4200/dashboard');
+        $response->headers->setCookie($cookie);
+        return $response;
     }
 
 }
