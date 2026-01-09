@@ -42,5 +42,26 @@ services:
       - db
     restart: unless-stopped
 
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: followup-mailhog
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Interface web
+    restart: unless-stopped
+
+  # messenger:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/php/Dockerfile
+  #   container_name: followup-messenger
+  #   command: php bin/console messenger:consume async --time-limit=3600
+  #   volumes:
+  #     - ./:/var/www/html
+  #   depends_on:
+  #     - db
+  #     - mailhog
+  #   restart: unless-stopped
+
 volumes:
   db_data:
