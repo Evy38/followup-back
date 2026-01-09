@@ -8,6 +8,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use App\Service\EmailVerificationService;
 
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use App\Service\UserService;
@@ -19,7 +20,8 @@ class RegisterController extends AbstractController
     public function register(
         Request $request,
         UserService $userService,
-        ValidatorInterface $validator
+        ValidatorInterface $validator,
+        EmailVerificationService $emailVerificationService
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
 
@@ -32,6 +34,7 @@ class RegisterController extends AbstractController
 
         $email = strtolower(trim($data['email']));
         $user = new User();
+        $user->setIsVerified(false);
         $user->setEmail($email);
         if (!empty($data['firstName'] ?? null)) {
             $user->setFirstName($data['firstName']);
@@ -53,14 +56,11 @@ class RegisterController extends AbstractController
 
         // Toute la logique métier est déléguée à UserService
         $userService->create($user);
+        $emailVerificationService->sendVerificationEmail($user);
 
         return new JsonResponse([
-            'message' => 'Utilisateur créé avec succès',
-            'user' => [
-                'id' => $user->getId(),
-                'email' => $user->getEmail(),
-                'roles' => $user->getRoles(),
-            ]
+            'message' => 'Compte créé. Veuillez confirmer votre adresse email pour activer votre compte.'
         ], Response::HTTP_CREATED);
+
     }
 }
