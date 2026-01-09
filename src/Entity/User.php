@@ -67,6 +67,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $resetPasswordTokenExpiresAt = null;
 
+    #[ORM\Column(type: 'boolean')]
+    private bool $isVerified = false;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $emailVerificationToken = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $emailVerificationTokenExpiresAt = null;
+
+
     /**
      * @var Collection<int, Candidature>
      */
@@ -253,5 +263,49 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
         return $this->resetPasswordTokenExpiresAt > new \DateTimeImmutable();
     }
+    public function isVerified(): bool
+    {
+        return $this->isVerified;
+    }
+
+    public function setIsVerified(bool $isVerified): self
+    {
+        $this->isVerified = $isVerified;
+        return $this;
+    }
+
+    public function getEmailVerificationToken(): ?string
+    {
+        return $this->emailVerificationToken;
+    }
+
+    public function setEmailVerificationToken(?string $token): self
+    {
+        $this->emailVerificationToken = $token;
+        return $this;
+    }
+
+    public function getEmailVerificationTokenExpiresAt(): ?\DateTimeImmutable
+    {
+        return $this->emailVerificationTokenExpiresAt;
+    }
+
+    public function setEmailVerificationTokenExpiresAt(?\DateTimeImmutable $expiresAt): self
+    {
+        $this->emailVerificationTokenExpiresAt = $expiresAt;
+        return $this;
+    }
+
+    // Règle métier locale : la validité du token dépend uniquement de l’état interne de l’utilisateur.
+    // Aucun accès externe n’est requis, ce qui garantit la cohérence de l’objet.
+    public function isEmailVerificationTokenValid(): bool
+    {
+        if ($this->emailVerificationToken === null || $this->emailVerificationTokenExpiresAt === null) {
+            return false;
+        }
+
+        return $this->emailVerificationTokenExpiresAt > new \DateTimeImmutable();
+    }
+
 
 }
