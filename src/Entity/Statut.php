@@ -6,16 +6,35 @@ use App\Repository\StatutRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
+use ApiPlatform\Metadata\Delete;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: StatutRepository::class)]
+#[ApiResource(
+    operations: [
+        new Get(normalizationContext: ['groups' => ['statut:read']]),
+        new GetCollection(normalizationContext: ['groups' => ['statut:read']]),
+        new Post(denormalizationContext: ['groups' => ['statut:write']], security: "is_granted('ROLE_ADMIN')"),
+        new Put(denormalizationContext: ['groups' => ['statut:write']], security: "is_granted('ROLE_ADMIN')")
+    ],
+    security: "is_granted('ROLE_USER')"
+)]
+
 class Statut
 {
-    #[ORM\Id]
+     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['statut:read', 'candidature:read', 'candidature:write'])]
     private ?int $id = null;
 
-    #[ORM\Column(length: 50)]
+    #[ORM\Column(length: 100)]
+    #[Groups(['statut:read', 'candidature:read', 'candidature:write'])]
     private ?string $libelle = null;
 
     /**

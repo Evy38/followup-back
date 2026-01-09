@@ -6,24 +6,41 @@ use App\Repository\VilleRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
+use ApiPlatform\Metadata\Delete;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: VilleRepository::class)]
+#[ApiResource(
+    operations: [
+        new GetCollection(normalizationContext: ['groups' => ['ville:read']]),
+        new Get(normalizationContext: ['groups' => ['ville:read']])
+    ],
+    security: "is_granted('ROLE_USER')"
+)]
 class Ville
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['ville:read', 'candidature:read', 'candidature:write'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 100)]
+    #[Groups(['ville:read', 'candidature:read', 'candidature:write'])]
     private ?string $nomVille = null;
 
-    #[ORM\Column(length: 20, nullable: true)]
+    #[ORM\Column(length: 10, nullable: true)]
+    #[Groups(['ville:read', 'candidature:read', 'candidature:write'])]
     private ?string $codePostal = null;
 
-    #[ORM\Column(length: 100)]
+    #[ORM\Column(length: 100, nullable: true)]
+    #[Groups(['ville:read', 'candidature:read', 'candidature:write'])]
     private ?string $pays = null;
-
     /**
      * @var Collection<int, Candidature>
      */

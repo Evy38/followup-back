@@ -1,78 +1,176 @@
-# followup-back
+# FollowUp – Backend (Symfony) 🎯
 
-Petit backend Symfony pour FollowUp — instructions d'installation et d'usage (focalisé Docker / dev local).
+API REST sécurisée de suivi de candidatures d’emploi  
+Projet de fin de formation – **Titre Professionnel CDA**
 
-## Prérequis
-- Docker Desktop installé (Windows / Mac / Linux)
-- Docker Compose (fourni avec Docker Desktop)
-- (Optionnel) client MySQL si tu veux te connecter depuis l'hôte
+---
 
-## Structure importante
-- `docker-compose.yml` : définit les services `php`, `db` et `pma`.
-- `docker/php/Dockerfile` : image PHP/Apache pour Symfony.
-- `docker/db/init.sql` : script d'initialisation de la base de données (création des DB et de l'utilisateur).
-- `.env.example` : exemple de variables d'environnement à copier en `.env`.
+## 📌 Présentation du projet
 
-## Installer et démarrer (en local)
-1. Copier l'exemple d'environnement et personnaliser si besoin :
+FollowUp est une application permettant à un utilisateur de **centraliser et suivre ses candidatures d’emploi** :
+- entreprises contactées
+- statuts des candidatures
+- relances effectuées
+- réponses reçues
 
-```cmd
-copy .env.example .env
-```
+Le backend expose une **API REST sécurisée**, conçue pour être consommée par un frontend Angular.
 
-2. Construire et lancer les services (en background) :
+---
 
-```cmd
-docker compose up -d --build
-```
+## 🎯 Objectifs pédagogiques (REAC)
 
-3. Vérifier l'état des services :
+Ce projet démontre ma capacité à :
 
-```cmd
-docker compose ps
-docker compose logs -f db
-```
+- Concevoir une **API REST sécurisée**
+- Mettre en place une **architecture backend claire**
+- Implémenter une **authentification moderne (JWT / OAuth)**
+- Séparer correctement les responsabilités (Controller / Service / Repository)
+- Tester les parcours critiques de l’application
+- Documenter et justifier les choix techniques
 
-4. Accéder à l'application
-- Symfony (via le service `php`) : http://localhost:8080
-- phpMyAdmin : http://localhost:8081 (utilisateur/mot de passe défini dans `.env` / `docker-compose.yml`)
+---
 
-## Fichier `.env` et variables importantes
-- Le projet fournit `.env.example`. Copie‑le en `.env` et garde tes vrais secrets hors du dépôt.
-- Variables utiles :
-	- `MYSQL_ROOT_PASSWORD` : mot de passe root MySQL (dev)
-	- `MYSQL_USER` / `MYSQL_PASSWORD` : utilisateur et mot de passe créés pour l'app
-	- `DATABASE_URL` : connexion utilisée par Symfony
+## 🏗️ Architecture Backend
 
-Exemple de `DATABASE_URL` dans `.env` pour ce setup :
+### Séparation des responsabilités
 
-```
-DATABASE_URL=mysql://follow_user:root@db:3306/followup_db
-```
+Controller → Service → Repository → Base de données
 
-## Dépannage rapide
-- Erreur MySQL « data directory has files in it » :
-	- Sur Windows, préfère un volume Docker nommé pour `/var/lib/mysql` (déjà configuré). Si tu as un dossier `./docker/db` avec des fichiers, supprime-le avant de recréer le conteneur ou utilise `docker volume rm` pour supprimer le volume Docker.
-- Problèmes de permissions Symfony (cache / logs) :
-	- Exécute `docker compose exec php bash` puis `chown -R www-data:www-data var/` ou installe les dépendances (`composer install`) à l’intérieur du conteneur.
-- Vérifier les logs :
-	- `docker compose logs -f php` ou `docker compose logs -f db`
 
-## Commandes utiles
-- Démarrer (build) : `docker compose up -d --build`
-- Arrêter : `docker compose down`
-- Recréer uniquement la DB (suppression du container + volume) :
+- **Controllers**
+  - Reçoivent les requêtes HTTP
+  - Valident les entrées
+  - Délèguent toute logique métier aux services
 
-```cmd
-docker compose stop db
-docker compose rm -f db
-docker volume rm followup-back_db_data
-docker compose up -d db
-```
+- **Services**
+  - Contiennent la logique métier
+  - Centralisent la sécurité (hash mot de passe, règles métier)
+  - Rendent le code testable et maintenable
 
-## Sécurité (notes importantes)
-- Ne commite jamais de secrets (mot de passe, clé privée) dans le dépôt public.
-- En production, n'expose pas le port MySQL sur l'hôte et utilise un gestionnaire de secrets.
+- **Repositories**
+  - Gèrent exclusivement l’accès aux données (Doctrine ORM)
 
-## Aide — contact
-Si tu veux que j'ajoute des scripts pour fixer automatiquement les permissions, ou que je replace les variables par défaut par des variables d'environnement dans `docker-compose.yml` (déjà fait), dis‑moi et je le fais.
+👉 Cette séparation respecte les bonnes pratiques Symfony et les attendus du REAC.
+
+---
+
+## 🔐 Sécurité & Authentification
+
+### Authentification JWT
+
+- Authentification via **LexikJWTAuthenticationBundle**
+- API **stateless**
+- Accès aux routes protégées via token JWT
+
+### OAuth Google
+
+- Connexion possible via Google OAuth
+- Création automatique de l’utilisateur si inexistant
+- Génération d’un JWT après authentification OAuth
+- Stockage du token dans un **cookie HTTP-only**
+
+👉 Le JWT n’est **jamais exposé dans l’URL**, pour éviter tout risque XSS.
+
+### Sécurité des mots de passe
+
+- Hash avec le **hasher Symfony**
+- Jamais stockés en clair
+- Politique minimale :
+  - 8 caractères
+  - 1 majuscule
+  - 1 chiffre
+
+---
+
+## 🔁 Réinitialisation de mot de passe
+
+Flux sécurisé en deux étapes :
+
+1. Demande de réinitialisation (`/api/password/request`)
+2. Génération d’un token temporaire (1h)
+3. Réinitialisation avec token (`/api/password/reset`)
+4. Invalidation automatique du token
+
+✔️ Aucun retour ne révèle si un email existe ou non (protection contre l’énumération).
+
+---
+
+## 🧪 Tests & Qualité
+
+### Stratégie de tests
+
+- **Tests unitaires** :
+  - Services
+  - Repositories
+- **Tests fonctionnels** :
+  - Parcours critique de réinitialisation de mot de passe
+  - Appels réels via HTTP (WebTestCase)
+
+### Exemple de test fonctionnel
+
+- Création utilisateur
+- Demande de reset
+- Récupération du token
+- Réinitialisation du mot de passe
+- Vérification du hash
+
+👉 Les contrôleurs ne sont **jamais instanciés directement** dans les tests.
+
+---
+
+## 📦 Stack technique
+
+| Élément | Technologie |
+|---|---|
+| Langage | PHP 8.2 |
+| Framework | Symfony 7.3 |
+| Base de données | MySQL |
+| ORM | Doctrine |
+| Authentification | JWT + OAuth Google |
+| Tests | PHPUnit |
+| Conteneurisation | Docker |
+
+---
+
+## 📂 Modèle de données (simplifié)
+
+User
+└── Candidature
+├── Entreprise
+├── Statut
+├── Relance
+└── Reponse
+
+
+---
+
+## 🚀 Installation (environnement local)
+
+```bash
+git clone <repo>
+cd followup-back
+docker-compose up -d
+docker-compose exec app composer install
+docker-compose exec app php bin/console lexik:jwt:generate-keypair
+docker-compose exec app php bin/console doctrine:migrations:migrate
+
+📖 Documentation API
+
+Swagger / OpenAPI disponible
+
+Endpoints testables directement via l’interface
+
+🧭 Évolutions possibles
+
+Tests d’intégration complets
+
+Statistiques et indicateurs de suivi
+
+Notifications automatiques
+
+CI/CD
+
+👤 Auteur
+
+Cécile
+Projet réalisé dans le cadre du Titre Professionnel Concepteur Développeur d’Applications

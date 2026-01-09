@@ -10,7 +10,8 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 
 /**
- * @extends ServiceEntityRepository<User>
+ * Repository = couche d’accès aux données
+ * Permet de manipuler la base de données sans écrire de SQL.
  */
 class UserRepository extends ServiceEntityRepository implements PasswordUpgraderInterface
 {
@@ -20,12 +21,12 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     }
 
     /**
-     * Used to upgrade (rehash) the user's password automatically over time.
+     * 🔁 Méthode Symfony : met à jour le hash du mot de passe si nécessaire.
      */
     public function upgradePassword(PasswordAuthenticatedUserInterface $user, string $newHashedPassword): void
     {
         if (!$user instanceof User) {
-            throw new UnsupportedUserException(sprintf('Instances of "%s" are not supported.', $user::class));
+            throw new UnsupportedUserException(sprintf('Instances of "%s" non supportées.', $user::class));
         }
 
         $user->setPassword($newHashedPassword);
@@ -33,28 +34,57 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $this->getEntityManager()->flush();
     }
 
-    //    /**
-    //     * @return User[] Returns an array of User objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('u')
-    //            ->andWhere('u.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('u.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * ✅ Méthode générique : sauvegarde (création ou mise à jour)
+     * $flush = true => exécute tout de suite la requête SQL
+     * $flush = false => enregistre dans le cache Doctrine, mais n’envoie pas encore à la BDD
+     */
+    public function save(object $entity, bool $flush = false): void
+    {
+        $this->getEntityManager()->persist($entity);
 
-    //    public function findOneBySomeField($value): ?User
-    //    {
-    //        return $this->createQueryBuilder('u')
-    //            ->andWhere('u.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
+    /**
+     * ✅ Supprime un utilisateur
+     */
+    public function remove(object $entity, bool $flush = false): void
+    {
+        $this->getEntityManager()->remove($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
+    /**
+     * 🔍 Trouve un utilisateur par son email
+     */
+    public function findByEmail(string $email): ?User
+    {
+        return $this->findOneBy(['email' => $email]);
+    }
+
+    /**
+     * 🧩 Vérifie si un email existe déjà dans la BDD
+     * Si $excludeId est donné → ignore cet utilisateur (utile en mode "update")
+     */
+    public function existsByEmail(string $email, ?int $excludeId = null): bool
+    {
+        $qb = $this->createQueryBuilder('u')
+            ->select('COUNT(u.id)')
+            ->andWhere('u.email = :email')
+            ->setParameter('email', $email);
+
+        if ($excludeId) {
+            $qb->andWhere('u.id != :id')
+               ->setParameter('id', $excludeId);
+        }
+
+        // getSingleScalarResult() renvoie un nombre → on le convertit en booléen
+        return (int) $qb->getQuery()->getSingleScalarResult() > 0;
+    }
 }
