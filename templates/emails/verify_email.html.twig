@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="fr">
+<body>
+    <p>Bonjour {{ user.firstName ?? 'utilisateur' }},</p>
+
+    <p>
+        Merci pour votre inscription sur FollowUp.
+        Pour activer votre compte, veuillez confirmer votre adresse email en cliquant sur le lien ci-dessous :
+    </p>
+
+    <p>
+        <a href="{{ verificationUrl }}">Confirmer mon adresse email</a>
+    </p>
+
+    <p>
+        Ce lien est valable jusqu’au {{ expiresAt|date('d/m/Y H:i') }}.
+    </p>
+
+    <p>
+        Si vous n’êtes pas à l’origine de cette inscription, ignorez cet email.
+    </p>
+</body>
+</html>
