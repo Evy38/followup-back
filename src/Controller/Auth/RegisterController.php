@@ -54,13 +54,19 @@ class RegisterController extends AbstractController
             return new JsonResponse($errorMessages, Response::HTTP_BAD_REQUEST);
         }
 
-        // Toute la logique métier est déléguée à UserService
-        $userService->create($user);
-        $emailVerificationService->sendVerificationEmail($user);
+        try {
+            // Toute la logique métier est déléguée à UserService
+            $userService->create($user);
+            $emailVerificationService->sendVerificationEmail($user);
 
-        return new JsonResponse([
-            'message' => 'Compte créé. Veuillez confirmer votre adresse email pour activer votre compte.'
-        ], Response::HTTP_CREATED);
+            return new JsonResponse([
+                'message' => 'Compte créé. Veuillez confirmer votre adresse email pour activer votre compte.'
+            ], Response::HTTP_CREATED);
+        } catch (\Throwable $e) {
+            return new JsonResponse([
+                'error' => 'Erreur serveur: ' . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
 
     }
 }
