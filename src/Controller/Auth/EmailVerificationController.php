@@ -9,6 +9,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+
 
 class EmailVerificationController extends AbstractController
 {
@@ -17,7 +19,7 @@ class EmailVerificationController extends AbstractController
         Request $request,
         UserRepository $userRepository,
         EntityManagerInterface $entityManager
-    ): JsonResponse {
+    ): Response {
         $token = $request->query->get('token');
 
         if (!$token) {
@@ -46,11 +48,11 @@ class EmailVerificationController extends AbstractController
         $user->setIsVerified(true);
         $user->setEmailVerificationToken(null);
         $user->setEmailVerificationTokenExpiresAt(null);
-
+        
         $entityManager->flush();
 
         return new JsonResponse([
-            'message' => 'Adresse email confirmée avec succès. Vous pouvez maintenant vous connecter.'
+            'message' => 'Adresse email confirmée avec succès.'
         ], Response::HTTP_OK);
     }
 }
