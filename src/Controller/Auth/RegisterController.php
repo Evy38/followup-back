@@ -57,7 +57,6 @@ class RegisterController extends AbstractController
         try {
             // Toute la logique métier est déléguée à UserService
             $userService->create($user);
-            $emailVerificationService->sendVerificationEmail($user);
 
             return new JsonResponse([
                 'message' => 'Compte créé. Veuillez confirmer votre adresse email pour activer votre compte.'

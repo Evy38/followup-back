@@ -3,47 +3,52 @@
 namespace App\Service;
 
 use App\Entity\User;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 
 class EmailVerificationService
 {
-    private EntityManagerInterface $entityManager;
     private MailerInterface $mailer;
     private string $frontendUrl;
 
     public function __construct(
-        EntityManagerInterface $entityManager,
         MailerInterface $mailer,
         string $frontendUrl
     ) {
-        $this->entityManager = $entityManager;
         $this->mailer = $mailer;
         $this->frontendUrl = rtrim($frontendUrl, '/');
     }
 
     /**
-     * Génère un token de vérification et envoie l'email
+     * Génère le token et l’attache à l’utilisateur
+     * ⚠️ NE FAIT AUCUN flush
+     */
+    public function generateVerificationToken(User $user): void
+    {
+        // Ne régénère le token que s'il n'existe pas ou est expiré
+        if (!$user->getEmailVerificationToken() || !$user->isEmailVerificationTokenValid()) {
+            $token = bin2hex(random_bytes(32));
+            $expiresAt = new \DateTimeImmutable('+24 hours');
+            $user->setEmailVerificationToken($token);
+            $user->setEmailVerificationTokenExpiresAt($expiresAt);
+            $user->setIsVerified(false);
+        }
+    }
+
+    /**
+     * Envoie l’email de vérification
      */
     public function sendVerificationEmail(User $user): void
     {
-        // Génération du token
-        $token = bin2hex(random_bytes(32));
-        $expiresAt = new \DateTimeImmutable('+24 hours');
+        $token = $user->getEmailVerificationToken();
 
-        // Stockage sur l'utilisateur
-        $user->setEmailVerificationToken($token);
-        $user->setEmailVerificationTokenExpiresAt($expiresAt);
-        $user->setIsVerified(false);
+        if ($token === null) {
+            throw new \LogicException('Le token de vérification est manquant.');
+        }
 
-        $this->entityManager->flush();
-
-        // Construction de l'URL de confirmation
         $verificationUrl = $this->frontendUrl . '/verify-email?token=' . $token;
 
-        // Email
         $email = (new TemplatedEmail())
             ->from(new Address('noreply@followup.com', 'FollowUp'))
             ->to(new Address($user->getEmail()))
@@ -52,7 +57,7 @@ class EmailVerificationService
             ->context([
                 'user' => $user,
                 'verificationUrl' => $verificationUrl,
-                'expiresAt' => $expiresAt,
+                'expiresAt' => $user->getEmailVerificationTokenExpiresAt(),
             ]);
 
         $this->mailer->send($email);
