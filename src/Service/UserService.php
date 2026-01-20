@@ -10,37 +10,33 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Doctrine\DBAL\Exception as DBALException;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\Exception\ORMException;
 
 class UserService
 {
-    // 💡 Dépendances nécessaires au fonctionnement du service
-    private UserRepository $repository;              // pour accéder à la BDD via Doctrine
-    private UserPasswordHasherInterface $hasher;     // pour chiffrer les mots de passe
-    private EntityManagerInterface $em;              // pour persister, supprimer, flusher
+    private UserRepository $repository;
+    private UserPasswordHasherInterface $hasher;
+    private EntityManagerInterface $em;
+    private EmailVerificationService $emailVerificationService;
 
-    // 💡 Symfony injecte automatiquement ces dépendances au moment où le service est créé
     public function __construct(
         UserRepository $repository,
         UserPasswordHasherInterface $hasher,
-        EntityManagerInterface $em
+        EntityManagerInterface $em,
+        EmailVerificationService $emailVerificationService
     ) {
         $this->repository = $repository;
         $this->hasher = $hasher;
         $this->em = $em;
+        $this->emailVerificationService = $emailVerificationService;
     }
 
-    /**
-     * 📋 Récupère tous les utilisateurs
-     */
     public function getAll(): array
     {
         return $this->repository->findAll();
     }
 
-    /**
-     * 🔍 Récupère un utilisateur par ID (ou erreur 404 s’il n’existe pas)
-     */
     public function getById(int $id): User
     {
         $user = $this->repository->find($id);
@@ -53,43 +49,70 @@ class UserService
     }
 
     /**
-     * ➕ Crée un nouvel utilisateur
+     * ➕ Création d’un utilisateur + email de vérification
      */
     public function create(User $user): User
     {
-        // Vérifie si l’email existe déjà
         if ($this->repository->existsByEmail($user->getEmail())) {
+            error_log('[FollowUp] Tentative de double inscription pour l\'email : ' . $user->getEmail());
             throw new ConflictHttpException("Cet email est déjà utilisé.");
         }
 
-        // Règle métier : email Gmail obligatoire
         if (!str_ends_with($user->getEmail(), '@gmail.com')) {
-            throw new BadRequestHttpException("Pour FollowUp, l'email doit être une adresse Gmail (ex : monjob.followup@gmail.com).");
+            throw new BadRequestHttpException(
+                "Pour FollowUp, l'email doit être une adresse Gmail (ex : monjob.followup@gmail.com)."
+            );
         }
 
-        // Hash du mot de passe (jamais stocké en clair)
-        $hashed = $this->hasher->hashPassword($user, $user->getPassword());
-        $user->setPassword($hashed);
+        if ($user->getPassword() === null) {
+            throw new BadRequestHttpException("Mot de passe requis.");
+        }
 
-        // Essaye d’enregistrer le user dans la base
+        // Hash mot de passe
+        $hashedPassword = $this->hasher->hashPassword($user, $user->getPassword());
+        $user->setPassword($hashedPassword);
+
+        $user->setIsVerified(false);
+
         try {
-            $this->repository->save($user, true); // true = flush immédiat
-        } catch (DBALException|ORMException $e) {
-            // Si Doctrine échoue, on renvoie une erreur claire
-            throw new BadRequestHttpException("Erreur lors de l’enregistrement du nouvel utilisateur.");
+            // 1️⃣ Persist utilisateur (sans flush)
+            $this->repository->save($user, false);
+
+            // 2️⃣ Génération du token (uniquement s'il n'existe pas déjà)
+            if (!$user->getEmailVerificationToken()) {
+                $this->emailVerificationService->generateVerificationToken($user);
+            }
+
+            // 3️⃣ Flush UNIQUE
+            $this->repository->save($user, true);
+        } catch (UniqueConstraintViolationException $e) {
+            // Cas de race condition : deux requêtes simultanées
+            error_log('[FollowUp] Contrainte d\'unicité SQL violée pour l\'email : ' . $user->getEmail());
+            throw new ConflictHttpException("Cet email est déjà utilisé.");
+        } catch (DBALException | ORMException $e) {
+            error_log('[FollowUp] Erreur transactionnelle lors de la création utilisateur : ' . $e->getMessage());
+            throw new BadRequestHttpException(
+                "Erreur lors de l’enregistrement du nouvel utilisateur."
+            );
+        }
+
+        // 4️⃣ Envoi email (hors transaction DB)
+        try {
+            $this->emailVerificationService->sendVerificationEmail($user);
+        } catch (\Throwable $e) {
+            error_log('[FollowUp] Erreur lors de l\'envoi de l\'email de confirmation : ' . $e->getMessage());
+            throw new BadRequestHttpException(
+                "Le compte a été créé mais l'email de confirmation n'a pas pu être envoyé."
+            );
         }
 
         return $user;
     }
 
-    /**
-     * ♻️ Met à jour un utilisateur existant
-     */
     public function update(int $id, User $data): User
     {
-        $user = $this->getById($id); // on récupère l’utilisateur existant
+        $user = $this->getById($id);
 
-        // Vérifie s’il y a un nouvel email et s’il est déjà pris
         if ($data->getEmail()) {
             if ($this->repository->existsByEmail($data->getEmail(), $id)) {
                 throw new ConflictHttpException("Cet email est déjà utilisé.");
@@ -97,38 +120,36 @@ class UserService
             $user->setEmail($data->getEmail());
         }
 
-        // Met à jour les rôles si fournis
         if ($data->getRoles()) {
             $user->setRoles($data->getRoles());
         }
 
-        // Met à jour le mot de passe si fourni
         if ($data->getPassword()) {
-            $hashed = $this->hasher->hashPassword($user, $data->getPassword());
-            $user->setPassword($hashed);
+            $hashedPassword = $this->hasher->hashPassword($user, $data->getPassword());
+            $user->setPassword($hashedPassword);
         }
 
-        // On essaye d’enregistrer les changements
         try {
             $this->repository->save($user, true);
-        } catch (DBALException|ORMException $e) {
-            throw new BadRequestHttpException("Erreur lors de la mise à jour de l’utilisateur.");
+        } catch (DBALException | ORMException $e) {
+            throw new BadRequestHttpException(
+                "Erreur lors de la mise à jour de l’utilisateur."
+            );
         }
 
         return $user;
     }
 
-    /**
-     * ❌ Supprime un utilisateur
-     */
     public function delete(int $id): void
     {
-        $user = $this->getById($id); // 404 si introuvable
+        $user = $this->getById($id);
 
         try {
             $this->repository->remove($user, true);
-        } catch (DBALException|ORMException $e) {
-            throw new BadRequestHttpException("Impossible de supprimer cet utilisateur pour le moment.");
+        } catch (DBALException | ORMException $e) {
+            throw new BadRequestHttpException(
+                "Impossible de supprimer cet utilisateur pour le moment."
+            );
         }
     }
 }

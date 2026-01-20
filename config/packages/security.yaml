@@ -10,13 +10,12 @@ security:
                 property: email
 
     firewalls:
-
         # 🔓 Swagger public
         swagger:
             pattern: ^/api/docs
             stateless: true
             security: false
-            
+
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
@@ -37,6 +36,7 @@ security:
             stateless: true
             security: false
 
+    # 🔓 Vérification email (PUBLIC)
         email_verification:
             pattern: ^/api/verify-email
             stateless: true
@@ -45,7 +45,7 @@ security:
         api:
             pattern: ^/api
             stateless: true
-            jwt: 
+            jwt:
 
     access_control:
         - { path: ^/api/verify-email, roles: PUBLIC_ACCESS }
