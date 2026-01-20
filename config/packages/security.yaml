@@ -10,13 +10,12 @@ security:
                 property: email
 
     firewalls:
-
         # 🔓 Swagger public
         swagger:
             pattern: ^/api/docs
             stateless: true
             security: false
-            
+
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
@@ -31,18 +30,25 @@ security:
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
 
-        # 🔓 Routes publiques pour mot de passe oublié
+        # 🔓 Routes publiques pour mot de passe oublié et vérification d'email
         password_reset:
             pattern: ^/api/password
+            stateless: true
+            security: false
+
+    # 🔓 Vérification email (PUBLIC)
+        email_verification:
+            pattern: ^/api/verify-email
             stateless: true
             security: false
 
         api:
             pattern: ^/api
             stateless: true
-            jwt: 
+            jwt:
 
     access_control:
+        - { path: ^/api/verify-email, roles: PUBLIC_ACCESS }
         - { path: ^/api/register, roles: PUBLIC_ACCESS }
         - { path: ^/api/login_check, roles: PUBLIC_ACCESS }
         - { path: ^/api/password/forgot, roles: PUBLIC_ACCESS }
