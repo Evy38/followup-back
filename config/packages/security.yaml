@@ -91,11 +91,3 @@ security:
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 
-# ============================================================
-# 🚪 LOGOUT (JWT)
-# ============================================================
-# En JWT, le logout est surtout côté frontend
-# (suppression du token)
-_security_logout:
-    resource: security.route_loader.logout
-    type: service
