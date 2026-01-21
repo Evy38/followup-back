@@ -82,6 +82,7 @@ security:
 
         # 🔓 PUBLIC : vérification email (token unique)
         - { path: ^/api/verify-email, roles: PUBLIC_ACCESS }
+        - { path: ^/api/verify-email/resend, roles: PUBLIC_ACCESS }
 
         # 🔓 PUBLIC : mot de passe oublié / reset
         - { path: ^/api/password/request, roles: PUBLIC_ACCESS }
@@ -89,5 +90,6 @@ security:
 
         # 🔒 PRIVÉ : tout le reste de l’API
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
+        
 
 
