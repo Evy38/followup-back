@@ -71,6 +71,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?\DateTimeImmutable $resetPasswordTokenExpiresAt = null;
 
     #[ORM\Column(type: 'boolean')]
+    #[Groups(['user:read', 'user:write'])]
     private bool $isVerified = false;
 
     #[ORM\Column(length: 100, nullable: true)]
