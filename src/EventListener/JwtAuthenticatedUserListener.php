@@ -19,8 +19,11 @@ class JwtAuthenticatedUserListener
         $request = $this->requestStack->getCurrentRequest();
         $path = $request?->getPathInfo();
 
+
         // ❌ Ne PAS bloquer le login
-        if ($path === '/api/login_check') {
+        // Mais en environnement de test, loginUser ne passe pas par /api/login_check
+        // On ne doit PAS bypasser la vérification pour les tests
+        if ($path === '/api/login_check' && $_SERVER['APP_ENV'] !== 'test') {
             return;
         }
 

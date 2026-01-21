@@ -25,8 +25,9 @@ class UserServiceTest extends KernelTestCase
         $this->em = $container->get(EntityManagerInterface::class);
         $this->repository = $container->get(UserRepository::class);
         $hasher = $container->get(UserPasswordHasherInterface::class);
+        $emailVerificationService = $container->get(\App\Service\EmailVerificationService::class);
 
-        $this->service = new UserService($this->repository, $hasher, $this->em);
+        $this->service = new UserService($this->repository, $hasher, $this->em, $emailVerificationService);
 
         // 🧹 Nettoyage complet de la table user avant chaque test
         // On désactive temporairement les contraintes FK pour éviter les erreurs si d'autres tables référencent user
