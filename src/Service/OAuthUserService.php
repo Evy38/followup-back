@@ -31,11 +31,24 @@ class OAuthUserService
         $user = $this->userRepository->findOneBy(['email' => $email]);
 
         if ($user) {
-            // Met à jour l'identifiant Google si besoin
+            $needsUpdate = false;
+
             if ($user->getGoogleId() !== $googleId) {
                 $user->setGoogleId($googleId);
+                $needsUpdate = true;
+            }
+            // ✅ Google prouve la possession de l’email
+            if (!$user->isVerified()) {
+                $user->setIsVerified(true);
+                $user->setEmailVerificationToken(null);
+                $user->setEmailVerificationTokenExpiresAt(null);
+                $needsUpdate = true;
+            }
+
+            if ($needsUpdate) {
                 $this->entityManager->flush();
             }
+
             return $user;
         }
 
@@ -46,10 +59,14 @@ class OAuthUserService
         $user->setLastName($lastName);
         $user->setGoogleId($googleId);
         $user->setRoles(['ROLE_USER']);
+        $user->setIsVerified(true);
+        $user->setEmailVerificationToken(null);
+        $user->setEmailVerificationTokenExpiresAt(null);
         $user->setPassword(null); // Pas de mot de passe pour OAuth
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();
+        $this->entityManager->refresh($user);
 
         return $user;
     }
