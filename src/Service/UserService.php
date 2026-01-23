@@ -113,11 +113,20 @@ class UserService
     {
         $user = $this->getById($id);
 
+
         if ($data->getEmail()) {
             if ($this->repository->existsByEmail($data->getEmail(), $id)) {
                 throw new ConflictHttpException("Cet email est déjà utilisé.");
             }
             $user->setEmail($data->getEmail());
+        }
+
+        if ($data->getFirstName() !== null) {
+            $user->setFirstName($data->getFirstName());
+        }
+
+        if ($data->getLastName() !== null) {
+            $user->setLastName($data->getLastName());
         }
 
         if ($data->getRoles()) {

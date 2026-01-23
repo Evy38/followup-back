@@ -34,10 +34,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['user:read', 'user:write'])]
     private ?string $email = null;
 
+
     #[ORM\Column(length: 100, nullable: true)]
+    #[Groups(['user:read', 'user:write'])]
     private ?string $firstName = null;
 
     #[ORM\Column(length: 100, nullable: true)]
+    #[Groups(['user:read', 'user:write'])]
     private ?string $lastName = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -71,6 +74,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?\DateTimeImmutable $resetPasswordTokenExpiresAt = null;
 
     #[ORM\Column(type: 'boolean')]
+    #[Groups(['user:read', 'user:write'])]
     private bool $isVerified = false;
 
     #[ORM\Column(length: 100, nullable: true)]

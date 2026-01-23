@@ -60,26 +60,18 @@ class AuthController extends AbstractController
         // Délégation à OAuthUserService pour la gestion utilisateur OAuth
         $user = $oauthUserService->getOrCreateFromGoogle($email, $firstName, $lastName, $googleId);
 
+        error_log('[GOOGLE CALLBACK] User ID = ' . $user->getId());
+        error_log('[GOOGLE CALLBACK] Email = ' . $user->getEmail());
+        error_log('[GOOGLE CALLBACK] isVerified = ' . ($user->isVerified() ? 'true' : 'false'));
+
         // Générer JWT FollowUp
         $jwt = $jwtManager->create($user);
+        error_log('[GOOGLE CALLBACK] JWT GENERATED = ' . substr($jwt, 0, 40) . '...');
 
-        // Créer un cookie HTTP-only sécurisé pour le JWT
-        // En production, mettre 'secure' à true
-        $cookie = new Cookie(
-            'AUTH_TOKEN',
-            $jwt,
-            0, // session cookie
-            '/',
-            null,
-            false, // secure: false en dev, true en prod
-            true, // httpOnly
-            false,
-            'lax'
-        );
+        // ✅ Redirect vers ton composant Angular qui stocke en localStorage
+        return $this->redirect('http://localhost:4200/google-callback?token=' . urlencode($jwt));
 
-        $response = $this->redirect('http://localhost:4200/dashboard');
-        $response->headers->setCookie($cookie);
-        return $response;
+
     }
 
 }
