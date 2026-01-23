@@ -1,25 +1,51 @@
 security:
+    # ============================================================
+    # 🔐 HASHAGE DES MOTS DE PASSE
+    # ============================================================
+    # Symfony choisit automatiquement l’algorithme le plus sûr
     password_hashers:
         App\Entity\User:
             algorithm: auto
 
+
+    # ============================================================
+    # 👤 PROVIDER UTILISATEUR
+    # ============================================================
+    # Définit comment Symfony retrouve un utilisateur
     providers:
         app_user_provider:
             entity:
                 class: App\Entity\User
                 property: email
 
+
+    # ============================================================
+    # 🔥 FIREWALLS
+    # ============================================================
     firewalls:
-        # 🔓 Swagger public
+
+        # ----------------------------
+        # 🔓 ROUTES DEV / DEBUG
+        # ----------------------------
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+
+
+        # ----------------------------
+        # 🔓 SWAGGER / DOC API
+        # ----------------------------
         swagger:
             pattern: ^/api/docs
             stateless: true
             security: false
 
-        dev:
-            pattern: ^/(_(profiler|wdt)|css|images|js)/
-            security: false
 
+        # ----------------------------
+        # 🔐 AUTHENTIFICATION (LOGIN)
+        # ----------------------------
+        # Reçoit email + password
+        # Génère un JWT si succès
         login:
             pattern: ^/api/login
             stateless: true
@@ -30,28 +56,40 @@ security:
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
 
-        # 🔓 Routes publiques pour mot de passe oublié et vérification d'email
-        password_reset:
-            pattern: ^/api/password
-            stateless: true
-            security: false
 
-    # 🔓 Vérification email (PUBLIC)
-        email_verification:
-            pattern: ^/api/verify-email
-            stateless: true
-            security: false
-
+        # ----------------------------
+        # 🔐 FIREWALL PRINCIPAL API
+        # ----------------------------
+        # Toutes les routes /api/**
+        # JWT obligatoire par défaut
         api:
             pattern: ^/api
             stateless: true
-            jwt:
+            jwt: ~
 
+
+    # ============================================================
+    # 🚦 CONTRÔLE D’ACCÈS (QUI A LE DROIT)
+    # ============================================================
+    # ⚠️ L’ordre est IMPORTANT (du plus spécifique au plus général)
     access_control:
-        - { path: ^/api/verify-email, roles: PUBLIC_ACCESS }
+
+        # 🔓 PUBLIC : création de compte
         - { path: ^/api/register, roles: PUBLIC_ACCESS }
+
+        # 🔓 PUBLIC : login (JWT)
         - { path: ^/api/login_check, roles: PUBLIC_ACCESS }
-        - { path: ^/api/password/forgot, roles: PUBLIC_ACCESS }
+
+        # 🔓 PUBLIC : vérification email (token unique)
+        - { path: ^/api/verify-email, roles: PUBLIC_ACCESS }
+        - { path: ^/api/verify-email/resend, roles: PUBLIC_ACCESS }
+
+        # 🔓 PUBLIC : mot de passe oublié / reset
         - { path: ^/api/password/request, roles: PUBLIC_ACCESS }
         - { path: ^/api/password/reset, roles: PUBLIC_ACCESS }
+
+        # 🔒 PRIVÉ : tout le reste de l’API
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
+        
+
+
