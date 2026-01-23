@@ -2,28 +2,63 @@
 
 namespace App\Controller\Api;
 
+use App\Entity\User;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 class MeController extends AbstractController
 {
+    public function __construct(private RequestStack $requestStack)
+    {
+    }
+
     #[Route('/api/me', name: 'api_me', methods: ['GET'])]
     public function me(): JsonResponse
     {
-        // Ici, si le JWT est invalide -> Symfony renverra 401 avant d'arriver ici
-        // Si le user n'est pas verified -> ton listener renverra 403 avant d'arriver ici
+        error_log('====================');
+        error_log('[API ME] /api/me CALLED');
+        $request = $this->requestStack->getCurrentRequest();
+        $authHeader = $request?->headers->get('Authorization');
+
+        error_log('[API ME] Authorization header = ' . ($authHeader ?? 'NULL'));
+
         $user = $this->getUser();
 
-        // Patch test : si l'utilisateur n'est pas vérifié, on retourne 403 explicitement
-        if (method_exists($user, 'isVerified') && !$user->isVerified()) {
-            return $this->json([
-                'message' => 'Compte non confirmé. Vérifiez votre email.'
-            ], 403);
+        if ($user === null) {
+            error_log('[API ME] getUser() = NULL');
+        } else {
+            error_log('[API ME] getUser() class = ' . get_class($user));
         }
 
-        return new JsonResponse([
-            'email' => method_exists($user, 'getEmail') ? $user->getEmail() : null,
+
+        if (!$user instanceof User) {
+            return $this->json([
+                'authenticated' => false,
+                'verified' => false,
+                'user' => null,
+            ], 401);
+        }
+
+        if ($user instanceof User) {
+            error_log('[API ME] User ID = ' . $user->getId());
+            error_log('[API ME] Email = ' . $user->getEmail());
+            error_log('[API ME] isVerified = ' . ($user->isVerified() ? 'true' : 'false'));
+        }
+
+        return $this->json([
+            'authenticated' => true,
+            'verified' => $user->isVerified(),
+            'user' => [
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'firstName' => $user->getFirstName(),
+                'lastName' => $user->getLastName(),
+                'roles' => $user->getRoles(),
+                'googleId' => $user->getGoogleId(),
+            ],
         ]);
     }
+
 }
