@@ -17,7 +17,12 @@ class UserController extends AbstractController
     #[Route('/profile', name: 'api_user_profile', methods: ['GET'])]
     public function getProfile(): JsonResponse
     {
-        return $this->json($this->getUser());
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->json(['error' => 'Non authentifié'], 401);
+        }
+        return $this->json($user, context: ['groups' => ['user:read']]);
+
     }
 
     // Modifier le profil

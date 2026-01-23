@@ -16,27 +16,21 @@ class JwtAuthenticatedUserListener
 
     public function onJwtAuthenticated(JWTAuthenticatedEvent $event): void
     {
-        $request = $this->requestStack->getCurrentRequest();
-        $path = $request?->getPathInfo();
-
-
-        // ❌ Ne PAS bloquer le login
-        // Mais en environnement de test, loginUser ne passe pas par /api/login_check
-        // On ne doit PAS bypasser la vérification pour les tests
-        if ($path === '/api/login_check' && $_SERVER['APP_ENV'] !== 'test') {
-            return;
-        }
+        error_log('====================');
+        error_log('[JWT LISTENER] JWT AUTHENTICATED');
 
         $user = $event->getToken()->getUser();
 
-        if (!$user instanceof User) {
-            throw new AccessDeniedHttpException('Utilisateur invalide.');
+        error_log('[JWT LISTENER] User class = ' . (is_object($user) ? get_class($user) : 'NOT OBJECT'));
+
+        if ($user instanceof User) {
+            error_log('[JWT LISTENER] User ID = ' . $user->getId());
+            error_log('[JWT LISTENER] Email = ' . $user->getEmail());
+            error_log('[JWT LISTENER] isVerified = ' . ($user->isVerified() ? 'true' : 'false'));
         }
 
-        if (!$user->isVerified()) {
-            throw new AccessDeniedHttpException(
-                'Compte non confirmé. Vérifiez votre email.'
-            );
+        if (!$user instanceof User) {
+            throw new AccessDeniedHttpException('Utilisateur invalide.');
         }
     }
 }
