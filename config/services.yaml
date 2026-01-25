@@ -16,6 +16,10 @@ services:
     # this creates a service per class whose id is the fully-qualified class name
     App\:
         resource: "../src/"
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
 
     App\EventListener\JwtAuthenticatedUserListener:
         tags:
@@ -32,3 +36,10 @@ services:
             $frontendUrl: "%frontend_url%"
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+    App\Service\AdzunaService:
+        arguments:
+            $httpClient: '@http_client'
+            $appId: '%env(ADZUNA_APP_ID)%'
+            $appKey: '%env(ADZUNA_APP_KEY)%'
+            $country: '%env(ADZUNA_COUNTRY)%'
