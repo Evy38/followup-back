@@ -95,6 +95,9 @@ class Candidature
      */
     #[ORM\ManyToMany(targetEntity: MotCle::class, inversedBy: 'candidatures')]
     private Collection $motsCles;
+    #[Groups(['candidature:read', 'candidature:write'])]
+    #[ORM\Column(length: 100)]
+    private string $externalOfferId;
 
 
 
@@ -300,4 +303,16 @@ class Candidature
 
         return $this;
     }
+
+    public function getExternalOfferId(): string
+    {
+        return $this->externalOfferId;
+    }
+
+    public function setExternalOfferId(string $externalOfferId): static
+    {
+        $this->externalOfferId = $externalOfferId;
+        return $this;
+    }
+
 }
