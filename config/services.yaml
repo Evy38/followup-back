@@ -34,6 +34,9 @@ services:
     App\Service\EmailVerificationService:
         arguments:
             $frontendUrl: "%frontend_url%"
+
+    # Alias pour corriger l'autowiring du ProcessorInterface
+    ApiPlatform\State\ProcessorInterface: '@api_platform.doctrine.orm.state.persist_processor'
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
 

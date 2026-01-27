@@ -14,6 +14,7 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
 use Symfony\Component\Serializer\Annotation\Groups;
+use App\State\RelanceCreateProcessor;
 
 #[ORM\Entity(repositoryClass: RelanceRepository::class)]
 #[ApiResource(
@@ -27,6 +28,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
             normalizationContext: ['groups' => ['relance:read']]
         ),
         new Post(
+            processor: RelanceCreateProcessor::class,
             securityPostDenormalize: "object.getCandidature().getUser() == user or is_granted('ROLE_ADMIN')",
             denormalizationContext: ['groups' => ['relance:write']]
         ),
