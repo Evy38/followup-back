@@ -31,7 +31,8 @@ use ApiPlatform\Metadata\Delete;
             security: "object.getUser() == user or is_granted('ROLE_ADMIN')"
         ),
         new Delete(
-            security: "object.getUser() == user or is_granted('ROLE_ADMIN')"
+            security: "object.getUser() == user or is_granted('ROLE_ADMIN')",
+            securityMessage: "Vous ne pouvez supprimer que vos propres candidatures, sauf si vous êtes administrateur."
         )
     ],
     normalizationContext: ['groups' => ['candidature:read']],
@@ -85,6 +86,19 @@ class Candidature
     #[ORM\JoinColumn(nullable: false)]
     private ?Statut $statut = null;
 
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(['candidature:read'])]
+    private ?\DateTimeImmutable $dateEnvoi = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(['candidature:read'])]
+    private ?\DateTimeImmutable $dateDerniereRelance = null;
+
+    #[ORM\OneToMany(mappedBy: 'candidature', targetEntity: Relance::class, orphanRemoval: true)]
+    #[Groups(['candidature:read'])]
+    private Collection $relances;
+
+
     /**
      * @var Collection<int, Reponse>
      */
@@ -99,19 +113,12 @@ class Candidature
     #[ORM\Column(length: 100)]
     private string $externalOfferId;
 
-
-
-    /**
-     * @var Collection<int, Relance>
-     */
-    #[ORM\OneToMany(targetEntity: Relance::class, mappedBy: 'candidature')]
-    private Collection $relances;
-
     public function __construct()
     {
         $this->relances = new ArrayCollection();
         $this->reponses = new ArrayCollection();
         $this->motsCles = new ArrayCollection();
+
     }
 
     public function getMotsCles(): Collection
@@ -312,6 +319,26 @@ class Candidature
     public function setExternalOfferId(string $externalOfferId): static
     {
         $this->externalOfferId = $externalOfferId;
+        return $this;
+    }
+
+    public function getDateEnvoi(): ?\DateTimeImmutable
+    {
+        return $this->dateEnvoi;
+    }
+    public function setDateEnvoi(?\DateTimeImmutable $d): static
+    {
+        $this->dateEnvoi = $d;
+        return $this;
+    }
+
+    public function getDateDerniereRelance(): ?\DateTimeImmutable
+    {
+        return $this->dateDerniereRelance;
+    }
+    public function setDateDerniereRelance(?\DateTimeImmutable $d): static
+    {
+        $this->dateDerniereRelance = $d;
         return $this;
     }
 
