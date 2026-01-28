@@ -95,6 +95,19 @@ class CandidatureFromOfferController extends AbstractController
         $candidature->setJobTitle($dto->title ?: 'Poste non renseigné');
 
         $em->persist($candidature);
+
+        // 5) Créer automatiquement les relances (+7, +14, +21 jours)
+        $baseDate = new \DateTimeImmutable();
+
+        $delays = [7, 14, 21];
+
+        foreach ($delays as $delay) {
+            $relance = new \App\Entity\Relance();
+            $relance->setCandidature($candidature);
+            $relance->setDateRelance($baseDate->modify("+$delay days"));
+
+            $em->persist($relance);
+        }
         $em->flush();
 
         return $this->json($candidature, 201, [], ['groups' => ['candidature:read']]);

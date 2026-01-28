@@ -31,12 +31,6 @@ class Canal
     #[Groups(['canal:read', 'candidature:read', 'candidature:write'])]
     private ?string $libelle = null;
 
-    /**
-     * @var Collection<int, Candidature>
-     */
-    #[ORM\OneToMany(targetEntity: Candidature::class, mappedBy: 'canal')]
-    private Collection $candidatures;
-
     public function __construct()
     {
         $this->candidatures = new ArrayCollection();
@@ -60,28 +54,4 @@ class Canal
         return $this;
     }
 
-    /**
-     * @return Collection<int, Candidature>
-     */
-    public function getCandidatures(): Collection
-    {
-        return $this->candidatures;
-    }
-
-    public function addCandidature(Candidature $candidature): static
-    {
-        if (!$this->candidatures->contains($candidature)) {
-            $this->candidatures->add($candidature);
-            $candidature->setCanal($this);
-        }
-        return $this;
-    }
-
-    public function removeCandidature(Candidature $candidature): static
-    {
-        if ($this->candidatures->removeElement($candidature) && $candidature->getCanal() === $this) {
-            $candidature->setCanal(null);
-        }
-        return $this;
-    }
 }
