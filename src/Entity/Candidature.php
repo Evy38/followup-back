@@ -2,7 +2,6 @@
 
 namespace App\Entity;
 
-use Symfony\Component\Serializer\Annotation\Groups;
 use App\Repository\CandidatureRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -14,6 +13,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: CandidatureRepository::class)]
 #[ApiResource(
@@ -32,141 +32,78 @@ use ApiPlatform\Metadata\Delete;
         ),
         new Delete(
             security: "object.getUser() == user or is_granted('ROLE_ADMIN')",
-            securityMessage: "Vous ne pouvez supprimer que vos propres candidatures, sauf si vous êtes administrateur."
+            securityMessage: "Vous ne pouvez supprimer que vos propres candidatures."
         )
     ],
     normalizationContext: ['groups' => ['candidature:read']],
     denormalizationContext: ['groups' => ['candidature:write']]
 )]
-
-
 class Candidature
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['candidature:read'])]
     private ?int $id = null;
 
-    #[Groups(['candidature:read', 'candidature:write'])]
     #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[Groups(['candidature:read'])]
     private ?\DateTime $dateCandidature = null;
 
+    #[ORM\Column(length: 255)]
     #[Groups(['candidature:read', 'candidature:write'])]
-    #[ORM\Column(length: 50, nullable: true)]
-    private ?string $mode = null;
+    private string $jobTitle;
 
-    #[Groups(['candidature:read', 'candidature:write'])]
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['candidature:read'])]
     private ?string $lienAnnonce = null;
 
+    #[ORM\Column(length: 50, nullable: true)]
     #[Groups(['candidature:read', 'candidature:write'])]
+    private ?string $mode = null;
+
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['candidature:read', 'candidature:write'])]
     private ?string $commentaire = null;
 
+    #[ORM\Column(length: 100)]
     #[Groups(['candidature:read'])]
-    #[ORM\ManyToOne(inversedBy: 'candidatures')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?User $user = null;
-
-    #[Groups(['candidature:read', 'candidature:write'])]
-    #[ORM\ManyToOne(inversedBy: 'candidatures')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Entreprise $entreprise = null;
-
-    #[Groups(['candidature:read', 'candidature:write'])]
-    #[ORM\ManyToOne(inversedBy: 'candidatures')]
-    private ?Ville $ville = null;
-
-    #[Groups(['candidature:read', 'candidature:write'])]
-    #[ORM\ManyToOne(inversedBy: 'candidatures')]
-    private ?Canal $canal = null;
-
-    #[Groups(['candidature:read', 'candidature:write'])]
-    #[ORM\ManyToOne(inversedBy: 'candidatures')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Statut $statut = null;
-
-    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    #[Groups(['candidature:read'])]
-    private ?\DateTimeImmutable $dateEnvoi = null;
+    private string $externalOfferId;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     #[Groups(['candidature:read'])]
     private ?\DateTimeImmutable $dateDerniereRelance = null;
 
+    #[ORM\ManyToOne(inversedBy: 'candidatures')]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['candidature:read'])]
+    private ?User $user = null;
+
+    #[ORM\ManyToOne(inversedBy: 'candidatures')]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['candidature:read'])]
+    private ?Entreprise $entreprise = null;
+
+    #[ORM\ManyToOne(inversedBy: 'candidatures')]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['candidature:read'])]
+    private ?Statut $statut = null;
+
     #[ORM\OneToMany(mappedBy: 'candidature', targetEntity: Relance::class, orphanRemoval: true)]
     #[Groups(['candidature:read'])]
     private Collection $relances;
 
-
-    /**
-     * @var Collection<int, Reponse>
-     */
-    #[ORM\OneToMany(mappedBy: 'candidature', targetEntity: Reponse::class, orphanRemoval: true)]
-    private Collection $reponses;
-    /**
-     * @var Collection<int, MotCle>
-     */
     #[ORM\ManyToMany(targetEntity: MotCle::class, inversedBy: 'candidatures')]
-    private Collection $motsCles;
     #[Groups(['candidature:read', 'candidature:write'])]
-    #[ORM\Column(length: 100)]
-    private string $externalOfferId;
+    private Collection $motsCles;
 
     public function __construct()
     {
         $this->relances = new ArrayCollection();
-        $this->reponses = new ArrayCollection();
         $this->motsCles = new ArrayCollection();
-
     }
 
-    public function getMotsCles(): Collection
-    {
-        return $this->motsCles;
-    }
-
-    public function addMotCle(MotCle $motCle): static
-    {
-        if (!$this->motsCles->contains($motCle)) {
-            $this->motsCles->add($motCle);
-        }
-
-        return $this;
-    }
-
-    public function removeMotCle(MotCle $motCle): static
-    {
-        $this->motsCles->removeElement($motCle);
-        return $this;
-    }
-
-
-    public function getReponses(): Collection
-    {
-        return $this->reponses;
-    }
-
-    public function addReponse(Reponse $reponse): static
-    {
-        if (!$this->reponses->contains($reponse)) {
-            $this->reponses->add($reponse);
-            $reponse->setCandidature($this);
-        }
-
-        return $this;
-    }
-
-    public function removeReponse(Reponse $reponse): static
-    {
-        if ($this->reponses->removeElement($reponse)) {
-            if ($reponse->getCandidature() === $this) {
-                $reponse->setCandidature(null);
-            }
-        }
-
-        return $this;
-    }
+    // ---------------- Getters / Setters ----------------
 
     public function getId(): ?int
     {
@@ -177,23 +114,19 @@ class Candidature
     {
         return $this->dateCandidature;
     }
-
-    public function setDateCandidature(\DateTime $dateCandidature): static
+    public function setDateCandidature(\DateTime $d): static
     {
-        $this->dateCandidature = $dateCandidature;
-
+        $this->dateCandidature = $d;
         return $this;
     }
 
-    public function getMode(): ?string
+    public function getJobTitle(): string
     {
-        return $this->mode;
+        return $this->jobTitle;
     }
-
-    public function setMode(?string $mode): static
+    public function setJobTitle(string $t): static
     {
-        $this->mode = $mode;
-
+        $this->jobTitle = $t;
         return $this;
     }
 
@@ -201,11 +134,19 @@ class Candidature
     {
         return $this->lienAnnonce;
     }
-
-    public function setLienAnnonce(?string $lienAnnonce): static
+    public function setLienAnnonce(?string $l): static
     {
-        $this->lienAnnonce = $lienAnnonce;
+        $this->lienAnnonce = $l;
+        return $this;
+    }
 
+    public function getMode(): ?string
+    {
+        return $this->mode;
+    }
+    public function setMode(?string $m): static
+    {
+        $this->mode = $m;
         return $this;
     }
 
@@ -213,101 +154,9 @@ class Candidature
     {
         return $this->commentaire;
     }
-
-    public function setCommentaire(?string $commentaire): static
+    public function setCommentaire(?string $c): static
     {
-        $this->commentaire = $commentaire;
-
-        return $this;
-    }
-
-    public function getUser(): ?User
-    {
-        return $this->user;
-    }
-
-    public function setUser(?User $user): static
-    {
-        $this->user = $user;
-
-        return $this;
-    }
-
-    public function getEntreprise(): ?Entreprise
-    {
-        return $this->entreprise;
-    }
-
-    public function setEntreprise(?Entreprise $entreprise): static
-    {
-        $this->entreprise = $entreprise;
-
-        return $this;
-    }
-
-    public function getVille(): ?Ville
-    {
-        return $this->ville;
-    }
-
-    public function setVille(?Ville $ville): static
-    {
-        $this->ville = $ville;
-
-        return $this;
-    }
-
-    public function getCanal(): ?Canal
-    {
-        return $this->canal;
-    }
-
-    public function setCanal(?Canal $canal): static
-    {
-        $this->canal = $canal;
-
-        return $this;
-    }
-
-    public function getStatut(): ?Statut
-    {
-        return $this->statut;
-    }
-
-    public function setStatut(?Statut $statut): static
-    {
-        $this->statut = $statut;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Relance>
-     */
-    public function getRelances(): Collection
-    {
-        return $this->relances;
-    }
-
-    public function addRelance(Relance $relance): static
-    {
-        if (!$this->relances->contains($relance)) {
-            $this->relances->add($relance);
-            $relance->setCandidature($this);
-        }
-
-        return $this;
-    }
-
-    public function removeRelance(Relance $relance): static
-    {
-        if ($this->relances->removeElement($relance)) {
-            // set the owning side to null (unless already changed)
-            if ($relance->getCandidature() === $this) {
-                $relance->setCandidature(null);
-            }
-        }
-
+        $this->commentaire = $c;
         return $this;
     }
 
@@ -315,20 +164,9 @@ class Candidature
     {
         return $this->externalOfferId;
     }
-
-    public function setExternalOfferId(string $externalOfferId): static
+    public function setExternalOfferId(string $id): static
     {
-        $this->externalOfferId = $externalOfferId;
-        return $this;
-    }
-
-    public function getDateEnvoi(): ?\DateTimeImmutable
-    {
-        return $this->dateEnvoi;
-    }
-    public function setDateEnvoi(?\DateTimeImmutable $d): static
-    {
-        $this->dateEnvoi = $d;
+        $this->externalOfferId = $id;
         return $this;
     }
 
@@ -342,4 +180,43 @@ class Candidature
         return $this;
     }
 
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+    public function setUser(User $u): static
+    {
+        $this->user = $u;
+        return $this;
+    }
+
+    public function getEntreprise(): ?Entreprise
+    {
+        return $this->entreprise;
+    }
+    public function setEntreprise(Entreprise $e): static
+    {
+        $this->entreprise = $e;
+        return $this;
+    }
+
+    public function getStatut(): ?Statut
+    {
+        return $this->statut;
+    }
+    public function setStatut(Statut $s): static
+    {
+        $this->statut = $s;
+        return $this;
+    }
+
+    public function getRelances(): Collection
+    {
+        return $this->relances;
+    }
+
+    public function getMotsCles(): Collection
+    {
+        return $this->motsCles;
+    }
 }
