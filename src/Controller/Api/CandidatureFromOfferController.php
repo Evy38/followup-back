@@ -92,6 +92,7 @@ class CandidatureFromOfferController extends AbstractController
         $candidature->setMode('externe'); // ou null si tu veux
         $candidature->setCommentaire(null);
         $candidature->setExternalOfferId($dto->externalId);
+        $candidature->setJobTitle($dto->title ?? 'Poste non renseigné');
 
         $em->persist($candidature);
         $em->flush();

@@ -43,11 +43,6 @@ class MotCle
     #[ORM\ManyToMany(targetEntity: Relance::class, mappedBy: 'motsCles')]
     private Collection $relances;
 
-    /**
-     * @var Collection<int, Reponse>
-     */
-    #[ORM\ManyToMany(targetEntity: Reponse::class, mappedBy: 'motsCles')]
-    private Collection $reponses;
 
     #[ORM\ManyToMany(targetEntity: Candidature::class, mappedBy: 'motsCles')]
     private Collection $candidatures;
@@ -56,7 +51,6 @@ class MotCle
     public function __construct()
     {
         $this->relances = new ArrayCollection();
-        $this->reponses = new ArrayCollection();
         $this->candidatures = new ArrayCollection();
     }
 
@@ -123,31 +117,6 @@ class MotCle
     {
         if ($this->relances->removeElement($relance)) {
             $relance->removeMotCle($this);
-        }
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Reponse>
-     */
-    public function getReponses(): Collection
-    {
-        return $this->reponses;
-    }
-
-    public function addReponse(Reponse $reponse): static
-    {
-        if (!$this->reponses->contains($reponse)) {
-            $this->reponses->add($reponse);
-            $reponse->addMotCle($this);
-        }
-        return $this;
-    }
-
-    public function removeReponse(Reponse $reponse): static
-    {
-        if ($this->reponses->removeElement($reponse)) {
-            $reponse->removeMotCle($this);
         }
         return $this;
     }
