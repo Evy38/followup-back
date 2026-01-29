@@ -46,9 +46,9 @@ class Candidature
     #[Groups(['candidature:read'])]
     private ?int $id = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[ORM\Column(type: 'datetime_immutable')]
     #[Groups(['candidature:read'])]
-    private ?\DateTime $dateCandidature = null;
+    private ?\DateTimeImmutable $dateCandidature = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(['candidature:read', 'candidature:write'])]
@@ -89,7 +89,12 @@ class Candidature
     #[Groups(['candidature:read'])]
     private ?Statut $statut = null;
 
-    #[ORM\OneToMany(mappedBy: 'candidature', targetEntity: Relance::class, orphanRemoval: true)]
+    #[ORM\OneToMany(
+        mappedBy: 'candidature',
+        targetEntity: Relance::class,
+        orphanRemoval: true,
+        cascade: ['persist']
+    )]
     #[Groups(['candidature:read'])]
     private Collection $relances;
 
@@ -97,11 +102,13 @@ class Candidature
     #[Groups(['candidature:read', 'candidature:write'])]
     private Collection $motsCles;
 
+
     public function __construct()
     {
         $this->relances = new ArrayCollection();
         $this->motsCles = new ArrayCollection();
     }
+
 
     // ---------------- Getters / Setters ----------------
 
@@ -110,11 +117,11 @@ class Candidature
         return $this->id;
     }
 
-    public function getDateCandidature(): ?\DateTime
+    public function getDateCandidature(): ?\DateTimeImmutable
     {
         return $this->dateCandidature;
     }
-    public function setDateCandidature(\DateTime $d): static
+    public function setDateCandidature(\DateTimeImmutable $d): static
     {
         $this->dateCandidature = $d;
         return $this;

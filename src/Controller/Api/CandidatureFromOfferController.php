@@ -15,6 +15,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use App\Service\RelanceService;
 
 #[Route('/api/candidatures')]
 class CandidatureFromOfferController extends AbstractController
@@ -26,13 +27,16 @@ class CandidatureFromOfferController extends AbstractController
         ValidatorInterface $validator,
         EntrepriseRepository $entrepriseRepository,
         StatutRepository $statutRepository,
+        RelanceService $relanceService,
         EntityManagerInterface $em
     ): JsonResponse {
+        // --- Auth : récupère le user connecté ---
         $user = $this->getUser();
         if (!$user instanceof User) {
             return $this->json(['error' => 'Non authentifié'], 401);
         }
 
+        // --- Validation : lit le JSON (externalId, company, redirectUrl, title…) ---
         $data = json_decode($request->getContent(), true);
         if (!is_array($data)) {
             return $this->json(['error' => 'JSON invalide'], 400);
@@ -54,7 +58,7 @@ class CandidatureFromOfferController extends AbstractController
             return $this->json($out, 400);
         }
 
-        // 1) Entreprise (find or create)
+        // --- Entreprise : find or create ---
         $entreprise = $entrepriseRepository->findOneByNom($dto->company);
         if (!$entreprise) {
             $entreprise = new Entreprise();
@@ -62,7 +66,7 @@ class CandidatureFromOfferController extends AbstractController
             $em->persist($entreprise);
         }
 
-        // 2) Statut par défaut (doit exister)
+        // --- Statut : find “Candidaté” (ou le crée en MVP) ---
         $statut = $statutRepository->findOneBy(['libelle' => 'Candidaté']);
         if (!$statut) {
             // MVP rapide : on le crée si absent (sinon fais-le via fixtures/migration)
@@ -71,8 +75,7 @@ class CandidatureFromOfferController extends AbstractController
             $em->persist($statut);
         }
 
-        // 3) Empêcher doublon : même user + même lienAnnonce
-        // (tu peux raffiner plus tard avec externalId stocké)
+        // --- Anti-doublon : même user + même lienAnnonce → renvoie l’existant ---
         $existing = $em->getRepository(Candidature::class)->findOneBy([
             'user' => $user,
             'lienAnnonce' => $dto->redirectUrl,
@@ -82,12 +85,12 @@ class CandidatureFromOfferController extends AbstractController
             return $this->json($existing, 200, [], ['groups' => ['candidature:read']]);
         }
 
-        // 4) Créer la candidature
+        // --- Crée la candidature : set date, jobTitle, externalOfferId, lienAnnonce… ---
         $candidature = new Candidature();
         $candidature->setUser($user);
         $candidature->setEntreprise($entreprise);
         $candidature->setStatut($statut);
-        $candidature->setDateCandidature(new \DateTime());
+        $candidature->setDateCandidature(new \DateTimeImmutable());
         $candidature->setLienAnnonce($dto->redirectUrl);
         $candidature->setMode('externe'); // ou null si tu veux
         $candidature->setCommentaire(null);
@@ -96,20 +99,17 @@ class CandidatureFromOfferController extends AbstractController
 
         $em->persist($candidature);
 
-        // 5) Créer automatiquement les relances (+7, +14, +21 jours)
-        $baseDate = new \DateTimeImmutable();
+        // --- Génère les relances via RelanceService ---
+        $relances = $relanceService->createDefaultRelances($candidature);
 
-        $delays = [7, 14, 21];
-
-        foreach ($delays as $delay) {
-            $relance = new \App\Entity\Relance();
-            $relance->setCandidature($candidature);
-            $relance->setDateRelance($baseDate->modify("+$delay days"));
-
-            $em->persist($relance);
+        foreach ($relances as $relance) {
+            $candidature->getRelances()->add($relance);
         }
+
+        // --- Persist + flush : enregistre candidature + relances ---
         $em->flush();
 
+        // --- Réponse JSON : renvoie la candidature (avec potentiellement ses relances selon sérialisation / groupes) ---
         return $this->json($candidature, 201, [], ['groups' => ['candidature:read']]);
     }
 }

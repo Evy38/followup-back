@@ -73,6 +73,18 @@ class Relance
     #[Groups(['relance:read', 'relance:write', 'candidature:read', 'candidature:write'])]
     private Collection $motsCles;
 
+    #[ORM\Column(type: 'smallint')]
+    #[Groups(['relance:read', 'relance:write', 'candidature:read'])]
+    private int $rang = 1;
+
+    #[ORM\Column(options: ['default' => false])]
+    #[Groups(['relance:read', 'relance:write', 'candidature:read'])]
+    private bool $faite = false;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(['relance:read', 'relance:write', 'candidature:read'])]
+    private ?\DateTimeImmutable $dateRealisation = null;
+
     public function __construct()
     {
         $this->motsCles = new ArrayCollection();
@@ -148,6 +160,36 @@ class Relance
     public function removeMotCle(MotCle $motCle): static
     {
         $this->motsCles->removeElement($motCle);
+        return $this;
+    }
+
+    public function getRang(): int
+    {
+        return $this->rang;
+    }
+    public function setRang(int $rang): static
+    {
+        $this->rang = $rang;
+        return $this;
+    }
+
+    public function isFaite(): bool
+    {
+        return $this->faite;
+    }
+    public function setFaite(bool $faite): static
+    {
+        $this->faite = $faite;
+        return $this;
+    }
+
+    public function getDateRealisation(): ?\DateTimeImmutable
+    {
+        return $this->dateRealisation;
+    }
+    public function setDateRealisation(?\DateTimeImmutable $d): static
+    {
+        $this->dateRealisation = $d;
         return $this;
     }
 }
