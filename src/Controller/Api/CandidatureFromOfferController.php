@@ -93,7 +93,6 @@ class CandidatureFromOfferController extends AbstractController
         $candidature->setDateCandidature(new \DateTimeImmutable());
         $candidature->setLienAnnonce($dto->redirectUrl);
         $candidature->setMode('externe'); // ou null si tu veux
-        $candidature->setCommentaire(null);
         $candidature->setExternalOfferId($dto->externalId);
         $candidature->setJobTitle($dto->title ?: 'Poste non renseigné');
 
