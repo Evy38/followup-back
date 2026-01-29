@@ -14,7 +14,8 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
 use Symfony\Component\Serializer\Annotation\Groups;
-use App\State\RelanceCreateProcessor;
+use ApiPlatform\Metadata\Patch;
+use App\State\RelanceUpdateProcessor;
 
 #[ORM\Entity(repositoryClass: RelanceRepository::class)]
 #[ApiResource(
@@ -33,13 +34,22 @@ use App\State\RelanceCreateProcessor;
             denormalizationContext: ['groups' => ['relance:write']]
         ),
         new Put(
+            processor: RelanceUpdateProcessor::class,
             security: "object.getCandidature().getUser() == user or is_granted('ROLE_ADMIN')",
             denormalizationContext: ['groups' => ['relance:write']]
+        ),
+        new Patch(
+            processor: RelanceUpdateProcessor::class,
+            security: "object.getCandidature().getUser() == user",
+            denormalizationContext: ['groups' => ['relance:write']],
+            inputFormats: ['json' => ['application/merge-patch+json', 'application/json']]
         ),
         new Delete(
             security: "object.getCandidature().getUser() == user or is_granted('ROLE_ADMIN')"
         )
-    ]
+    ],
+    normalizationContext: ['groups' => ['relance:read']],
+    denormalizationContext: ['groups' => ['relance:write']]
 )]
 class Relance
 {
@@ -78,11 +88,11 @@ class Relance
     private int $rang = 1;
 
     #[ORM\Column(options: ['default' => false])]
-    #[Groups(['relance:read', 'relance:write', 'candidature:read'])]
+    #[Groups(['relance:write', 'relance:read', 'candidature:read'])]
     private bool $faite = false;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['relance:read', 'relance:write', 'candidature:read'])]
+    #[Groups(['relance:write', 'relance:read', 'candidature:read'])]
     private ?\DateTimeImmutable $dateRealisation = null;
 
     public function __construct()

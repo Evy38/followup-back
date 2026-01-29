@@ -62,10 +62,6 @@ class Candidature
     #[Groups(['candidature:read', 'candidature:write'])]
     private ?string $mode = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Groups(['candidature:read', 'candidature:write'])]
-    private ?string $commentaire = null;
-
     #[ORM\Column(length: 100)]
     #[Groups(['candidature:read'])]
     private string $externalOfferId;
@@ -154,16 +150,6 @@ class Candidature
     public function setMode(?string $m): static
     {
         $this->mode = $m;
-        return $this;
-    }
-
-    public function getCommentaire(): ?string
-    {
-        return $this->commentaire;
-    }
-    public function setCommentaire(?string $c): static
-    {
-        $this->commentaire = $c;
         return $this;
     }
 
