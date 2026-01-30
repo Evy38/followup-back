@@ -98,13 +98,33 @@ class Candidature
     #[Groups(['candidature:read', 'candidature:write'])]
     private Collection $motsCles;
 
+    #[ORM\Column(length: 20, options: ['default' => 'attente'])]
+    #[Groups(['candidature:read', 'candidature:write'])]
+    private string $statutReponse = 'attente';
+
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
+    #[Groups(['candidature:read', 'candidature:write'])]
+    private ?\DateTimeInterface $dateEntretien = null;
+
+    #[ORM\Column(type: Types::TIME_MUTABLE, nullable: true)]
+    #[Groups(['candidature:read', 'candidature:write'])]
+    private ?\DateTimeInterface $heureEntretien = null;
+
+    #[ORM\OneToMany(
+        mappedBy: 'candidature',
+        targetEntity: Entretien::class,
+        orphanRemoval: true,
+        cascade: ['persist']
+    )]
+    #[Groups(['candidature:read'])]
+    private Collection $entretiens;
 
     public function __construct()
     {
         $this->relances = new ArrayCollection();
         $this->motsCles = new ArrayCollection();
+        $this->entretiens = new ArrayCollection();
     }
-
 
     // ---------------- Getters / Setters ----------------
 
@@ -212,4 +232,67 @@ class Candidature
     {
         return $this->motsCles;
     }
+
+    public function getStatutReponse(): string
+    {
+        return $this->statutReponse;
+    }
+
+    public function setStatutReponse(string $statutReponse): static
+    {
+        $validStatuts = [
+            'attente',     // sans réponse
+            'echanges',    // en discussion
+            'entretien',   // au moins un entretien
+            'negative',    // refus
+            'positive',    // retour positif
+            'annule'       // entretien annulé (dernier supprimé)
+        ];
+        if (!in_array($statutReponse, $validStatuts, true)) {
+            throw new \InvalidArgumentException(
+                sprintf(
+                    'Statut "%s" invalide. Valeurs autorisées: %s',
+                    $statutReponse,
+                    implode(', ', $validStatuts)
+                )
+            );
+        }
+
+        $this->statutReponse = $statutReponse;
+
+        if ($statutReponse !== 'entretien') {
+            $this->dateEntretien = null;
+            $this->heureEntretien = null;
+        }
+
+        return $this;
+    }
+
+    public function getDateEntretien(): ?\DateTimeInterface
+    {
+        return $this->dateEntretien;
+    }
+
+    public function setDateEntretien(?\DateTimeInterface $dateEntretien): static
+    {
+        $this->dateEntretien = $dateEntretien;
+        return $this;
+    }
+
+    public function getHeureEntretien(): ?\DateTimeInterface
+    {
+        return $this->heureEntretien;
+    }
+
+    public function setHeureEntretien(?\DateTimeInterface $heureEntretien): static
+    {
+        $this->heureEntretien = $heureEntretien;
+        return $this;
+    }
+
+    public function getEntretiens(): Collection
+    {
+        return $this->entretiens;
+    }
+
 }
