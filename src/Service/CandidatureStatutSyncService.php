@@ -39,7 +39,7 @@ class CandidatureStatutSyncService
     public function syncAfterEntretienDeletion(Candidature $candidature): void
     {
         if ($candidature->getEntretiens()->isEmpty()) {
-            $candidature->setStatutReponse('annule');
+            $candidature->setStatutReponse('attente');
         }
     }
 }
