@@ -102,7 +102,7 @@ class CandidatureFromOfferController extends AbstractController
         $relances = $relanceService->createDefaultRelances($candidature);
 
         foreach ($relances as $relance) {
-            $candidature->getRelances()->add($relance);
+            $candidature->addRelance($relance);
         }
 
         // --- Persist + flush : enregistre candidature + relances ---

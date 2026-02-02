@@ -88,6 +88,9 @@ security:
         - { path: ^/api/password/request, roles: PUBLIC_ACCESS }
         - { path: ^/api/password/reset, roles: PUBLIC_ACCESS }
 
+        # 🔓 PUBLIC : OAuth Google
+        - { path: ^/auth/google, roles: PUBLIC_ACCESS }
+
         # 🔒 PRIVÉ : tout le reste de l’API
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
         

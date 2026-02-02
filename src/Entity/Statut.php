@@ -9,8 +9,7 @@ use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
-use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\Put;
+use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: StatutRepository::class)]
@@ -18,22 +17,21 @@ use Symfony\Component\Serializer\Annotation\Groups;
     operations: [
         new Get(normalizationContext: ['groups' => ['statut:read']]),
         new GetCollection(normalizationContext: ['groups' => ['statut:read']]),
-        new Post(denormalizationContext: ['groups' => ['statut:write']], security: "is_granted('ROLE_ADMIN')"),
-        new Put(denormalizationContext: ['groups' => ['statut:write']], security: "is_granted('ROLE_ADMIN')")
     ],
     security: "is_granted('ROLE_USER')"
 )]
 
 class Statut
 {
-     #[ORM\Id]
+    #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['statut:read', 'candidature:read', 'candidature:write'])]
+    #[Groups(['statut:read', 'candidature:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 100)]
-    #[Groups(['statut:read', 'candidature:read', 'candidature:write'])]
+    #[Assert\NotBlank]
+    #[Groups(['statut:read', 'candidature:read'])]
     private ?string $libelle = null;
 
     /**
@@ -85,12 +83,10 @@ class Statut
     public function removeCandidature(Candidature $candidature): static
     {
         if ($this->candidatures->removeElement($candidature)) {
-            // set the owning side to null (unless already changed)
             if ($candidature->getStatut() === $this) {
                 $candidature->setStatut(null);
             }
         }
-
         return $this;
     }
 }

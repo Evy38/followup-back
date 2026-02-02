@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use App\State\EntretienProcessor;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity]
 #[ApiResource(
@@ -44,10 +45,12 @@ class Entretien
 
     #[ORM\Column(type: 'date')]
     #[Groups(['entretien:read', 'entretien:write', 'candidature:read'])]
+    #[Assert\NotNull]
     private \DateTimeInterface $dateEntretien;
 
     #[ORM\Column(type: 'time')]
     #[Groups(['entretien:read', 'entretien:write', 'candidature:read'])]
+    #[Assert\NotNull]
     private \DateTimeInterface $heureEntretien;
 
     #[ORM\Column(length: 20)]
@@ -60,7 +63,7 @@ class Entretien
 
     #[ORM\ManyToOne(inversedBy: 'entretiens')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['entretien:read', 'entretien:write'])]
+    #[Groups(['entretien:read'])]
     private ?Candidature $candidature = null;
 
     // ---------------- Getters / Setters ----------------
@@ -99,6 +102,13 @@ class Entretien
 
     public function setStatut(string $statut): self
     {
+        $allowed = ['prevu', 'passe'];
+        if (!in_array($statut, $allowed, true)) {
+            throw new \InvalidArgumentException(
+                sprintf('Statut entretien invalide : %s', $statut)
+            );
+        }
+
         $this->statut = $statut;
         return $this;
     }
@@ -110,6 +120,13 @@ class Entretien
 
     public function setResultat(?string $resultat): self
     {
+        $allowed = [null, 'positive', 'negative'];
+        if (!in_array($resultat, $allowed, true)) {
+            throw new \InvalidArgumentException(
+                sprintf('Résultat entretien invalide : %s', $resultat)
+            );
+        }
+
         $this->resultat = $resultat;
         return $this;
     }

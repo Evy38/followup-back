@@ -16,6 +16,7 @@ use ApiPlatform\Metadata\Delete;
 use Symfony\Component\Serializer\Annotation\Groups;
 use ApiPlatform\Metadata\Patch;
 use App\State\RelanceUpdateProcessor;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: RelanceRepository::class)]
 #[ApiResource(
@@ -27,11 +28,6 @@ use App\State\RelanceUpdateProcessor;
         new GetCollection(
             security: "is_granted('ROLE_USER')",
             normalizationContext: ['groups' => ['relance:read']]
-        ),
-        new Post(
-            processor: RelanceCreateProcessor::class,
-            securityPostDenormalize: "object.getCandidature().getUser() == user or is_granted('ROLE_ADMIN')",
-            denormalizationContext: ['groups' => ['relance:write']]
         ),
         new Put(
             processor: RelanceUpdateProcessor::class,
@@ -60,30 +56,26 @@ class Relance
     private ?int $id = null;
 
     #[ORM\Column]
-    #[Groups(['relance:read', 'relance:write', 'candidature:read', 'candidature:write'])]
+    #[Assert\NotNull]
+    #[Groups(['relance:read', 'relance:write', 'candidature:read'])]
     private ?\DateTimeImmutable $dateRelance = null;
 
     #[ORM\Column(length: 50, nullable: true)]
-    #[Groups(['relance:read', 'relance:write', 'candidature:read', 'candidature:write'])]
+    #[Groups(['relance:read', 'relance:write', 'candidature:read'])]
     private ?string $type = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Groups(['relance:read', 'relance:write', 'candidature:read', 'candidature:write'])]
+    #[Groups(['relance:read', 'relance:write', 'candidature:read'])]
     private ?string $contenu = null;
 
     #[ORM\ManyToOne(inversedBy: 'relances')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['relance:read', 'relance:write'])]
+    #[Groups(['relance:read'])]
     private ?Candidature $candidature = null;
 
-    /**
-     * @var Collection<int, MotCle>
-     */
-    #[ORM\ManyToMany(targetEntity: MotCle::class, inversedBy: 'relances')]
-    #[Groups(['relance:read', 'relance:write', 'candidature:read', 'candidature:write'])]
-    private Collection $motsCles;
-
     #[ORM\Column(type: 'smallint')]
+    #[Assert\Positive]
+    #[Assert\LessThanOrEqual(10)]
     #[Groups(['relance:read', 'relance:write', 'candidature:read'])]
     private int $rang = 1;
 
@@ -151,28 +143,6 @@ class Relance
         return $this;
     }
 
-    /**
-     * @return Collection<int, MotCle>
-     */
-    public function getMotsCles(): Collection
-    {
-        return $this->motsCles;
-    }
-
-    public function addMotCle(MotCle $motCle): static
-    {
-        if (!$this->motsCles->contains($motCle)) {
-            $this->motsCles->add($motCle);
-        }
-        return $this;
-    }
-
-    public function removeMotCle(MotCle $motCle): static
-    {
-        $this->motsCles->removeElement($motCle);
-        return $this;
-    }
-
     public function getRang(): int
     {
         return $this->rang;
@@ -190,6 +160,15 @@ class Relance
     public function setFaite(bool $faite): static
     {
         $this->faite = $faite;
+
+        if ($faite && $this->dateRealisation === null) {
+            $this->dateRealisation = new \DateTimeImmutable();
+        }
+
+        if (!$faite) {
+            $this->dateRealisation = null;
+        }
+
         return $this;
     }
 
