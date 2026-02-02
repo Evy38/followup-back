@@ -102,14 +102,6 @@ class Candidature
     #[Groups(['candidature:read', 'candidature:write'])]
     private string $statutReponse = 'attente';
 
-    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
-    #[Groups(['candidature:read', 'candidature:write'])]
-    private ?\DateTimeInterface $dateEntretien = null;
-
-    #[ORM\Column(type: Types::TIME_MUTABLE, nullable: true)]
-    #[Groups(['candidature:read', 'candidature:write'])]
-    private ?\DateTimeInterface $heureEntretien = null;
-
     #[ORM\OneToMany(
         mappedBy: 'candidature',
         targetEntity: Entretien::class,
@@ -260,33 +252,6 @@ class Candidature
 
         $this->statutReponse = $statutReponse;
 
-        if ($statutReponse !== 'entretien') {
-            $this->dateEntretien = null;
-            $this->heureEntretien = null;
-        }
-
-        return $this;
-    }
-
-    public function getDateEntretien(): ?\DateTimeInterface
-    {
-        return $this->dateEntretien;
-    }
-
-    public function setDateEntretien(?\DateTimeInterface $dateEntretien): static
-    {
-        $this->dateEntretien = $dateEntretien;
-        return $this;
-    }
-
-    public function getHeureEntretien(): ?\DateTimeInterface
-    {
-        return $this->heureEntretien;
-    }
-
-    public function setHeureEntretien(?\DateTimeInterface $heureEntretien): static
-    {
-        $this->heureEntretien = $heureEntretien;
         return $this;
     }
 
