@@ -149,7 +149,6 @@ class ForgotPasswordController extends AbstractController
         $user->setResetPasswordTokenExpiresAt(null);
 
         $em->flush();
-        error_log('RESET TOKEN GENERATED: ' . $token);
 
 
         return new JsonResponse([

@@ -16,6 +16,10 @@ services:
     # this creates a service per class whose id is the fully-qualified class name
     App\:
         resource: "../src/"
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
 
     App\EventListener\JwtAuthenticatedUserListener:
         tags:
@@ -30,5 +34,15 @@ services:
     App\Service\EmailVerificationService:
         arguments:
             $frontendUrl: "%frontend_url%"
+
+    # Alias pour corriger l'autowiring du ProcessorInterface
+    ApiPlatform\State\ProcessorInterface: '@api_platform.doctrine.orm.state.persist_processor'
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+    App\Service\AdzunaService:
+        arguments:
+            $httpClient: '@http_client'
+            $appId: '%env(ADZUNA_APP_ID)%'
+            $appKey: '%env(ADZUNA_APP_KEY)%'
+            $country: '%env(ADZUNA_COUNTRY)%'

@@ -2,11 +2,10 @@
 
 namespace App\Entity;
 
-use Symfony\Component\Serializer\Annotation\Groups;
 use App\Repository\CandidatureRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\DBAL\Types\Types;
+use Symfony\Component\Validator\Constraints as Assert;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
@@ -14,6 +13,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: CandidatureRepository::class)]
 #[ApiResource(
@@ -31,159 +31,115 @@ use ApiPlatform\Metadata\Delete;
             security: "object.getUser() == user or is_granted('ROLE_ADMIN')"
         ),
         new Delete(
-            security: "object.getUser() == user or is_granted('ROLE_ADMIN')"
+            security: "object.getUser() == user or is_granted('ROLE_ADMIN')",
+            securityMessage: "Vous ne pouvez supprimer que vos propres candidatures."
         )
     ],
     normalizationContext: ['groups' => ['candidature:read']],
     denormalizationContext: ['groups' => ['candidature:write']]
 )]
-
-
 class Candidature
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['candidature:read'])]
     private ?int $id = null;
 
-    #[Groups(['candidature:read', 'candidature:write'])]
-    #[ORM\Column(type: Types::DATE_MUTABLE)]
-    private ?\DateTime $dateCandidature = null;
+    #[ORM\Column(type: 'datetime_immutable')]
+    #[Groups(['candidature:read'])]
+    #[Assert\NotNull]
+    private ?\DateTimeImmutable $dateCandidature = null;
 
+    #[ORM\Column(length: 255)]
     #[Groups(['candidature:read', 'candidature:write'])]
-    #[ORM\Column(length: 50, nullable: true)]
-    private ?string $mode = null;
+    #[Assert\NotBlank]
+    private string $jobTitle;
 
-    #[Groups(['candidature:read', 'candidature:write'])]
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['candidature:read'])]
     private ?string $lienAnnonce = null;
 
+    #[ORM\Column(length: 50, nullable: true)]
     #[Groups(['candidature:read', 'candidature:write'])]
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $commentaire = null;
+    private ?string $mode = null;
 
+    #[ORM\Column(length: 100)]
     #[Groups(['candidature:read'])]
+    #[Assert\NotBlank]
+    private string $externalOfferId;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(['candidature:read'])]
+    private ?\DateTimeImmutable $dateDerniereRelance = null;
+
     #[ORM\ManyToOne(inversedBy: 'candidatures')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['candidature:read'])]
     private ?User $user = null;
 
-    #[Groups(['candidature:read', 'candidature:write'])]
     #[ORM\ManyToOne(inversedBy: 'candidatures')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['candidature:read'])]
     private ?Entreprise $entreprise = null;
 
-    #[Groups(['candidature:read', 'candidature:write'])]
-    #[ORM\ManyToOne(inversedBy: 'candidatures')]
-    private ?Ville $ville = null;
-
-    #[Groups(['candidature:read', 'candidature:write'])]
-    #[ORM\ManyToOne(inversedBy: 'candidatures')]
-    private ?Canal $canal = null;
-
-    #[Groups(['candidature:read', 'candidature:write'])]
     #[ORM\ManyToOne(inversedBy: 'candidatures')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['candidature:read'])]
     private ?Statut $statut = null;
 
-    /**
-     * @var Collection<int, Reponse>
-     */
-    #[ORM\OneToMany(mappedBy: 'candidature', targetEntity: Reponse::class, orphanRemoval: true)]
-    private Collection $reponses;
-    /**
-     * @var Collection<int, MotCle>
-     */
-    #[ORM\ManyToMany(targetEntity: MotCle::class, inversedBy: 'candidatures')]
-    private Collection $motsCles;
-
-
-
-    /**
-     * @var Collection<int, Relance>
-     */
-    #[ORM\OneToMany(targetEntity: Relance::class, mappedBy: 'candidature')]
+    #[ORM\OneToMany(
+        mappedBy: 'candidature',
+        targetEntity: Relance::class,
+        orphanRemoval: true,
+        cascade: ['persist']
+    )]
+    #[Groups(['candidature:read'])]
     private Collection $relances;
+
+    #[ORM\Column(length: 20, options: ['default' => 'attente'])]
+    #[Groups(['candidature:read'])]
+    private string $statutReponse = 'attente';
+
+    #[ORM\OneToMany(
+        mappedBy: 'candidature',
+        targetEntity: Entretien::class,
+        orphanRemoval: true,
+        cascade: ['persist']
+    )]
+    #[Groups(['candidature:read'])]
+    private Collection $entretiens;
 
     public function __construct()
     {
         $this->relances = new ArrayCollection();
-        $this->reponses = new ArrayCollection();
-        $this->motsCles = new ArrayCollection();
+        $this->entretiens = new ArrayCollection();
     }
 
-    public function getMotsCles(): Collection
-    {
-        return $this->motsCles;
-    }
-
-    public function addMotCle(MotCle $motCle): static
-    {
-        if (!$this->motsCles->contains($motCle)) {
-            $this->motsCles->add($motCle);
-        }
-
-        return $this;
-    }
-
-    public function removeMotCle(MotCle $motCle): static
-    {
-        $this->motsCles->removeElement($motCle);
-        return $this;
-    }
-
-
-    public function getReponses(): Collection
-    {
-        return $this->reponses;
-    }
-
-    public function addReponse(Reponse $reponse): static
-    {
-        if (!$this->reponses->contains($reponse)) {
-            $this->reponses->add($reponse);
-            $reponse->setCandidature($this);
-        }
-
-        return $this;
-    }
-
-    public function removeReponse(Reponse $reponse): static
-    {
-        if ($this->reponses->removeElement($reponse)) {
-            if ($reponse->getCandidature() === $this) {
-                $reponse->setCandidature(null);
-            }
-        }
-
-        return $this;
-    }
+    // ---------------- Getters / Setters ----------------
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getDateCandidature(): ?\DateTime
+    public function getDateCandidature(): ?\DateTimeImmutable
     {
         return $this->dateCandidature;
     }
-
-    public function setDateCandidature(\DateTime $dateCandidature): static
+    public function setDateCandidature(\DateTimeImmutable $d): static
     {
-        $this->dateCandidature = $dateCandidature;
-
+        $this->dateCandidature = $d;
         return $this;
     }
 
-    public function getMode(): ?string
+    public function getJobTitle(): string
     {
-        return $this->mode;
+        return $this->jobTitle;
     }
-
-    public function setMode(?string $mode): static
+    public function setJobTitle(string $t): static
     {
-        $this->mode = $mode;
-
+        $this->jobTitle = $t;
         return $this;
     }
 
@@ -191,23 +147,39 @@ class Candidature
     {
         return $this->lienAnnonce;
     }
-
-    public function setLienAnnonce(?string $lienAnnonce): static
+    public function setLienAnnonce(?string $l): static
     {
-        $this->lienAnnonce = $lienAnnonce;
-
+        $this->lienAnnonce = $l;
         return $this;
     }
 
-    public function getCommentaire(): ?string
+    public function getMode(): ?string
     {
-        return $this->commentaire;
+        return $this->mode;
+    }
+    public function setMode(?string $m): static
+    {
+        $this->mode = $m;
+        return $this;
     }
 
-    public function setCommentaire(?string $commentaire): static
+    public function getExternalOfferId(): string
     {
-        $this->commentaire = $commentaire;
+        return $this->externalOfferId;
+    }
+    public function setExternalOfferId(string $id): static
+    {
+        $this->externalOfferId = $id;
+        return $this;
+    }
 
+    public function getDateDerniereRelance(): ?\DateTimeImmutable
+    {
+        return $this->dateDerniereRelance;
+    }
+    public function setDateDerniereRelance(?\DateTimeImmutable $d): static
+    {
+        $this->dateDerniereRelance = $d;
         return $this;
     }
 
@@ -215,11 +187,9 @@ class Candidature
     {
         return $this->user;
     }
-
-    public function setUser(?User $user): static
+    public function setUser(User $u): static
     {
-        $this->user = $user;
-
+        $this->user = $u;
         return $this;
     }
 
@@ -227,35 +197,9 @@ class Candidature
     {
         return $this->entreprise;
     }
-
-    public function setEntreprise(?Entreprise $entreprise): static
+    public function setEntreprise(Entreprise $e): static
     {
-        $this->entreprise = $entreprise;
-
-        return $this;
-    }
-
-    public function getVille(): ?Ville
-    {
-        return $this->ville;
-    }
-
-    public function setVille(?Ville $ville): static
-    {
-        $this->ville = $ville;
-
-        return $this;
-    }
-
-    public function getCanal(): ?Canal
-    {
-        return $this->canal;
-    }
-
-    public function setCanal(?Canal $canal): static
-    {
-        $this->canal = $canal;
-
+        $this->entreprise = $e;
         return $this;
     }
 
@@ -263,20 +207,50 @@ class Candidature
     {
         return $this->statut;
     }
-
-    public function setStatut(?Statut $statut): static
+    public function setStatut(Statut $s): static
     {
-        $this->statut = $statut;
+        $this->statut = $s;
+        return $this;
+    }
+
+    public function getRelances(): Collection
+    {
+        return $this->relances;
+    }
+
+    public function getStatutReponse(): string
+    {
+        return $this->statutReponse;
+    }
+
+    public function setStatutReponse(string $statutReponse): static
+    {
+        $validStatuts = [
+            'attente',     // sans réponse
+            'echanges',    // en discussion
+            'entretien',   // au moins un entretien
+            'negative',    // refus
+            'positive',    // retour positif
+            'annule'       // entretien annulé (dernier supprimé)
+        ];
+        if (!in_array($statutReponse, $validStatuts, true)) {
+            throw new \InvalidArgumentException(
+                sprintf(
+                    'Statut "%s" invalide. Valeurs autorisées: %s',
+                    $statutReponse,
+                    implode(', ', $validStatuts)
+                )
+            );
+        }
+
+        $this->statutReponse = $statutReponse;
 
         return $this;
     }
 
-    /**
-     * @return Collection<int, Relance>
-     */
-    public function getRelances(): Collection
+    public function getEntretiens(): Collection
     {
-        return $this->relances;
+        return $this->entretiens;
     }
 
     public function addRelance(Relance $relance): static
@@ -285,19 +259,37 @@ class Candidature
             $this->relances->add($relance);
             $relance->setCandidature($this);
         }
-
         return $this;
     }
 
     public function removeRelance(Relance $relance): static
     {
         if ($this->relances->removeElement($relance)) {
-            // set the owning side to null (unless already changed)
             if ($relance->getCandidature() === $this) {
                 $relance->setCandidature(null);
             }
         }
-
         return $this;
     }
+
+    public function addEntretien(Entretien $entretien): static
+    {
+        if (!$this->entretiens->contains($entretien)) {
+            $this->entretiens->add($entretien);
+            $entretien->setCandidature($this);
+        }
+        return $this;
+    }
+
+    public function removeEntretien(Entretien $entretien): static
+    {
+        if ($this->entretiens->removeElement($entretien)) {
+            if ($entretien->getCandidature() === $this) {
+                $entretien->setCandidature(null);
+            }
+        }
+        return $this;
+    }
+
+
 }
