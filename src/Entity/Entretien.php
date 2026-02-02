@@ -2,7 +2,6 @@
 
 namespace App\Entity;
 
-use App\Repository\EntretienRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 use ApiPlatform\Metadata\ApiResource;
@@ -12,7 +11,7 @@ use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use App\State\EntretienProcessor;
 
-#[ORM\Entity(repositoryClass: EntretienRepository::class)]
+#[ORM\Entity]
 #[ApiResource(
     operations: [
         new Get(

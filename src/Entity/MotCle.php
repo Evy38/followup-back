@@ -2,7 +2,6 @@
 
 namespace App\Entity;
 
-use App\Repository\MotCleRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -14,7 +13,7 @@ use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
 use Symfony\Component\Serializer\Annotation\Groups;
 
-#[ORM\Entity(repositoryClass: MotCleRepository::class)]
+#[ORM\Entity]
 #[ApiResource(
     operations: [
         new Get(normalizationContext: ['groups' => ['motcle:read']]),
