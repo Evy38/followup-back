@@ -20,10 +20,8 @@ class VerifyEmailController extends AbstractController
     ): JsonResponse {
 
         $token = $request->query->get('token');
-        error_log('[VERIFY EMAIL] Token reçu : ' . $token);
 
         if (!$token) {
-            error_log('[VERIFY EMAIL] Token manquant');
             return new JsonResponse(['error' => 'Token manquant'], 400);
         }
 
@@ -31,7 +29,6 @@ class VerifyEmailController extends AbstractController
         $user = $userRepository->findOneBy([
             'emailVerificationToken' => $token
         ]);
-        error_log('[VERIFY EMAIL] Utilisateur trouvé ? ' . ($user ? 'oui' : 'non'));
 
         if (!$user) {
             // Vérification idempotente : l'utilisateur a-t-il déjà été vérifié ?
@@ -40,20 +37,17 @@ class VerifyEmailController extends AbstractController
                 'emailVerificationToken' => null
             ]);
             if ($userVerified) {
-                error_log('[VERIFY EMAIL] Déjà vérifié, retour succès idempotent');
                 return new JsonResponse([
                     'message' => 'Email déjà confirmé.'
                 ], 200);
             }
-            error_log('[VERIFY EMAIL] Token invalide');
+
             return new JsonResponse(['error' => 'Token invalide'], 400);
         }
 
         $expiresAt = $user->getEmailVerificationTokenExpiresAt();
-        error_log('[VERIFY EMAIL] Expire à : ' . ($expiresAt ? $expiresAt->format('c') : 'null'));
 
         if (!$expiresAt || $expiresAt < new \DateTimeImmutable()) {
-            error_log('[VERIFY EMAIL] Token expiré');
             return new JsonResponse(['error' => 'Token expiré'], 400);
         }
 
@@ -88,10 +82,9 @@ class VerifyEmailController extends AbstractController
         ]);
 
         if (!$user) {
-            return new JsonResponse([
-                'message' => 'Aucun compte associé à cet email.'
-            ], 404);
+            return new JsonResponse(['error' => 'Token invalide'], 400);
         }
+
 
         if ($user->isVerified()) {
             return new JsonResponse([
