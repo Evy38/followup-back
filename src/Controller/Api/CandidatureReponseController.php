@@ -10,32 +10,10 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-/**
- * Controller dédié à la gestion du statut global d’une candidature.
- *
- * ⚠️ IMPORTANT :
- * - La gestion des entretiens est désormais assurée par l’entité Entretien
- *   et ses processors API Platform.
- * - Ce controller ne fait que des mises à jour simples et ciblées.
- *
- * Logique métier :
- * - Le frontend ne calcule jamais le statut.
- * - Il demande une intention → le backend décide.
- */
 #[Route('/api/candidatures')]
 class CandidatureReponseController extends AbstractController
 {
-    /**
-     * Met à jour le statut global de réponse de la candidature.
-     *
-     * Cas d’usage :
-     * - Pas encore de réponse → "attente"
-     * - Échanges en cours → "echanges"
-     * - Refus explicite → "negative"
-     *
-     * ⚠️ Ce endpoint NE gère PAS les entretiens.
-     * Dès qu’un entretien existe, la synchronisation est gérée ailleurs.
-     */
+
     #[Route('/{id}/statut-reponse', name: 'api_candidature_update_statut_reponse', methods: ['PATCH'])]
     #[IsGranted('ROLE_USER')]
     public function updateStatutReponse(
@@ -58,11 +36,23 @@ class CandidatureReponseController extends AbstractController
         // 3️⃣ Lecture du payload JSON
         $data = json_decode($request->getContent(), true);
 
+
+        if (!is_array($data)) {
+            return new JsonResponse(['error' => 'JSON invalide.'], 400);
+        }
+
         if (!isset($data['statutReponse'])) {
             return $this->json(['error' => 'statutReponse manquant'], 400);
         }
 
         try {
+
+            if (!$candidature->getEntretiens()->isEmpty()) {
+                return $this->json([
+                    'error' => 'Le statut est géré automatiquement car des entretiens existent.'
+                ], 400);
+            }
+
             // 4️⃣ Mise à jour contrôlée
             // La validation est faite directement dans l’entité
             $candidature->setStatutReponse($data['statutReponse']);
