@@ -11,4 +11,3 @@ nelmio_cors:
         max_age: 3600 # Durée de validité du OK cors pour éviter au nav de redemander l'autorisation à chauqe appel
     paths: # Précise où appliquer les règles
         '^/api/': ~
-        '^/': null

@@ -5,7 +5,7 @@ namespace App\Entity;
 use App\Repository\CandidatureRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\DBAL\Types\Types;
+use Symfony\Component\Validator\Constraints as Assert;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
@@ -48,10 +48,12 @@ class Candidature
 
     #[ORM\Column(type: 'datetime_immutable')]
     #[Groups(['candidature:read'])]
+    #[Assert\NotNull]
     private ?\DateTimeImmutable $dateCandidature = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(['candidature:read', 'candidature:write'])]
+    #[Assert\NotBlank]
     private string $jobTitle;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -64,6 +66,7 @@ class Candidature
 
     #[ORM\Column(length: 100)]
     #[Groups(['candidature:read'])]
+    #[Assert\NotBlank]
     private string $externalOfferId;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
@@ -94,12 +97,8 @@ class Candidature
     #[Groups(['candidature:read'])]
     private Collection $relances;
 
-    #[ORM\ManyToMany(targetEntity: MotCle::class, inversedBy: 'candidatures')]
-    #[Groups(['candidature:read', 'candidature:write'])]
-    private Collection $motsCles;
-
     #[ORM\Column(length: 20, options: ['default' => 'attente'])]
-    #[Groups(['candidature:read', 'candidature:write'])]
+    #[Groups(['candidature:read'])]
     private string $statutReponse = 'attente';
 
     #[ORM\OneToMany(
@@ -114,7 +113,6 @@ class Candidature
     public function __construct()
     {
         $this->relances = new ArrayCollection();
-        $this->motsCles = new ArrayCollection();
         $this->entretiens = new ArrayCollection();
     }
 
@@ -220,11 +218,6 @@ class Candidature
         return $this->relances;
     }
 
-    public function getMotsCles(): Collection
-    {
-        return $this->motsCles;
-    }
-
     public function getStatutReponse(): string
     {
         return $this->statutReponse;
@@ -259,5 +252,44 @@ class Candidature
     {
         return $this->entretiens;
     }
+
+    public function addRelance(Relance $relance): static
+    {
+        if (!$this->relances->contains($relance)) {
+            $this->relances->add($relance);
+            $relance->setCandidature($this);
+        }
+        return $this;
+    }
+
+    public function removeRelance(Relance $relance): static
+    {
+        if ($this->relances->removeElement($relance)) {
+            if ($relance->getCandidature() === $this) {
+                $relance->setCandidature(null);
+            }
+        }
+        return $this;
+    }
+
+    public function addEntretien(Entretien $entretien): static
+    {
+        if (!$this->entretiens->contains($entretien)) {
+            $this->entretiens->add($entretien);
+            $entretien->setCandidature($this);
+        }
+        return $this;
+    }
+
+    public function removeEntretien(Entretien $entretien): static
+    {
+        if ($this->entretiens->removeElement($entretien)) {
+            if ($entretien->getCandidature() === $this) {
+                $entretien->setCandidature(null);
+            }
+        }
+        return $this;
+    }
+
 
 }
