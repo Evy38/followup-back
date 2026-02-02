@@ -20,8 +20,7 @@ class RegisterController extends AbstractController
     public function register(
         Request $request,
         UserService $userService,
-        ValidatorInterface $validator,
-        EmailVerificationService $emailVerificationService
+        ValidatorInterface $validator
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
 
@@ -61,7 +60,7 @@ class RegisterController extends AbstractController
             return new JsonResponse([
                 'message' => 'Compte créé. Veuillez confirmer votre adresse email pour activer votre compte.'
             ], Response::HTTP_CREATED);
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             return new JsonResponse([
                 'error' => 'Erreur serveur: ' . $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);

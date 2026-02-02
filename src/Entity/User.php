@@ -11,14 +11,23 @@ use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 use ApiPlatform\Metadata\ApiResource;
-
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 #[ApiResource(
-    normalizationContext: ['groups' => ['user:read']],
-    denormalizationContext: ['groups' => ['user:write']]
+    operations: [
+        new Get(
+            security: "object == user or is_granted('ROLE_ADMIN')"
+        ),
+        new GetCollection(
+            security: "is_granted('ROLE_ADMIN')"
+        ),
+    ],
+    normalizationContext: ['groups' => ['user:read']]
 )]
+
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -92,6 +101,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function __construct()
     {
+        $this->roles = ['ROLE_USER'];
         $this->candidatures = new ArrayCollection();
     }
 
@@ -161,8 +171,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
 
     /**
-     * Ensure the session doesn't contain actual password hashes by CRC32C-hashing them, as supported since Symfony 7.3.
+     * Prevent exposing the real password hash during PHP serialization.
+     * Used internally by Symfony >= 7.3.
      */
+
     public function __serialize(): array
     {
         $data = (array) $this;
@@ -312,6 +324,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
 
         return $this->emailVerificationTokenExpiresAt > new \DateTimeImmutable();
+    }
+
+    public function isOauthUser(): bool
+    {
+        return $this->googleId !== null;
     }
 
 
