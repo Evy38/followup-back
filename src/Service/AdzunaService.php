@@ -17,19 +17,23 @@ class AdzunaService
     /**
      * @return JobOfferDTO[]
      */
-    public function search(string $query, string $location, int $page = 1): array
+    public function search(string $query, string $location, int $page = 1, ?string $contract = null): array
     {
+        $params = [
+            'app_id' => $this->appId,
+            'app_key' => $this->appKey,
+            'what' => $query,
+            'where' => $location,
+            'results_per_page' => 100,
+        ];
+        if ($contract) {
+            $params['contract_type'] = $contract;
+        }
         $response = $this->httpClient->request(
             'GET',
             "https://api.adzuna.com/v1/api/jobs/{$this->country}/search/{$page}",
             [
-                'query' => [
-                    'app_id' => $this->appId,
-                    'app_key' => $this->appKey,
-                    'what' => $query,
-                    'where' => $location,
-                    'results_per_page' => 20,
-                ],
+                'query' => $params,
             ]
         );
 
