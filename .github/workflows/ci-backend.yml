@@ -41,7 +41,8 @@ jobs:
           coverage: none
 
       - name: 📦 Installer les dépendances Composer
-        run: composer install --no-interaction --prefer-dist # installe les dépendances
+        run: composer install --no-interaction --prefer-dist --no-scripts
+
 
       - name: ⚙️ Préparer l’environnement Symfony
         run: |
@@ -60,5 +61,3 @@ jobs:
           JWT_PASSPHRASE: ${{ secrets.JWT_PASSPHRASE }}
           MAILER_DSN: ${{ secrets.MAILER_DSN }}
         run: php bin/phpunit
-        
-# tentatives de modif pour observation action github
