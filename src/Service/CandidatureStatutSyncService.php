@@ -21,8 +21,8 @@ class CandidatureStatutSyncService
         $lastEntretien = $entretiens->last();
 
         if ($lastEntretien->getStatut() === 'passe') {
-            if ($lastEntretien->getResultat() === 'positive') {
-                $candidature->setStatutReponse('positive');
+            if ($lastEntretien->getResultat() === 'engage') {
+                $candidature->setStatutReponse('engage');
                 return;
             }
 

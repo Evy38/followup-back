@@ -60,7 +60,7 @@ class Entretien
 
     #[ORM\Column(length: 20, nullable: true)]
     #[Groups(['entretien:read', 'entretien:write', 'candidature:read'])]
-    private ?string $resultat = null; // positive | negative | attente
+    private ?string $resultat = null; // engage | negative | attente
 
     #[ORM\ManyToOne(inversedBy: 'entretiens')]
     #[ORM\JoinColumn(nullable: false)]
@@ -121,7 +121,7 @@ class Entretien
 
     public function setResultat(?string $resultat): self
     {
-        $allowed = [null, 'positive', 'negative'];
+        $allowed = [null, 'engage', 'negative'];
         if (!in_array($resultat, $allowed, true)) {
             throw new \InvalidArgumentException(
                 sprintf('Résultat entretien invalide : %s', $resultat)
