@@ -11,7 +11,7 @@ jobs:
   backend:
     runs-on: ubuntu-latest
 
-# github lance un conteneur MySQL temporaire
+# github lance un conteneur MySQL temporaire comme docker
   
     services:
       mysql:
