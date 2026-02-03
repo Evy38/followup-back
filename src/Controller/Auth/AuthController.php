@@ -28,9 +28,9 @@ class AuthController extends AbstractController
         Request $request,
         GoogleAuthService $googleAuthService,
         OAuthUserService $oauthUserService,
-        JWTTokenManagerInterface $jwtManager,
-        string $frontendUrl
+        JWTTokenManagerInterface $jwtManager
     ): RedirectResponse {
+        $frontendUrl = $this->getParameter('frontend_url');
 
         $client = $googleAuthService->getClient();
         $code = $request->query->get('code');
