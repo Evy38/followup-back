@@ -51,17 +51,22 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_PASSPHRASE: ${{ secrets.JWT_PASSPHRASE }}
           MAILER_DSN: ${{ secrets.MAILER_DSN }}
+          SYMFONY_DOTENV_VARS: ""
         run: php bin/console cache:clear
 
       - name: 🧩 Vérifier le schéma Doctrine
         env:
+          APP_ENV: test
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SYMFONY_DOTENV_VARS: ""
         run: php bin/console doctrine:schema:validate --skip-sync
 
       - name: 🧪 Lancer les tests PHPUnit
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          APP_ENV: test
           APP_SECRET: ${{ secrets.APP_SECRET }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_PASSPHRASE: ${{ secrets.JWT_PASSPHRASE }}
           MAILER_DSN: ${{ secrets.MAILER_DSN }}
+          SYMFONY_DOTENV_VARS: ""
         run: php bin/phpunit
