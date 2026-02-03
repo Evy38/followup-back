@@ -45,9 +45,13 @@ jobs:
 
 
       - name: ⚙️ Préparer l’environnement Symfony
-        run: |
-          cp .env.test .env
-          php bin/console cache:clear
+        env:
+          APP_ENV: test
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_PASSPHRASE: ${{ secrets.JWT_PASSPHRASE }}
+          MAILER_DSN: ${{ secrets.MAILER_DSN }}
+        run: php bin/console cache:clear
 
       - name: 🧩 Vérifier le schéma Doctrine
         env:
