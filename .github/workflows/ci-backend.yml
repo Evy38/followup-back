@@ -45,6 +45,7 @@ jobs:
           APP_ENV: test
           DATABASE_URL: "mysql://follow_user:root@127.0.0.1:3306/followup_test?serverVersion=8.0"
         run: |
+          touch .env
           php bin/console cache:clear
 
       - name: 🗄️ Créer le schéma de base de données
