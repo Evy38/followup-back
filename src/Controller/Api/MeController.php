@@ -26,9 +26,23 @@ class MeController extends AbstractController
             ], 401);
         }
 
+        if (!$user->isVerified()) {
+            return $this->json([
+                'authenticated' => true,
+                'verified' => false,
+                'user' => [
+                    'id' => $user->getId(),
+                    'email' => $user->getEmail(),
+                    'firstName' => $user->getFirstName(),
+                    'lastName' => $user->getLastName(),
+                    'roles' => $user->getRoles(),
+                    'googleId' => $user->getGoogleId(),
+                ],
+            ], 403);
+        }
         return $this->json([
             'authenticated' => true,
-            'verified' => $user->isVerified(),
+            'verified' => true,
             'user' => [
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
