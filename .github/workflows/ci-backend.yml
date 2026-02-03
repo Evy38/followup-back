@@ -51,8 +51,10 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_PASSPHRASE: ${{ secrets.JWT_PASSPHRASE }}
           MAILER_DSN: ${{ secrets.MAILER_DSN }}
-          SYMFONY_DOTENV_VARS: ""
-        run: php bin/console cache:clear
+        run: |
+          touch .env
+          php bin/console cache:clear
+
 
       - name: 🧩 Vérifier le schéma Doctrine
         env:
