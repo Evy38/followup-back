@@ -44,6 +44,7 @@ jobs:
         env:
           APP_ENV: test
           DATABASE_URL: "mysql://root:root@127.0.0.1:3306/followup_test?serverVersion=8.0"
+          MESSENGER_TRANSPORT_DSN: "sync://"
         run: |
           touch .env
           php bin/console cache:clear
@@ -52,6 +53,7 @@ jobs:
         env:
           APP_ENV: test
           DATABASE_URL: "mysql://root:root@127.0.0.1:3306/followup_test?serverVersion=8.0"
+          MESSENGER_TRANSPORT_DSN: "sync://"
         run: |
           php bin/console doctrine:database:create --if-not-exists
           php bin/console doctrine:schema:create
@@ -60,6 +62,7 @@ jobs:
         env:
           APP_ENV: test
           DATABASE_URL: "mysql://root:root@127.0.0.1:3306/followup_test?serverVersion=8.0"
+          MESSENGER_TRANSPORT_DSN: "sync://"
         run: php bin/console doctrine:schema:validate --skip-sync
 
       - name: 🧪 Lancer les tests PHPUnit
@@ -69,4 +72,5 @@ jobs:
           DATABASE_URL: "mysql://root:root@127.0.0.1:3306/followup_test?serverVersion=8.0"
           JWT_PASSPHRASE: ${{ secrets.JWT_PASSPHRASE }}
           MAILER_DSN: "null://null"
+          MESSENGER_TRANSPORT_DSN: "sync://"
         run: php bin/phpunit
