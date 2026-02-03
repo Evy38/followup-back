@@ -82,7 +82,7 @@ class VerifyEmailController extends AbstractController
         ]);
 
         if (!$user) {
-            return new JsonResponse(['error' => 'Token invalide'], 400);
+            return new JsonResponse(['error' => 'Utilisateur non trouvé'], 404);
         }
 
 
