@@ -60,3 +60,5 @@ jobs:
           JWT_PASSPHRASE: ${{ secrets.JWT_PASSPHRASE }}
           MAILER_DSN: ${{ secrets.MAILER_DSN }}
         run: php bin/phpunit
+        
+# tentatives de modif pour observation action github
