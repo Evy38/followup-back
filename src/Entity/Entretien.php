@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Repository\EntretienRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 use ApiPlatform\Metadata\ApiResource;
@@ -12,7 +13,7 @@ use ApiPlatform\Metadata\Get;
 use App\State\EntretienProcessor;
 use Symfony\Component\Validator\Constraints as Assert;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: EntretienRepository::class)]
 #[ApiResource(
     operations: [
         new Get(
@@ -63,7 +64,7 @@ class Entretien
 
     #[ORM\ManyToOne(inversedBy: 'entretiens')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['entretien:read'])]
+    #[Groups(['entretien:read', 'entretien:write'])]
     private ?Candidature $candidature = null;
 
     // ---------------- Getters / Setters ----------------

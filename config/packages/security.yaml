@@ -94,5 +94,7 @@ security:
         # 🔒 PRIVÉ : tout le reste de l’API
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
         
+        # ADMIN : User avec role_ADMIN
+        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 
