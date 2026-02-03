@@ -7,6 +7,9 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class AdzunaService
 {
+    private const RESULTS_PER_PAGE = 100;
+    private const MAX_PAGES = 5; 
+
     public function __construct(
         private HttpClientInterface $httpClient,
         private string $appId,
@@ -24,17 +27,17 @@ class AdzunaService
             'app_key' => $this->appKey,
             'what' => $query,
             'where' => $location,
-            'results_per_page' => 100,
+            'results_per_page' => self::RESULTS_PER_PAGE,
         ];
+        
         if ($contract) {
             $params['contract_type'] = $contract;
         }
+
         $response = $this->httpClient->request(
             'GET',
             "https://api.adzuna.com/v1/api/jobs/{$this->country}/search/{$page}",
-            [
-                'query' => $params,
-            ]
+            ['query' => $params]
         );
 
         $data = $response->toArray();
@@ -52,5 +55,35 @@ class AdzunaService
             ),
             $data['results']
         );
+    }
+
+    /**
+     * Récupère TOUTES les offres disponibles (avec limite de sécurité)
+     * @return JobOfferDTO[]
+     */
+    public function searchAll(string $query, string $location, ?string $contract = null): array
+    {
+        $allJobs = [];
+        $page = 1;
+
+        while ($page <= self::MAX_PAGES) {
+            $jobs = $this->search($query, $location, $page, $contract);
+            
+            // Si aucune offre retournée, on arrête
+            if (empty($jobs)) {
+                break;
+            }
+
+            $allJobs = array_merge($allJobs, $jobs);
+            
+            // Si on a récupéré moins de 100 résultats, c'est la dernière page
+            if (count($jobs) < self::RESULTS_PER_PAGE) {
+                break;
+            }
+
+            $page++;
+        }
+
+        return $allJobs;
     }
 }

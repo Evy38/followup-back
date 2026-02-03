@@ -18,11 +18,13 @@ class JobController extends AbstractController
     #[Route('', methods: ['GET'])]
     public function search(Request $request): JsonResponse
     {
-            $ville = $request->query->get('ville', 'france');
-            $poste = $request->query->get('poste', 'developer');
-            $contrat = $request->query->get('contrat');
-            return $this->json(
-                $this->adzunaService->search($poste, $ville, 1, $contrat)
-            );
+        $ville = $request->query->get('ville', 'france');
+        $poste = $request->query->get('poste', 'developer');
+        $contrat = $request->query->get('contrat');
+        
+        // Utilise searchAll pour récupérer toutes les offres
+        return $this->json(
+            $this->adzunaService->searchAll($poste, $ville, $contrat)
+        );
     }
 }

@@ -1,0 +1,62 @@
+name: CI Backend Symfony #nom du fichier dans github action
+
+# le CI se lance quand on push sur main et quans on ouvre une PR vers main --> Chaque modif critique automatiquement vérifiée
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+
+# github lance un conteneur MySQL temporaire
+  
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: followup_test
+          MYSQL_USER: follow_user
+          MYSQL_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -u follow_user -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4 # github clone le repo dan sla machine CI
+
+      - name: 🐘 Setup PHP 
+        uses: shivammathur/setup-php@v2 # installe PHP + extensions
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_mysql
+          coverage: none
+
+      - name: 📦 Installer les dépendances Composer
+        run: composer install --no-interaction --prefer-dist # installe les dépendances
+
+      - name: ⚙️ Préparer l’environnement Symfony
+        run: |
+          cp .env.test .env
+          php bin/console cache:clear
+
+      - name: 🧩 Vérifier le schéma Doctrine
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: php bin/console doctrine:schema:validate --skip-sync
+
+      - name: 🧪 Lancer les tests PHPUnit
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          JWT_PASSPHRASE: ${{ secrets.JWT_PASSPHRASE }}
+          MAILER_DSN: ${{ secrets.MAILER_DSN }}
+        run: php bin/phpunit

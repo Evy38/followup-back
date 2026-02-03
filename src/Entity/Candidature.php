@@ -230,8 +230,8 @@ class Candidature
             'echanges',    // en discussion
             'entretien',   // au moins un entretien
             'negative',    // refus
-            'positive',    // retour positif
-            'annule'       // entretien annulé (dernier supprimé)
+            'engage',    // retour positif
+            'annule'       // entretien annulé 
         ];
         if (!in_array($statutReponse, $validStatuts, true)) {
             throw new \InvalidArgumentException(
@@ -244,7 +244,6 @@ class Candidature
         }
 
         $this->statutReponse = $statutReponse;
-
         return $this;
     }
 
