@@ -65,6 +65,6 @@ class MeControllerTest extends WebTestCase
 
         $this->assertResponseIsSuccessful();
         $responseData = json_decode($client->getResponse()->getContent(), true);
-        $this->assertEquals('verified@test.com', $responseData['email'] ?? null);
+        $this->assertEquals('verified@test.com', $responseData['user']['email'] ?? null);
     }
 }

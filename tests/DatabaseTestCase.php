@@ -58,9 +58,25 @@ abstract class DatabaseTestCase extends KernelTestCase
         $schemaTool = new SchemaTool($this->entityManager);
         $metadata = $this->entityManager->getMetadataFactory()->getAllMetadata();
 
+        // Drop toute la base (plus sûr que dropSchema)
+        $conn = $this->entityManager->getConnection();
+        $platform = $conn->getDatabasePlatform();
+        $conn->executeStatement('SET FOREIGN_KEY_CHECKS=0');
+        // Supprime messenger_messages si elle existe
+        try {
+            $conn->executeStatement($platform->getDropTableSQL('messenger_messages'));
+        } catch (\Exception $e) {}
+        foreach ($metadata as $meta) {
+            $tableName = $meta->getTableName();
+            try {
+                $conn->executeStatement($platform->getDropTableSQL($tableName));
+            } catch (\Exception $e) {
+                // Ignore si la table n'existe pas
+            }
+        }
+        $conn->executeStatement('SET FOREIGN_KEY_CHECKS=1');
+
         if (!empty($metadata)) {
-            // Drop + recreate toutes les tables selon tes entités
-            $schemaTool->dropSchema($metadata);
             $schemaTool->createSchema($metadata);
         }
     }

@@ -54,7 +54,6 @@ class UserService
     public function create(User $user): User
     {
         if ($this->repository->existsByEmail($user->getEmail())) {
-            error_log('[FollowUp] Tentative de double inscription pour l\'email : ' . $user->getEmail());
             throw new ConflictHttpException("Cet email est déjà utilisé.");
         }
 
@@ -86,11 +85,8 @@ class UserService
             // 3️⃣ Flush UNIQUE
             $this->repository->save($user, true);
         } catch (UniqueConstraintViolationException $e) {
-            // Cas de race condition : deux requêtes simultanées
-            error_log('[FollowUp] Contrainte d\'unicité SQL violée pour l\'email : ' . $user->getEmail());
             throw new ConflictHttpException("Cet email est déjà utilisé.");
         } catch (DBALException | ORMException $e) {
-            error_log('[FollowUp] Erreur transactionnelle lors de la création utilisateur : ' . $e->getMessage());
             throw new BadRequestHttpException(
                 "Erreur lors de l’enregistrement du nouvel utilisateur."
             );
@@ -100,7 +96,6 @@ class UserService
         try {
             $this->emailVerificationService->sendVerificationEmail($user);
         } catch (\Throwable $e) {
-            error_log('[FollowUp] Erreur lors de l\'envoi de l\'email de confirmation : ' . $e->getMessage());
             throw new BadRequestHttpException(
                 "Le compte a été créé mais l'email de confirmation n'a pas pu être envoyé."
             );

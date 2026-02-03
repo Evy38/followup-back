@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Repository\EntretienRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 use ApiPlatform\Metadata\ApiResource;
@@ -12,7 +13,7 @@ use ApiPlatform\Metadata\Get;
 use App\State\EntretienProcessor;
 use Symfony\Component\Validator\Constraints as Assert;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: EntretienRepository::class)]
 #[ApiResource(
     operations: [
         new Get(
@@ -59,11 +60,11 @@ class Entretien
 
     #[ORM\Column(length: 20, nullable: true)]
     #[Groups(['entretien:read', 'entretien:write', 'candidature:read'])]
-    private ?string $resultat = null; // positive | negative | attente
+    private ?string $resultat = null; // engage | negative | attente
 
     #[ORM\ManyToOne(inversedBy: 'entretiens')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['entretien:read'])]
+    #[Groups(['entretien:read', 'entretien:write'])]
     private ?Candidature $candidature = null;
 
     // ---------------- Getters / Setters ----------------
@@ -120,7 +121,7 @@ class Entretien
 
     public function setResultat(?string $resultat): self
     {
-        $allowed = [null, 'positive', 'negative'];
+        $allowed = [null, 'engage', 'negative'];
         if (!in_array($resultat, $allowed, true)) {
             throw new \InvalidArgumentException(
                 sprintf('Résultat entretien invalide : %s', $resultat)
