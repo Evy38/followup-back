@@ -50,7 +50,6 @@ docker-compose.override.yml
 *.env.local
 docker-compose.*.local.yml
 
-# Pour s'assurer que env.test (sans point) n'est pas suivi, mais .env.test (avec point) l'est
 
 # Composer / PHP tooling
 /composer.lock
