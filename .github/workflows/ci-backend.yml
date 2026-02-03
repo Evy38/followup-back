@@ -1,6 +1,5 @@
-name: CI Backend Symfony #nom du fichier dans github action
+name: CI Backend Symfony
 
-# le CI se lance quand on push sur main et quans on ouvre une PR vers main --> Chaque modif critique automatiquement vérifiée
 on:
   push:
     branches: [ "main" ]
@@ -11,8 +10,6 @@ jobs:
   backend:
     runs-on: ubuntu-latest
 
-# github lance un conteneur MySQL temporaire
-  
     services:
       mysql:
         image: mysql:8.0
@@ -31,32 +28,51 @@ jobs:
 
     steps:
       - name: 📥 Checkout du code
-        uses: actions/checkout@v4 # github clone le repo dan sla machine CI
+        uses: actions/checkout@v4
 
       - name: 🐘 Setup PHP 
-        uses: shivammathur/setup-php@v2 # installe PHP + extensions
+        uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
           extensions: mbstring, pdo_mysql
           coverage: none
 
       - name: 📦 Installer les dépendances Composer
-        run: composer install --no-interaction --prefer-dist # installe les dépendances
+        run: composer install --no-interaction --prefer-dist --no-scripts
 
-      - name: ⚙️ Préparer l’environnement Symfony
+      - name: ⚙️ Préparer l'environnement Symfony
+        env:
+          APP_ENV: test
+          DATABASE_URL: "mysql://root:root@127.0.0.1:3306/followup_test?serverVersion=8.0"
+          MESSENGER_TRANSPORT_DSN: "sync://"
         run: |
-          cp .env.test .env
+          touch .env
           php bin/console cache:clear
+
+      - name: 🗄️ Créer le schéma de base de données
+        env:
+          APP_ENV: test
+          DATABASE_URL: "mysql://root:root@127.0.0.1:3306/followup_test?serverVersion=8.0"
+          MESSENGER_TRANSPORT_DSN: "sync://"
+        run: |
+          php bin/console doctrine:database:create --if-not-exists
+          php bin/console doctrine:schema:create
 
       - name: 🧩 Vérifier le schéma Doctrine
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          APP_ENV: test
+          DATABASE_URL: "mysql://root:root@127.0.0.1:3306/followup_test?serverVersion=8.0"
+          MESSENGER_TRANSPORT_DSN: "sync://"
         run: php bin/console doctrine:schema:validate --skip-sync
 
       - name: 🧪 Lancer les tests PHPUnit
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          APP_ENV: test
           APP_SECRET: ${{ secrets.APP_SECRET }}
+          DATABASE_URL: "mysql://root:root@127.0.0.1:3306/followup_test?serverVersion=8.0"
           JWT_PASSPHRASE: ${{ secrets.JWT_PASSPHRASE }}
-          MAILER_DSN: ${{ secrets.MAILER_DSN }}
+          MAILER_DSN: "null://null"
+          MESSENGER_TRANSPORT_DSN: "sync://"
+          CORS_ALLOW_ORIGIN: "*"
+          FRONTEND_URL: "http://localhost:3000"
         run: php bin/phpunit
