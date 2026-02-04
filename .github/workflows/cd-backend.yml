@@ -1,0 +1,123 @@
+name: CD Backend Symfony
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - sit
+          - uat
+          - prod
+
+jobs:
+  build:
+    name: Build backend for ${{ github.event.inputs.environment }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐘 Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: mbstring, pdo_mysql
+          coverage: none
+
+      - name: 📦 Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-dev
+
+      - name: ⚙️ Prepare Symfony (prod)
+        env:
+          APP_ENV: prod
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+        run: |
+          php bin/console cache:clear
+          php bin/console cache:warmup
+
+      - name: 📦 Upload backend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-${{ github.event.inputs.environment }}-${{ github.run_number }}
+          path: |
+            .
+            !.git
+            !var/cache
+            !var/log
+          retention-days: 30
+
+  deploy-sit:
+    name: Deploy to SIT
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event.inputs.environment == 'sit'
+    environment:
+      name: sit
+
+    steps:
+      - name: 📥 Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-sit-${{ github.run_number }}
+
+      - name: 🚀 Deploy SIT (simulation)
+        run: |
+          echo "🚀 Déploiement backend vers SIT"
+          echo "📦 Artefacts prêts"
+          echo "✅ Déploiement SIT simulé"
+
+  deploy-uat:
+    name: Deploy to UAT
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event.inputs.environment == 'uat'
+    environment:
+      name: uat
+
+    steps:
+      - name: 📥 Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-uat-${{ github.run_number }}
+
+      - name: 🚀 Deploy UAT (simulation)
+        run: |
+          echo "🚀 Déploiement backend vers UAT"
+          echo "📦 Artefacts prêts"
+          echo "✅ Déploiement UAT simulé"
+
+  deploy-prod:
+    name: Deploy to Production
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event.inputs.environment == 'prod'
+    environment:
+      name: prod
+
+    steps:
+      - name: 📥 Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-prod-${{ github.run_number }}
+
+      - name: 💾 Backup production (simulated)
+        run: |
+          echo "💾 Backup base de données"
+          echo "💾 Backup code applicatif"
+          echo "✅ Backup simulé"
+
+      - name: 🚀 Deploy PROD (simulation)
+        run: |
+          echo "🚀 Déploiement backend vers PROD"
+          echo "📦 Artefacts prêts"
+          echo "✅ Déploiement PROD simulé"
+
+      - name: 🧪 Post-deploy checks
+        run: |
+          echo "🧪 Vérification API /health"
+          echo "🧪 Connexion DB"
+          echo "✅ Vérifications simulées OK"
