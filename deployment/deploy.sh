@@ -1,0 +1,62 @@
+#!/bin/bash
+set -e
+
+ENVIRONMENT=$1
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+if [ -z "$ENVIRONMENT" ]; then
+  echo "Usage: ./deploy.sh [sit|uat|prod]"
+  exit 1
+fi
+
+case $ENVIRONMENT in
+  sit|uat|prod) ;;
+  *)
+    echo "Invalid environment. Use: sit, uat, prod"
+    exit 1
+    ;;
+esac
+
+echo "🚀 Deploy FollowUp Backend → $ENVIRONMENT"
+echo "📅 $TIMESTAMP"
+
+echo "✅ Step 1: Pre-checks"
+php -v
+composer -V
+
+echo "✅ Step 2: Install dependencies (prod)"
+composer install --no-interaction --prefer-dist --no-dev
+
+echo "✅ Step 3: Symfony cache warmup"
+APP_ENV=prod php bin/console cache:clear
+APP_ENV=prod php bin/console cache:warmup
+
+echo "💾 Step 4: Backup (simulation)"
+echo "(simulation) mysqldump -u... -p... followup_prod > backup.sql"
+
+echo "🚀 Step 5: Deploy (simulation)"
+case $ENVIRONMENT in
+  sit)
+    echo "(simulation) rsync -av . user@sit-server:/var/www/followup-back/"
+    ;;
+  uat)
+    echo "(simulation) rsync -av . user@uat-server:/var/www/followup-back/"
+    ;;
+  prod)
+    echo "⚠️ PRODUCTION deploy"
+    read -p "Type 'yes' to confirm: " confirmation
+    if [ "$confirmation" != "yes" ]; then
+      echo "Deployment cancelled"
+      exit 1
+    fi
+    echo "(simulation) rsync -av . user@prod-server:/var/www/followup-back/"
+    echo "(simulation) ssh user@prod-server 'sudo systemctl reload apache2'"
+    ;;
+esac
+
+echo "🧪 Step 6: Post-deploy checks (simulation)"
+echo "(simulation) curl https://api-$ENVIRONMENT.followup.com/health"
+
+echo "🎉 Deployment finished (simulation)"
+
+chmod +x deployment/deploy.sh
