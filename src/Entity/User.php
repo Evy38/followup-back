@@ -27,7 +27,6 @@ use ApiPlatform\Metadata\GetCollection;
     ],
     normalizationContext: ['groups' => ['user:read']]
 )]
-
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -43,7 +42,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['user:read', 'user:write'])]
     private ?string $email = null;
 
-
     #[ORM\Column(length: 100, nullable: true)]
     #[Groups(['user:read', 'user:write'])]
     private ?string $firstName = null;
@@ -55,7 +53,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $googleId = null;
 
-
     /**
      * @var list<string> The user roles
      */
@@ -65,7 +62,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     ])]
     #[Groups(['user:read', 'user:write'])]
     private array $roles = [];
-
 
     /**
      * @var string The hashed password
@@ -92,7 +88,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $emailVerificationTokenExpiresAt = null;
 
-
     /**
      * @var Collection<int, Candidature>
      */
@@ -115,12 +110,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->email;
     }
 
+    /**
+     * Normalise l'email en minuscules et supprime les espaces.
+     * Garantit l'unicité et la cohérence des emails en base.
+     */
     public function setEmail(string $email): static
     {
         $this->email = strtolower(trim($email));
         return $this;
     }
-
 
     /**
      * A visual identifier that represents this user.
@@ -149,11 +147,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public function setRoles(array $roles): static
     {
-        $allowedRoles = ['ROLE_USER', 'ROLE_ADMIN']; // ajout d'un filtrage pour éviter toute injection de rôle
+        $allowedRoles = ['ROLE_USER', 'ROLE_ADMIN'];
         $this->roles = array_values(array_intersect($roles, $allowedRoles));
         return $this;
     }
-
 
     /**
      * @see PasswordAuthenticatedUserInterface
@@ -169,16 +166,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-
     /**
      * Prevent exposing the real password hash during PHP serialization.
      * Used internally by Symfony >= 7.3.
      */
-
     public function __serialize(): array
     {
         $data = (array) $this;
-        $data["\0" . self::class . "\0password"] = hash('crc32c', $this->password);
+        // Protection contre les utilisateurs OAuth sans mot de passe
+        $data["\0" . self::class . "\0password"] = $this->password 
+            ? hash('crc32c', $this->password) 
+            : null;
 
         return $data;
     }
@@ -274,6 +272,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    /**
+     * Vérifie si le token de réinitialisation est valide et non expiré.
+     */
     public function isResetPasswordTokenValid(): bool
     {
         if ($this->resetPasswordToken === null || $this->resetPasswordTokenExpiresAt === null) {
@@ -282,6 +283,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
         return $this->resetPasswordTokenExpiresAt > new \DateTimeImmutable();
     }
+
     public function isVerified(): bool
     {
         return $this->isVerified;
@@ -315,8 +317,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    // Règle métier locale : la validité du token dépend uniquement de l’état interne de l’utilisateur.
-    // Aucun accès externe n’est requis, ce qui garantit la cohérence de l’objet.
+    /**
+     * Vérifie si le token de vérification d'email est valide et non expiré.
+     * Règle métier : la validité dépend uniquement de l'état interne.
+     */
     public function isEmailVerificationTokenValid(): bool
     {
         if ($this->emailVerificationToken === null || $this->emailVerificationTokenExpiresAt === null) {
@@ -326,10 +330,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->emailVerificationTokenExpiresAt > new \DateTimeImmutable();
     }
 
+    /**
+     * Détermine si l'utilisateur s'est inscrit via OAuth (Google).
+     */
     public function isOauthUser(): bool
     {
         return $this->googleId !== null;
     }
-
-
 }

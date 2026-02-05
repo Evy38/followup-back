@@ -2,15 +2,17 @@
 
 namespace App\Entity;
 
+use App\Enum\ResultatEntretien;
+use App\Enum\StatutEntretien;
 use App\Repository\EntretienRepository;
-use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Annotation\Groups;
+use App\State\EntretienProcessor;
 use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
-use App\State\EntretienProcessor;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: EntretienRepository::class)]
@@ -31,7 +33,6 @@ use Symfony\Component\Validator\Constraints as Assert;
             processor: EntretienProcessor::class,
             security: "object.getCandidature().getUser() == user"
         ),
-
     ],
     normalizationContext: ['groups' => ['entretien:read']],
     denormalizationContext: ['groups' => ['entretien:write']]
@@ -54,13 +55,13 @@ class Entretien
     #[Assert\NotNull]
     private \DateTimeInterface $heureEntretien;
 
-    #[ORM\Column(length: 20)]
+    #[ORM\Column(enumType: StatutEntretien::class)]
     #[Groups(['entretien:read', 'entretien:write', 'candidature:read'])]
-    private string $statut = 'prevu'; // prevu | passe
+    private StatutEntretien $statut = StatutEntretien::PREVU;
 
-    #[ORM\Column(length: 20, nullable: true)]
+    #[ORM\Column(enumType: ResultatEntretien::class, nullable: true)]
     #[Groups(['entretien:read', 'entretien:write', 'candidature:read'])]
-    private ?string $resultat = null; // engage | negative | attente
+    private ?ResultatEntretien $resultat = null;
 
     #[ORM\ManyToOne(inversedBy: 'entretiens')]
     #[ORM\JoinColumn(nullable: false)]
@@ -96,38 +97,24 @@ class Entretien
         return $this;
     }
 
-    public function getStatut(): string
+    public function getStatut(): StatutEntretien
     {
         return $this->statut;
     }
 
-    public function setStatut(string $statut): self
+    public function setStatut(StatutEntretien $statut): self
     {
-        $allowed = ['prevu', 'passe'];
-        if (!in_array($statut, $allowed, true)) {
-            throw new \InvalidArgumentException(
-                sprintf('Statut entretien invalide : %s', $statut)
-            );
-        }
-
         $this->statut = $statut;
         return $this;
     }
 
-    public function getResultat(): ?string
+    public function getResultat(): ?ResultatEntretien
     {
         return $this->resultat;
     }
 
-    public function setResultat(?string $resultat): self
+    public function setResultat(?ResultatEntretien $resultat): self
     {
-        $allowed = [null, 'engage', 'negative'];
-        if (!in_array($resultat, $allowed, true)) {
-            throw new \InvalidArgumentException(
-                sprintf('Résultat entretien invalide : %s', $resultat)
-            );
-        }
-
         $this->resultat = $resultat;
         return $this;
     }
@@ -137,7 +124,7 @@ class Entretien
         return $this->candidature;
     }
 
-    public function setCandidature(Candidature $candidature): self
+    public function setCandidature(?Candidature $candidature): self
     {
         $this->candidature = $candidature;
         return $this;
