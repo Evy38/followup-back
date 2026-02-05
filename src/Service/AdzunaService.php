@@ -14,8 +14,23 @@ class AdzunaService
         private HttpClientInterface $httpClient,
         private string $appId,
         private string $appKey,
-        private string $country
+        private string $country,
+        private ContractTypeMapper $contractMapper
     ) {}
+
+    /**
+     * Extrait le type de contrat depuis les données Adzuna
+     * Adzuna peut retourner cette info sous différents noms de clés
+     */
+    private function extractContractType(array $job): ?string
+    {
+        // Essayons toutes les variantes possibles
+        return $job['contract_time'] 
+            ?? $job['contract_type'] 
+            ?? $job['contractTime'] 
+            ?? $job['contractType']
+            ?? null;
+    }
 
     /**
      * @return JobOfferDTO[]
@@ -31,7 +46,7 @@ class AdzunaService
         ];
         
         if ($contract) {
-            $params['contract_type'] = $contract;
+            $params['contract_time'] = $contract;
         }
 
         $response = $this->httpClient->request(
@@ -48,7 +63,10 @@ class AdzunaService
                 title: $job['title'],
                 company: $job['company']['display_name'] ?? 'N/A',
                 location: $job['location']['display_name'] ?? 'N/A',
-                contractType: $job['contract_time'] ?? 'N/A',
+                // ✅ Extraction robuste + transformation en français
+                contractType: $this->contractMapper->toFrench(
+                    $this->extractContractType($job)
+                ),
                 salaryMin: $job['salary_min'] ?? null,
                 salaryMax: $job['salary_max'] ?? null,
                 redirectUrl: $job['redirect_url']
