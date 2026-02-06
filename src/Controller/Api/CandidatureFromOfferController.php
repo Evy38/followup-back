@@ -6,77 +6,64 @@ use App\DTO\CreateCandidatureFromOfferDTO;
 use App\Entity\Candidature;
 use App\Entity\Entreprise;
 use App\Entity\User;
+use App\Enum\StatutReponse;
+use App\Repository\CandidatureRepository;
 use App\Repository\EntrepriseRepository;
 use App\Repository\StatutRepository;
+use App\Service\RelanceService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-use App\Service\RelanceService;
 
+/**
+ * Contrôleur dédié à la création de candidatures depuis une offre externe.
+ * 
+ * Gère la création de candidatures provenant d'APIs tierces (ex: Adzuna)
+ * avec génération automatique des relances.
+ */
 #[Route('/api/candidatures')]
+#[IsGranted('ROLE_USER')]
 class CandidatureFromOfferController extends AbstractController
 {
+    public function __construct(
+        private readonly EntityManagerInterface $em,
+        private readonly EntrepriseRepository $entrepriseRepository,
+        private readonly StatutRepository $statutRepository,
+        private readonly CandidatureRepository $candidatureRepository,
+        private readonly RelanceService $relanceService
+    ) {
+    }
+
+    /**
+     * Crée une candidature depuis une offre externe.
+     * 
+     * Workflow :
+     * 1. Validation du DTO (via MapRequestPayload)
+     * 2. Vérification anti-doublon (même user + même URL)
+     * 3. Récupération ou création de l'entreprise
+     * 4. Récupération du statut "Candidaté"
+     * 5. Création de la candidature
+     * 6. Génération automatique des 3 relances (J+7, J+14, J+21)
+     * 
+     * @param CreateCandidatureFromOfferDTO $dto Données de l'offre externe
+     * @return JsonResponse La candidature créée ou existante
+     * 
+     * @throws BadRequestHttpException Si le statut "Candidaté" n'existe pas en base
+     */
     #[Route('/from-offer', name: 'api_candidatures_from_offer', methods: ['POST'])]
-    #[IsGranted('ROLE_USER')]
     public function createFromOffer(
-        Request $request,
-        ValidatorInterface $validator,
-        EntrepriseRepository $entrepriseRepository,
-        StatutRepository $statutRepository,
-        RelanceService $relanceService,
-        EntityManagerInterface $em
+        #[MapRequestPayload] CreateCandidatureFromOfferDTO $dto
     ): JsonResponse {
-        // --- Auth : récupère le user connecté ---
+        /** @var User $user */
         $user = $this->getUser();
-        if (!$user instanceof User) {
-            return $this->json(['error' => 'Non authentifié'], 401);
-        }
 
-        // --- Validation : lit le JSON (externalId, company, redirectUrl, title…) ---
-        $data = json_decode($request->getContent(), true);
-        if (!is_array($data)) {
-            return $this->json(['error' => 'JSON invalide'], 400);
-        }
-
-        $dto = new CreateCandidatureFromOfferDTO();
-        $dto->externalId = (string) ($data['externalId'] ?? '');
-        $dto->company = (string) ($data['company'] ?? '');
-        $dto->redirectUrl = (string) ($data['redirectUrl'] ?? '');
-        $dto->title = isset($data['title']) ? (string) $data['title'] : null;
-        $dto->location = isset($data['location']) ? (string) $data['location'] : null;
-
-        $errors = $validator->validate($dto);
-        if (count($errors) > 0) {
-            $out = [];
-            foreach ($errors as $e) {
-                $out[$e->getPropertyPath()][] = $e->getMessage();
-            }
-            return $this->json($out, 400);
-        }
-
-        // --- Entreprise : find or create ---
-        $entreprise = $entrepriseRepository->findOneByNom($dto->company);
-        if (!$entreprise) {
-            $entreprise = new Entreprise();
-            $entreprise->setNom($dto->company);
-            $em->persist($entreprise);
-        }
-
-        // --- Statut : find “Candidaté” (ou le crée en MVP) ---
-        $statut = $statutRepository->findOneBy(['libelle' => 'Candidaté']);
-        if (!$statut) {
-            // MVP rapide : on le crée si absent (sinon fais-le via fixtures/migration)
-            $statut = new \App\Entity\Statut();
-            $statut->setLibelle('Candidaté');
-            $em->persist($statut);
-        }
-
-        // --- Anti-doublon : même user + même lienAnnonce → renvoie l’existant ---
-        $existing = $em->getRepository(Candidature::class)->findOneBy([
+        // --- Anti-doublon : même user + même lienAnnonce → renvoie l'existant ---
+        $existing = $this->candidatureRepository->findOneBy([
             'user' => $user,
             'lienAnnonce' => $dto->redirectUrl,
         ]);
@@ -85,30 +72,91 @@ class CandidatureFromOfferController extends AbstractController
             return $this->json($existing, 200, [], ['groups' => ['candidature:read']]);
         }
 
-        // --- Crée la candidature : set date, jobTitle, externalOfferId, lienAnnonce… ---
+        // --- Récupération ou création de l'entreprise ---
+        $entreprise = $this->getOrCreateEntreprise($dto->company);
+
+        // --- Récupération du statut "Candidaté" ---
+        $statut = $this->getStatutCandidature();
+
+        // --- Création de la candidature ---
+        $candidature = $this->createCandidature($user, $entreprise, $statut, $dto);
+
+        // --- Génération des relances ---
+        $this->attachRelances($candidature);
+
+        // --- Persistance ---
+        $this->em->persist($candidature);
+        $this->em->flush();
+
+        return $this->json($candidature, 201, [], ['groups' => ['candidature:read']]);
+    }
+
+    /**
+     * Récupère une entreprise existante ou la crée si elle n'existe pas.
+     */
+    private function getOrCreateEntreprise(string $nomEntreprise): Entreprise
+    {
+        $entreprise = $this->entrepriseRepository->findOneByNom($nomEntreprise);
+
+        if (!$entreprise) {
+            $entreprise = new Entreprise();
+            $entreprise->setNom($nomEntreprise);
+            $this->em->persist($entreprise);
+        }
+
+        return $entreprise;
+    }
+
+    /**
+     * Récupère le statut "Candidaté".
+     * 
+     * @throws BadRequestHttpException Si le statut n'existe pas en base
+     */
+    private function getStatutCandidature(): \App\Entity\Statut
+    {
+        $statut = $this->statutRepository->findOneBy(['libelle' => 'Candidaté']);
+
+        if (!$statut) {
+            throw new BadRequestHttpException(
+                'Le statut "Candidaté" n\'existe pas en base. Veuillez exécuter les fixtures.'
+            );
+        }
+
+        return $statut;
+    }
+
+    /**
+     * Crée une instance de Candidature avec les données du DTO.
+     */
+    private function createCandidature(
+        User $user,
+        Entreprise $entreprise,
+        \App\Entity\Statut $statut,
+        CreateCandidatureFromOfferDTO $dto
+    ): Candidature {
         $candidature = new Candidature();
         $candidature->setUser($user);
         $candidature->setEntreprise($entreprise);
         $candidature->setStatut($statut);
         $candidature->setDateCandidature(new \DateTimeImmutable());
         $candidature->setLienAnnonce($dto->redirectUrl);
-        $candidature->setMode('externe'); // ou null si tu veux
+        $candidature->setMode('externe');
         $candidature->setExternalOfferId($dto->externalId);
         $candidature->setJobTitle($dto->title ?: 'Poste non renseigné');
+        $candidature->setStatutReponse(StatutReponse::ATTENTE);
 
-        $em->persist($candidature);
+        return $candidature;
+    }
 
-        // --- Génère les relances via RelanceService ---
-        $relances = $relanceService->createDefaultRelances($candidature);
+    /**
+     * Génère et attache les relances par défaut à la candidature.
+     */
+    private function attachRelances(Candidature $candidature): void
+    {
+        $relances = $this->relanceService->createDefaultRelances($candidature);
 
         foreach ($relances as $relance) {
             $candidature->addRelance($relance);
         }
-
-        // --- Persist + flush : enregistre candidature + relances ---
-        $em->flush();
-
-        // --- Réponse JSON : renvoie la candidature (avec potentiellement ses relances selon sérialisation / groupes) ---
-        return $this->json($candidature, 201, [], ['groups' => ['candidature:read']]);
     }
 }

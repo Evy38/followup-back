@@ -74,6 +74,7 @@ security:
     # ⚠️ L’ordre est IMPORTANT (du plus spécifique au plus général)
     access_control:
 
+        - { path: ^/api/debug, roles: PUBLIC_ACCESS }
         # 🔓 PUBLIC : création de compte
         - { path: ^/api/register, roles: PUBLIC_ACCESS }
 

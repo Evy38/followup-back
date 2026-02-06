@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\StatutReponse;
 use App\Repository\CandidatureRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -97,9 +98,9 @@ class Candidature
     #[Groups(['candidature:read'])]
     private Collection $relances;
 
-    #[ORM\Column(length: 20, options: ['default' => 'attente'])]
+    #[ORM\Column(enumType: StatutReponse::class)]
     #[Groups(['candidature:read'])]
-    private string $statutReponse = 'attente';
+    private StatutReponse $statutReponse = StatutReponse::ATTENTE;
 
     #[ORM\OneToMany(
         mappedBy: 'candidature',
@@ -127,6 +128,7 @@ class Candidature
     {
         return $this->dateCandidature;
     }
+
     public function setDateCandidature(\DateTimeImmutable $d): static
     {
         $this->dateCandidature = $d;
@@ -137,6 +139,7 @@ class Candidature
     {
         return $this->jobTitle;
     }
+
     public function setJobTitle(string $t): static
     {
         $this->jobTitle = $t;
@@ -147,6 +150,7 @@ class Candidature
     {
         return $this->lienAnnonce;
     }
+
     public function setLienAnnonce(?string $l): static
     {
         $this->lienAnnonce = $l;
@@ -157,6 +161,7 @@ class Candidature
     {
         return $this->mode;
     }
+
     public function setMode(?string $m): static
     {
         $this->mode = $m;
@@ -167,6 +172,7 @@ class Candidature
     {
         return $this->externalOfferId;
     }
+
     public function setExternalOfferId(string $id): static
     {
         $this->externalOfferId = $id;
@@ -177,6 +183,7 @@ class Candidature
     {
         return $this->dateDerniereRelance;
     }
+
     public function setDateDerniereRelance(?\DateTimeImmutable $d): static
     {
         $this->dateDerniereRelance = $d;
@@ -187,9 +194,10 @@ class Candidature
     {
         return $this->user;
     }
-    public function setUser(User $u): static
+
+    public function setUser(?User $user): self
     {
-        $this->user = $u;
+        $this->user = $user;
         return $this;
     }
 
@@ -197,6 +205,7 @@ class Candidature
     {
         return $this->entreprise;
     }
+
     public function setEntreprise(Entreprise $e): static
     {
         $this->entreprise = $e;
@@ -207,6 +216,7 @@ class Candidature
     {
         return $this->statut;
     }
+
     public function setStatut(Statut $s): static
     {
         $this->statut = $s;
@@ -218,31 +228,13 @@ class Candidature
         return $this->relances;
     }
 
-    public function getStatutReponse(): string
+    public function getStatutReponse(): StatutReponse
     {
         return $this->statutReponse;
     }
 
-    public function setStatutReponse(string $statutReponse): static
+    public function setStatutReponse(StatutReponse $statutReponse): static
     {
-        $validStatuts = [
-            'attente',     // sans réponse
-            'echanges',    // en discussion
-            'entretien',   // au moins un entretien
-            'negative',    // refus
-            'engage',    // retour positif
-            'annule'       // entretien annulé 
-        ];
-        if (!in_array($statutReponse, $validStatuts, true)) {
-            throw new \InvalidArgumentException(
-                sprintf(
-                    'Statut "%s" invalide. Valeurs autorisées: %s',
-                    $statutReponse,
-                    implode(', ', $validStatuts)
-                )
-            );
-        }
-
         $this->statutReponse = $statutReponse;
         return $this;
     }
@@ -289,6 +281,4 @@ class Candidature
         }
         return $this;
     }
-
-
 }

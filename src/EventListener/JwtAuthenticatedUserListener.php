@@ -2,25 +2,40 @@
 
 namespace App\EventListener;
 
+use App\Entity\User;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTAuthenticatedEvent;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-use App\Entity\User;
-use Symfony\Component\HttpFoundation\RequestStack;
 
+/**
+ * Event Listener pour la validation post-authentification JWT.
+ * 
+ * Vérifie que l'utilisateur authentifié par JWT est bien une instance valide de User.
+ * 
+ * Ce listener est déclenché après qu'un token JWT a été validé avec succès,
+ * mais avant que la requête ne soit traitée par le controller.
+ * 
+ * Cas d'usage :
+ * - Validation supplémentaire après décodage du JWT
+ * - Vérification de l'état du compte (banni, supprimé, etc.)
+ * - Enrichissement du contexte utilisateur
+ */
 class JwtAuthenticatedUserListener
 {
-    public function __construct(
-        private RequestStack $requestStack
-    ) {
-    }
-
+    /**
+     * Callback déclenché après authentification JWT réussie.
+     * 
+     * @param JWTAuthenticatedEvent $event Contient le token JWT et l'utilisateur
+     * 
+     * @throws AccessDeniedHttpException Si l'utilisateur n'est pas une instance valide
+     */
     public function onJwtAuthenticated(JWTAuthenticatedEvent $event): void
     {
-        
         $user = $event->getToken()->getUser();
 
+        // Vérification de sécurité : l'utilisateur doit être une instance de User
         if (!$user instanceof User) {
-            throw new AccessDeniedHttpException('Utilisateur invalide.');
+            throw new AccessDeniedHttpException('Token JWT invalide : utilisateur non reconnu.');
         }
+
     }
 }
