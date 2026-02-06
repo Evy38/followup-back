@@ -4,13 +4,15 @@ namespace App\Tests\Service;
 
 use App\DTO\JobOfferDTO;
 use App\Service\AdzunaService;
+use App\Service\ContractTypeMapper;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 
 class AdzunaServiceTest extends TestCase
 {
-    public function testSearchReturnsJobOfferDTOArray()
+    public function testSearchReturnsJobOfferDTOArray(): void
     {
         $mockResponseData = [
             'results' => [
@@ -32,7 +34,18 @@ class AdzunaServiceTest extends TestCase
         $response->method('toArray')->willReturn($mockResponseData);
         $httpClient->method('request')->willReturn($response);
 
-        $service = new AdzunaService($httpClient, 'appid', 'appkey', 'fr');
+        $contractMapper = new ContractTypeMapper();
+        $logger = $this->createMock(LoggerInterface::class);
+
+        $service = new AdzunaService(
+            $httpClient,
+            'appid',
+            'appkey',
+            'fr',
+            $contractMapper,
+            $logger
+        );
+
         $results = $service->search('php', 'paris');
 
         $this->assertIsArray($results);
@@ -42,7 +55,7 @@ class AdzunaServiceTest extends TestCase
         $this->assertEquals('Développeur PHP', $results[0]->title);
         $this->assertEquals('TestCorp', $results[0]->company);
         $this->assertEquals('Paris', $results[0]->location);
-        $this->assertEquals('full_time', $results[0]->contractType);
+        $this->assertEquals('Temps plein', $results[0]->contractType); // ✅ Traduit en français
         $this->assertEquals(35000, $results[0]->salaryMin);
         $this->assertEquals(45000, $results[0]->salaryMax);
         $this->assertEquals('http://example.com/job/123', $results[0]->redirectUrl);
