@@ -19,6 +19,7 @@ migration-db :
 	docker compose exec php php bin/console doctrine:migrations:migrate 
 	docker compose exec php php bin/console doctrine:fixtures:load --no-interaction 
 
+
 migration-tests :
 	docker compose exec php php bin/console make:migration --env=test
 	docker compose exec php php bin/console doctrine:database:create --env=test
