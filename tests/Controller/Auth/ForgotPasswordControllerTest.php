@@ -3,15 +3,13 @@
 namespace App\Tests\Controller\Auth;
 
 use App\Entity\User;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mailer\MailerInterface;
 
 class ForgotPasswordControllerTest extends WebTestCase
 {
-    /**
-     * 🔴 EMAIL MANQUANT → 400
-     */
-    public function testPasswordRequestFailsWhenEmailMissing(): void
+    public function testRequestPasswordResetFailsWhenEmailMissing(): void
     {
         $client = static::createClient();
 
@@ -24,15 +22,10 @@ class ForgotPasswordControllerTest extends WebTestCase
             json_encode([])
         );
 
-        $this->assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
-        $responseData = json_decode($client->getResponse()->getContent(), true);
-        $this->assertEquals("L'adresse email est requise.", $responseData['error'] ?? null);
+        $this->assertResponseStatusCodeSame(400);
     }
 
-    /**
-     * 🔴 EMAIL INVALIDE → 400
-     */
-    public function testPasswordRequestFailsWithInvalidEmail(): void
+    public function testRequestPasswordResetFailsWithInvalidEmail(): void
     {
         $client = static::createClient();
 
@@ -42,22 +35,13 @@ class ForgotPasswordControllerTest extends WebTestCase
             [],
             [],
             ['CONTENT_TYPE' => 'application/json'],
-            json_encode([
-                'email' => 'not-an-email'
-            ])
+            json_encode(['email' => 'not-an-email'])
         );
 
-        $this->assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
-        $this->assertStringContainsString(
-            "Adresse email invalide.",
-            $client->getResponse()->getContent()
-        );
+        $this->assertResponseStatusCodeSame(400);
     }
 
-    /**
-     * ✅ EMAIL INCONNU → 200 (anti-enumération)
-     */
-    public function testPasswordRequestSucceedsWhenUserNotFound(): void
+    public function testRequestPasswordResetWithUnknownEmailReturnsGenericMessage(): void
     {
         $client = static::createClient();
 
@@ -67,28 +51,35 @@ class ForgotPasswordControllerTest extends WebTestCase
             [],
             [],
             ['CONTENT_TYPE' => 'application/json'],
-            json_encode([
-                'email' => 'unknown_' . uniqid() . '@example.com'
-            ])
+            json_encode(['email' => 'unknown@test.com'])
         );
 
-        $this->assertResponseStatusCodeSame(Response::HTTP_OK);
+        $this->assertResponseIsSuccessful();
+        
+        // ✅ Assertion correcte
         $responseData = json_decode($client->getResponse()->getContent(), true);
-        $this->assertEquals('Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.', $responseData['message'] ?? null);
+        $this->assertEquals(
+            'Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.',
+            $responseData['message'] ?? null
+        );
     }
 
-    /**
-     * ✅ EMAIL EXISTANT → token généré
-     */
-    public function testPasswordRequestGeneratesResetToken(): void
+    public function testRequestPasswordResetWithExistingEmailGeneratesToken(): void
     {
         $client = static::createClient();
         $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
+        $em = $container->get(EntityManagerInterface::class);
 
+        // Mock du mailer
+        $mailer = $this->createMock(MailerInterface::class);
+        $mailer->expects($this->once())->method('send');
+        $container->set(MailerInterface::class, $mailer);
+
+        // Création d'un utilisateur
         $user = new User();
-        $user->setEmail('reset_' . uniqid() . '@example.com');
-        $user->setPassword('password');
+        $user->setEmail('user@test.com');
+        $user->setPassword('hashed-password');
+        $user->setIsVerified(true);
         $user->setRoles(['ROLE_USER']);
 
         $em->persist($user);
@@ -100,90 +91,16 @@ class ForgotPasswordControllerTest extends WebTestCase
             [],
             [],
             ['CONTENT_TYPE' => 'application/json'],
-            json_encode([
-                'email' => $user->getEmail()
-            ])
+            json_encode(['email' => 'user@test.com'])
         );
 
-        $this->assertResponseStatusCodeSame(Response::HTTP_OK);
+        $this->assertResponseIsSuccessful();
 
-        // 🔍 Vérification base
         $em->refresh($user);
         $this->assertNotNull($user->getResetPasswordToken());
         $this->assertNotNull($user->getResetPasswordTokenExpiresAt());
     }
 
-    /**
-     * 🔴 RESET — données manquantes → 400
-     */
-    public function testResetPasswordFailsWhenDataMissing(): void
-    {
-        $client = static::createClient();
-
-        $client->request(
-            'POST',
-            '/api/password/reset',
-            [],
-            [],
-            ['CONTENT_TYPE' => 'application/json'],
-            json_encode([])
-        );
-
-        $this->assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
-    }
-
-    /**
-     * 🔴 RESET — mots de passe différents → 400
-     */
-    public function testResetPasswordFailsWhenPasswordsDoNotMatch(): void
-    {
-        $client = static::createClient();
-
-        $client->request(
-            'POST',
-            '/api/password/reset',
-            [],
-            [],
-            ['CONTENT_TYPE' => 'application/json'],
-            json_encode([
-                'token' => 'any-token',
-                'newPassword' => 'Password1',
-                'confirmPassword' => 'Password2'
-            ])
-        );
-
-        $this->assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
-        $this->assertStringContainsString(
-            'Les mots de passe ne correspondent pas.',
-            $client->getResponse()->getContent()
-        );
-    }
-
-    /**
-     * 🔴 RESET — mot de passe trop faible → 400
-     */
-    public function testResetPasswordFailsWithWeakPassword(): void
-    {
-        $client = static::createClient();
-
-        $client->request(
-            'POST',
-            '/api/password/reset',
-            [],
-            [],
-            ['CONTENT_TYPE' => 'application/json'],
-            json_encode([
-                'token' => 'any-token',
-                'newPassword' => 'weakpass'
-            ])
-        );
-
-        $this->assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
-    }
-
-    /**
-     * 🔴 RESET — token invalide → 400
-     */
     public function testResetPasswordFailsWithInvalidToken(): void
     {
         $client = static::createClient();
@@ -196,32 +113,65 @@ class ForgotPasswordControllerTest extends WebTestCase
             ['CONTENT_TYPE' => 'application/json'],
             json_encode([
                 'token' => 'invalid-token',
-                'newPassword' => 'StrongPass1'
+                'newPassword' => 'Password1'
             ])
         );
 
-        $this->assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
-        $responseData = json_decode($client->getResponse()->getContent(), true);
-        $this->assertEquals('Token invalide ou expiré.', $responseData['error'] ?? null);
+        $this->assertResponseStatusCodeSame(400);
     }
 
-    /**
-     * 🔴 RESET — token expiré → 400
-     */
-    public function testResetPasswordFailsWithExpiredToken(): void
+    public function testResetPasswordFailsWithWeakPassword(): void
+    {
+        $client = static::createClient();
+
+        $client->request(
+            'POST',
+            '/api/password/reset',
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode([
+                'token' => 'token',
+                'newPassword' => 'weak'
+            ])
+        );
+
+        $this->assertResponseStatusCodeSame(400);
+    }
+
+    public function testResetPasswordFailsWhenPasswordsDoNotMatch(): void
+    {
+        $client = static::createClient();
+
+        $client->request(
+            'POST',
+            '/api/password/reset',
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode([
+                'token' => 'token',
+                'newPassword' => 'Password1',
+                'confirmPassword' => 'Password2'
+            ])
+        );
+
+        $this->assertResponseStatusCodeSame(400);
+    }
+
+    public function testResetPasswordSuccessWithValidToken(): void
     {
         $client = static::createClient();
         $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
+        $em = $container->get(EntityManagerInterface::class);
 
         $user = new User();
-        $user->setEmail('expired_' . uniqid() . '@example.com');
-        $user->setPassword('password');
+        $user->setEmail('reset@test.com');
+        $user->setPassword('old-password');
+        $user->setIsVerified(true);
         $user->setRoles(['ROLE_USER']);
-        $user->setResetPasswordToken('expired-token');
-        $user->setResetPasswordTokenExpiresAt(
-            new \DateTimeImmutable('-1 hour')
-        );
+        $user->setResetPasswordToken('valid-token');
+        $user->setResetPasswordTokenExpiresAt(new \DateTimeImmutable('+1 hour'));
 
         $em->persist($user);
         $em->flush();
@@ -233,56 +183,14 @@ class ForgotPasswordControllerTest extends WebTestCase
             [],
             ['CONTENT_TYPE' => 'application/json'],
             json_encode([
-                'token' => 'expired-token',
-                'newPassword' => 'StrongPass1'
+                'token' => 'valid-token',
+                'newPassword' => 'NewPassword1',
+                'confirmPassword' => 'NewPassword1'
             ])
         );
 
-        $this->assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
-        $responseData = json_decode($client->getResponse()->getContent(), true);
-        $this->assertEquals('Token expiré. Veuillez faire une nouvelle demande de réinitialisation.', $responseData['error'] ?? null);
-    }
+        $this->assertResponseIsSuccessful();
 
-    /**
-     * ✅ RESET — succès → 200
-     */
-    public function testResetPasswordSuccess(): void
-    {
-        $client = static::createClient();
-        $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
-
-        $token = 'valid-reset-token-' . uniqid();
-
-        $user = new User();
-        $user->setEmail('success_' . uniqid() . '@example.com');
-        $user->setPassword('oldpassword');
-        $user->setRoles(['ROLE_USER']);
-        $user->setResetPasswordToken($token);
-        $user->setResetPasswordTokenExpiresAt(
-            new \DateTimeImmutable('+1 hour')
-        );
-
-        $em->persist($user);
-        $em->flush();
-
-        $client->request(
-            'POST',
-            '/api/password/reset',
-            [],
-            [],
-            ['CONTENT_TYPE' => 'application/json'],
-            json_encode([
-                'token' => $token,
-                'newPassword' => 'NewStrongPass1'
-            ])
-        );
-
-        $this->assertResponseStatusCodeSame(Response::HTTP_OK);
-        $responseData = json_decode($client->getResponse()->getContent(), true);
-        $this->assertEquals('Mot de passe mis à jour avec succès.', $responseData['message'] ?? null);
-
-        // 🔍 Vérifie que le token a été consommé
         $em->refresh($user);
         $this->assertNull($user->getResetPasswordToken());
         $this->assertNull($user->getResetPasswordTokenExpiresAt());

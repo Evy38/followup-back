@@ -51,7 +51,7 @@ class RegisterController extends AbstractController
         $data = json_decode($request->getContent(), true);
 
         if (!is_array($data) || !isset($data['email'], $data['password'])) {
-            throw new BadRequestHttpException('Les champs "email" et "password" sont requis.');
+              throw new BadRequestHttpException('Email et mot de passe requis.');
         }
 
         // 2️⃣ Construction de l'entité User

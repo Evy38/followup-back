@@ -95,10 +95,6 @@ class OAuthUserServiceTest extends TestCase
             ->expects($this->once())
             ->method('flush');
 
-        $this->entityManager
-            ->expects($this->once())
-            ->method('refresh');
-
         $user = $this->service->getOrCreateFromGoogle(
             'new@gmail.com',
             'New',

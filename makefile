@@ -19,5 +19,5 @@ cache-clear-dk :
 	docker restart followup-php
 	docker-compose restart
 
-tests:
+tests :
 	docker exec -it followup-php ./vendor/bin/phpunit --testdox
