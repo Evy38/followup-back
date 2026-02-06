@@ -50,7 +50,7 @@ class Entretien
     #[Assert\NotNull]
     private \DateTimeInterface $dateEntretien;
 
-    #[ORM\Column(type: 'time')]
+    #[ORM\Column(type: 'time', nullable: true)]
     #[Groups(['entretien:read', 'entretien:write', 'candidature:read'])]
     #[Assert\NotNull]
     private \DateTimeInterface $heureEntretien;
