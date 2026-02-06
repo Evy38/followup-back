@@ -7,64 +7,103 @@ use App\Service\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
+/**
+ * Contrôleur de gestion des utilisateurs.
+ * 
+ * Endpoints :
+ * - GET /api/user/profile : Profil de l'utilisateur connecté
+ * - PUT /api/user/profile : Modification du profil
+ * - GET /api/user : Liste des utilisateurs (admin uniquement)
+ */
 #[Route('/api/user')]
+#[IsGranted('ROLE_USER')]
 class UserController extends AbstractController
 {
-    // Profil de l'utilisateur connecté
-    #[Route('/profile', name: 'api_user_profile', methods: ['GET'])]
-    #[IsGranted('ROLE_USER')]
-    public function getProfile(): JsonResponse
-    {
-        $user = $this->getUser();
-        if (!$user instanceof User) {
-            return $this->json(['error' => 'Non authentifié'], 401);
-        }
-        return $this->json($user, context: ['groups' => ['user:read']]);
-
+    public function __construct(
+        private readonly UserService $userService
+    ) {
     }
 
-    // Modifier le profil
-    #[Route('/profile', name: 'api_user_update_profile', methods: ['PUT'])]
-    #[IsGranted('ROLE_USER')]
-    public function updateProfile(Request $request, UserService $userService): JsonResponse
+    /**
+     * Récupère le profil de l'utilisateur connecté.
+     * 
+     * @return JsonResponse Les données de l'utilisateur
+     */
+    #[Route('/profile', name: 'api_user_profile', methods: ['GET'])]
+    public function getProfile(): JsonResponse
     {
+        /** @var User $user */
         $user = $this->getUser();
+
+        return $this->json($user, context: ['groups' => ['user:read']]);
+    }
+
+    /**
+     * Met à jour le profil de l'utilisateur connecté.
+     * 
+     * Champs modifiables :
+     * - email
+     * - firstName
+     * - lastName
+     * - password
+     * 
+     * @param Request $request Contient les données à mettre à jour
+     * @return JsonResponse L'utilisateur mis à jour
+     * 
+     * @throws BadRequestHttpException Si le JSON est invalide
+     */
+    #[Route('/profile', name: 'api_user_update_profile', methods: ['PUT'])]
+    public function updateProfile(Request $request): JsonResponse
+    {
+        /** @var User $currentUser */
+        $currentUser = $this->getUser();
+
         $data = json_decode($request->getContent(), true);
 
         if (!is_array($data)) {
-            return $this->json(['error' => 'JSON invalide'], 400);
+            throw new BadRequestHttpException('JSON invalide.');
         }
 
+        // Construction d'un objet User avec uniquement les champs à modifier
         $userData = new User();
 
-        if (!$user instanceof User) {
-            throw $this->createAccessDeniedException();
-        }
         if (isset($data['email'])) {
             $userData->setEmail($data['email']);
         }
+
         if (isset($data['firstName'])) {
             $userData->setFirstName($data['firstName']);
         }
+
         if (isset($data['lastName'])) {
             $userData->setLastName($data['lastName']);
         }
+
         if (isset($data['password'])) {
             $userData->setPassword($data['password']);
         }
-        $updatedUser = $userService->update($user->getId(), $userData);
+
+        // Délégation au service pour la logique métier
+        $updatedUser = $this->userService->update($currentUser->getId(), $userData);
+
         return $this->json($updatedUser, context: ['groups' => ['user:read']]);
     }
 
-    // Liste des utilisateurs (admin uniquement)
+    /**
+     * Liste tous les utilisateurs (réservé aux administrateurs).
+     * 
+     * @return JsonResponse La liste des utilisateurs
+     */
     #[Route('', name: 'api_users_list', methods: ['GET'])]
     #[IsGranted('ROLE_ADMIN')]
-    public function list(UserService $userService): JsonResponse
+    public function list(): JsonResponse
     {
-        $users = $userService->getAll();
+        $users = $this->userService->getAll();
+
         return $this->json($users, context: ['groups' => ['user:read']]);
     }
 }

@@ -9,11 +9,26 @@ use Symfony\Component\HttpFoundation\Response;
 class MeControllerTest extends WebTestCase
 {
     /**
-     * 🔒 Accès refusé sans JWT
+     * Nettoie la base de données avant chaque test.
+     */
+    private function cleanDatabase(): void
+    {
+        $container = static::getContainer();
+        $em = $container->get('doctrine')->getManager();
+
+        $connection = $em->getConnection();
+        $connection->executeStatement('SET FOREIGN_KEY_CHECKS=0');
+        $connection->executeStatement('DELETE FROM user');
+        $connection->executeStatement('SET FOREIGN_KEY_CHECKS=1');
+    }
+
+    /**
+     * Test de sécurité : Accès refusé sans JWT.
      */
     public function testMeRequiresAuthentication(): void
     {
         $client = static::createClient();
+        $this->cleanDatabase(); // ✅ Appelé APRÈS createClient()
 
         $client->request('GET', '/api/me');
 
@@ -21,11 +36,12 @@ class MeControllerTest extends WebTestCase
     }
 
     /**
-     * 🚫 Accès refusé si compte non vérifié
+     * Test de sécurité : Accès refusé si compte non vérifié.
      */
     public function testMeForbiddenIfUserNotVerified(): void
     {
         $client = static::createClient();
+        $this->cleanDatabase();
 
         $user = new User();
         $user->setEmail('notverified_' . uniqid() . '@test.com');
@@ -36,22 +52,23 @@ class MeControllerTest extends WebTestCase
         $em = $container->get('doctrine')->getManager();
         $em->persist($user);
         $em->flush();
+        
         $client->loginUser($user);
-
         $client->request('GET', '/api/me');
 
         $this->assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
     }
 
     /**
-     * ✅ Accès autorisé si utilisateur vérifié
+     * Test fonctionnel : Accès autorisé avec utilisateur vérifié.
      */
     public function testMeReturnsUserEmail(): void
     {
         $client = static::createClient();
+        $this->cleanDatabase();
 
         $user = new User();
-        $user->setEmail('verified@test.com');
+        $user->setEmail('verified_' . uniqid() . '@test.com'); // ✅ Email unique
         $user->setIsVerified(true);
         $user->setRoles(['ROLE_USER']);
 
@@ -59,12 +76,12 @@ class MeControllerTest extends WebTestCase
         $em = $container->get('doctrine')->getManager();
         $em->persist($user);
         $em->flush();
+        
         $client->loginUser($user);
-
         $client->request('GET', '/api/me');
 
         $this->assertResponseIsSuccessful();
         $responseData = json_decode($client->getResponse()->getContent(), true);
-        $this->assertEquals('verified@test.com', $responseData['user']['email'] ?? null);
+        $this->assertEquals($user->getEmail(), $responseData['user']['email'] ?? null);
     }
 }
