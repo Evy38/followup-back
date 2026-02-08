@@ -6,6 +6,7 @@ use App\DTO\CreateCandidatureFromOfferDTO;
 use App\Entity\Candidature;
 use App\Entity\Entreprise;
 use App\Entity\User;
+use App\Entity\Statut;
 use App\Enum\StatutReponse;
 use App\Repository\CandidatureRepository;
 use App\Repository\EntrepriseRepository;
@@ -15,7 +16,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -56,9 +56,28 @@ class CandidatureFromOfferController extends AbstractController
      * @throws BadRequestHttpException Si le statut "Candidaté" n'existe pas en base
      */
     #[Route('/from-offer', name: 'api_candidatures_from_offer', methods: ['POST'])]
-    public function createFromOffer(
-        #[MapRequestPayload] CreateCandidatureFromOfferDTO $dto
-    ): JsonResponse {
+    public function createFromOffer(Request $request, \Symfony\Component\Validator\Validator\ValidatorInterface $validator): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $dto = new CreateCandidatureFromOfferDTO();
+        $dto->externalId = $data['externalId'] ?? '';
+        $dto->company = $data['company'] ?? '';
+        $dto->redirectUrl = $data['redirectUrl'] ?? '';
+        $dto->title = $data['title'] ?? null;
+        $dto->location = $data['location'] ?? null;
+
+        $errors = $validator->validate($dto);
+        if (count($errors) > 0) {
+            $messages = [];
+            foreach ($errors as $error) {
+                $messages[$error->getPropertyPath()][] = $error->getMessage();
+            }
+            return $this->json([
+                'message' => 'Validation failed',
+                'errors' => $messages
+            ], 422);
+        }
+
         /** @var User $user */
         $user = $this->getUser();
 
@@ -112,18 +131,19 @@ class CandidatureFromOfferController extends AbstractController
      * 
      * @throws BadRequestHttpException Si le statut n'existe pas en base
      */
-    private function getStatutCandidature(): \App\Entity\Statut
+    private function getStatutCandidature(): Statut
     {
-        $statut = $this->statutRepository->findOneBy(['libelle' => 'Candidaté']);
+        $statut = $this->statutRepository->findOneBy(['libelle' => 'Envoyée']);
 
         if (!$statut) {
             throw new BadRequestHttpException(
-                'Le statut "Candidaté" n\'existe pas en base. Veuillez exécuter les fixtures.'
+                'Le statut "Envoyée" n\'existe pas en base. Vérifiez les fixtures.'
             );
         }
 
         return $statut;
     }
+
 
     /**
      * Crée une instance de Candidature avec les données du DTO.
@@ -131,7 +151,7 @@ class CandidatureFromOfferController extends AbstractController
     private function createCandidature(
         User $user,
         Entreprise $entreprise,
-        \App\Entity\Statut $statut,
+        Statut $statut,
         CreateCandidatureFromOfferDTO $dto
     ): Candidature {
         $candidature = new Candidature();
