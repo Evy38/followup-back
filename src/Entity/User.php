@@ -94,6 +94,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Candidature::class, mappedBy: 'user')]
     private Collection $candidatures;
 
+    #[ORM\Column(type: 'boolean')]
+    #[Groups(['user:read', 'user:write'])]
+    private bool $consentRgpd = false;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(['user:read'])]
+    private ?\DateTimeImmutable $consentRgpdAt = null;
+
     public function __construct()
     {
         $this->roles = ['ROLE_USER'];
@@ -174,8 +182,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $data = (array) $this;
         // Protection contre les utilisateurs OAuth sans mot de passe
-        $data["\0" . self::class . "\0password"] = $this->password 
-            ? hash('crc32c', $this->password) 
+        $data["\0" . self::class . "\0password"] = $this->password
+            ? hash('crc32c', $this->password)
             : null;
 
         return $data;
@@ -336,5 +344,27 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function isOauthUser(): bool
     {
         return $this->googleId !== null;
+    }
+
+    public function getConsentRgpd(): bool
+    {
+        return $this->consentRgpd;
+    }
+
+    public function setConsentRgpd(bool $consentRgpd): self
+    {
+        $this->consentRgpd = $consentRgpd;
+        return $this;
+    }
+
+    public function getConsentRgpdAt(): ?\DateTimeImmutable
+    {
+        return $this->consentRgpdAt;
+    }
+
+    public function setConsentRgpdAt(?\DateTimeImmutable $consentRgpdAt): self
+    {
+        $this->consentRgpdAt = $consentRgpdAt;
+        return $this;
     }
 }

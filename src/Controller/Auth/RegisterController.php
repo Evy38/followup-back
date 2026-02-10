@@ -51,7 +51,13 @@ class RegisterController extends AbstractController
         $data = json_decode($request->getContent(), true);
 
         if (!is_array($data) || !isset($data['email'], $data['password'])) {
-              throw new BadRequestHttpException('Email et mot de passe requis.');
+            throw new BadRequestHttpException('Email et mot de passe requis.');
+        }
+
+        if (!isset($data['consentRgpd']) || $data['consentRgpd'] !== true) {
+            throw new BadRequestHttpException(
+                'Le consentement au traitement des données personnelles est obligatoire.'
+            );
         }
 
         // 2️⃣ Construction de l'entité User
@@ -60,6 +66,9 @@ class RegisterController extends AbstractController
         $user->setPassword($data['password']);
         $user->setRoles(['ROLE_USER']);
         $user->setIsVerified(false);
+        $user->setConsentRgpd(true);
+        $user->setConsentRgpdAt(new \DateTimeImmutable());
+
 
         if (!empty($data['firstName'] ?? null)) {
             $user->setFirstName($data['firstName']);

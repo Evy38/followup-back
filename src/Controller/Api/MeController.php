@@ -69,6 +69,8 @@ class MeController extends AbstractController
                 'lastName' => $user->getLastName(),
                 'roles' => $user->getRoles(),
                 'isOAuth' => $user->isOauthUser(),
+                'consentRgpd' => $user->getConsentRgpd(),
+                'consentRgpdAt' => $user->getConsentRgpdAt(),
             ],
         ], Response::HTTP_OK);
     }

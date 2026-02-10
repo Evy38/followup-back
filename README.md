@@ -30,16 +30,16 @@ Le backend expose une **API REST sécurisée** conforme aux standards **OpenAPI 
 Ce projet démontre les compétences du **Titre Professionnel CDA** (TP-01281 v04) :
 
 ### **Activité Type 1 : Développer la partie back-end d'une application web**
-- ✅ Concevoir et développer une **API REST sécurisée** (Symfony 7.3 + API Platform 4.2)
-- ✅ Implémenter une **architecture en couches** (Controller/Service/Repository/Entity)
-- ✅ Garantir la **persistance des données** (Doctrine ORM + MySQL 8.0)
-- ✅ Respecter les **bonnes pratiques** (SOLID, DRY, Clean Code)
+- Concevoir et développer une **API REST sécurisée** (Symfony 7.3 + API Platform 4.2)
+- Implémenter une **architecture en couches** (Controller/Service/Repository/Entity)
+- Garantir la **persistance des données** (Doctrine ORM + MySQL 8.0)
+- Respecter les **bonnes pratiques** (SOLID, DRY, Clean Code)
 
 ### **Activité Type 3 : Préparer le déploiement d'une application sécurisée**
-- ✅ Élaborer et exécuter un **plan de tests** (56 tests automatisés)
-- ✅ Sécuriser l'application contre les **vulnérabilités OWASP Top 10**
-- ✅ Documenter l'architecture technique et les choix de conception
-- ✅ Conteneuriser l'application avec **Docker**
+- Élaborer et exécuter un **plan de tests** (56 tests automatisés)
+- Sécuriser l'application contre les **vulnérabilités OWASP Top 10**
+- Documenter l'architecture technique et les choix de conception
+- Conteneuriser l'application avec **Docker**
 
 ---
 

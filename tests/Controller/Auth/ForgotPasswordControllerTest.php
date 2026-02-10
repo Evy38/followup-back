@@ -56,7 +56,7 @@ class ForgotPasswordControllerTest extends WebTestCase
 
         $this->assertResponseIsSuccessful();
         
-        // ✅ Assertion correcte
+        // Assertion correcte
         $responseData = json_decode($client->getResponse()->getContent(), true);
         $this->assertEquals(
             'Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.',

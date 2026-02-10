@@ -55,7 +55,7 @@ class AdzunaServiceTest extends TestCase
         $this->assertEquals('Développeur PHP', $results[0]->title);
         $this->assertEquals('TestCorp', $results[0]->company);
         $this->assertEquals('Paris', $results[0]->location);
-        $this->assertEquals('Temps plein', $results[0]->contractType); // ✅ Traduit en français
+        $this->assertEquals('Temps plein', $results[0]->contractType); // Traduit en français
         $this->assertEquals(35000, $results[0]->salaryMin);
         $this->assertEquals(45000, $results[0]->salaryMax);
         $this->assertEquals('http://example.com/job/123', $results[0]->redirectUrl);

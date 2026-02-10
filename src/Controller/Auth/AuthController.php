@@ -64,7 +64,7 @@ class AuthController extends AbstractController
         // Générer JWT FollowUp
         $jwt = $jwtManager->create($user);
 
-        // ✅ Redirect vers ton composant Angular qui stocke en localStorage
+        // Redirect vers ton composant Angular qui stocke en localStorage
         return $this->redirect($frontendUrl . '/google-callback?token=' . urlencode($jwt));
 
 

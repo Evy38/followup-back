@@ -20,14 +20,14 @@ esac
 echo "🚀 Deploy FollowUp Backend → $ENVIRONMENT"
 echo "📅 $TIMESTAMP"
 
-echo "✅ Step 1: Pre-checks"
+echo "Step 1: Pre-checks"
 php -v
 composer -V
 
-echo "✅ Step 2: Install dependencies (prod)"
+echo "Step 2: Install dependencies (prod)"
 composer install --no-interaction --prefer-dist --no-dev
 
-echo "✅ Step 3: Symfony cache warmup"
+echo "Step 3: Symfony cache warmup"
 APP_ENV=prod php bin/console cache:clear
 APP_ENV=prod php bin/console cache:warmup
 

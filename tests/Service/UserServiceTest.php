@@ -109,7 +109,7 @@ class UserServiceTest extends KernelTestCase
         // 🔒 Le mot de passe ne doit jamais être stocké en clair
         $this->assertNotSame('Azerty123', $created->getPassword(), 'Le mot de passe ne doit pas être stocké en clair.');
 
-        // ✅ Il doit être encodé avec bcrypt ou argon2i (selon config)
+        // Il doit être encodé avec bcrypt ou argon2i (selon config)
         $this->assertMatchesRegularExpression(
             '/^\$2[ayb]\$.{56}$/', 
             $created->getPassword(),

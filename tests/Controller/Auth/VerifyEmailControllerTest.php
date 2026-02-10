@@ -73,7 +73,7 @@ class VerifyEmailControllerTest extends WebTestCase
     }
 
     /**
-     * ✅ Validation réussie → 200
+     * Validation réussie → 200
      */
     public function testVerifyEmailSuccess(): void
     {
@@ -221,7 +221,7 @@ class VerifyEmailControllerTest extends WebTestCase
     }
 
     /**
-     * ✅ RESEND — succès → 200
+     * RESEND — succès → 200
      */
     public function testResendVerificationEmailSuccess(): void
     {

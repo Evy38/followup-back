@@ -35,7 +35,7 @@ class CandidatureRepository extends ServiceEntityRepository
             ->where('c.user = :user')
             ->andWhere('c.statutReponse != :attente')
             ->setParameter('user', $user)
-            ->setParameter('attente', StatutReponse::ATTENTE->value) // ✅ Utilise l'Enum
+            ->setParameter('attente', StatutReponse::ATTENTE->value) // Utilise l'Enum
             ->orderBy('c.dateCandidature', 'DESC')
             ->getQuery()
             ->getResult();

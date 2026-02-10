@@ -26,7 +26,7 @@ class OAuthUserServiceTest extends TestCase
     }
 
     /**
-     * ✅ Utilisateur existant déjà vérifié
+     * Utilisateur existant déjà vérifié
      */
     public function testExistingVerifiedUserIsReturned(): void
     {

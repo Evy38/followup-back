@@ -24,7 +24,7 @@ class EmailVerificationServiceTest extends TestCase
     }
 
     /**
-     * ✅ Génère un token si aucun n'existe
+     * Génère un token si aucun n'existe
      */
     public function testGenerateVerificationTokenCreatesToken(): void
     {
@@ -39,7 +39,7 @@ class EmailVerificationServiceTest extends TestCase
     }
 
     /**
-     * ✅ Ne régénère PAS le token s'il est encore valide
+     * Ne régénère PAS le token s'il est encore valide
      */
     public function testGenerateVerificationTokenDoesNotOverrideValidToken(): void
     {
@@ -89,7 +89,7 @@ class EmailVerificationServiceTest extends TestCase
     }
 
     /**
-     * ✅ Envoi de l’email avec le bon contenu
+     * Envoi de l’email avec le bon contenu
      */
     public function testSendVerificationEmailSendsEmail(): void
     {

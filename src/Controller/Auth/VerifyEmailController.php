@@ -51,7 +51,7 @@ class VerifyEmailController extends AbstractController
             return new JsonResponse(['error' => 'Token expiré'], 400);
         }
 
-        // ✅ VALIDATION
+        // VALIDATION
         $user->setIsVerified(true);
         $user->setEmailVerificationToken(null);
         $user->setEmailVerificationTokenExpiresAt(null);
@@ -92,13 +92,13 @@ class VerifyEmailController extends AbstractController
             ], 400);
         }
 
-        // ✅ 1. Génération / régénération du token
+        // 1. Génération / régénération du token
         $emailVerificationService->generateVerificationToken($user);
 
-        // ✅ 2. Persistance
+        // 2. Persistance
         $em->flush();
 
-        // ✅ 3. Envoi de l’email
+        // 3. Envoi de l’email
         $emailVerificationService->sendVerificationEmail($user);
 
         return new JsonResponse([

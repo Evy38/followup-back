@@ -86,12 +86,12 @@
 | **A07 - Authentication Failures** | JWT requis sur tous les endpoints protégés |
 
 ### Points testés
-- ✅ Authentification JWT obligatoire
-- ✅ Autorisation basée sur les rôles (RBAC)
-- ✅ Validation des entrées (format email, complexité password)
-- ✅ Anti-énumération des utilisateurs
-- ✅ Tokens sécurisés (expiration + usage unique)
-- ✅ Protection CSRF via API stateless
+- Authentification JWT obligatoire
+- Autorisation basée sur les rôles (RBAC)
+- Validation des entrées (format email, complexité password)
+- Anti-énumération des utilisateurs
+- Tokens sécurisés (expiration + usage unique)
+- Protection CSRF via API stateless
 
 ---
 
@@ -133,11 +133,11 @@ OK (56 tests, 187 assertions)
 
 | Critère de performance | État |
 |------------------------|------|
-| Plan de tests couvre l'ensemble des fonctionnalités | ✅ 56 tests |
-| Environnement de tests créé | ✅ Base followup_test |
-| Tests d'intégration exécutés | ✅ 30 tests API |
-| Tests de sécurité réalisés | ✅ 8 tests OWASP |
-| Résultats conformes aux attendus | ✅ 100% de réussite |
+| Plan de tests couvre l'ensemble des fonctionnalités | 56 tests |
+| Environnement de tests créé | Base followup_test |
+| Tests d'intégration exécutés | 30 tests API |
+| Tests de sécurité réalisés | 8 tests OWASP |
+| Résultats conformes aux attendus | 100% de réussite |
 
 ### Référence
 - **REAC** : TP-01281 v04 (24/05/2023)
@@ -148,11 +148,11 @@ OK (56 tests, 187 assertions)
 
 ## 8. Points forts
 
-✅ **Automatisation complète** : Tous les tests s'exécutent via PHPUnit  
-✅ **Isolation garantie** : Chaque test recrée son contexte (pas d'effets de bord)  
-✅ **Documentation claire** : PHPDoc sur chaque test avec cas d'usage  
-✅ **Sécurité prioritaire** : 8 tests spécifiques conformes OWASP  
-✅ **Rapidité d'exécution** : < 20 secondes pour 56 tests  
+**Automatisation complète** : Tous les tests s'exécutent via PHPUnit  
+**Isolation garantie** : Chaque test recrée son contexte (pas d'effets de bord)  
+**Documentation claire** : PHPDoc sur chaque test avec cas d'usage  
+**Sécurité prioritaire** : 8 tests spécifiques conformes OWASP  
+**Rapidité d'exécution** : < 20 secondes pour 56 tests  
 
 ---
 

@@ -35,7 +35,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     }
 
     /**
-     * ✅ Méthode générique : sauvegarde (création ou mise à jour)
+     * Méthode générique : sauvegarde (création ou mise à jour)
      * $flush = true => exécute tout de suite la requête SQL
      * $flush = false => enregistre dans le cache Doctrine, mais n’envoie pas encore à la BDD
      */
@@ -49,7 +49,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     }
 
     /**
-     * ✅ Supprime un utilisateur
+     * Supprime un utilisateur
      */
     public function remove(object $entity, bool $flush = false): void
     {

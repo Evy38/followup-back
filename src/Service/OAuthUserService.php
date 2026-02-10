@@ -111,7 +111,10 @@ class OAuthUserService
         $user->setGoogleId($googleId);
         $user->setRoles(['ROLE_USER']);
         $user->setIsVerified(true);
-        $user->setPassword(null); // Pas de mot de passe pour OAuth
+        $user->setPassword(null);
+
+        $user->setConsentRgpd(false);
+        $user->setConsentRgpdAt(null);
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();

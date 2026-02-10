@@ -21,7 +21,7 @@ class UserControllerTest extends WebTestCase
     }
 
     /**
-     * ✅ Récupération du profil utilisateur connecté
+     * Récupération du profil utilisateur connecté
      */
     public function testGetProfileReturnsUserData(): void
     {
@@ -88,7 +88,7 @@ class UserControllerTest extends WebTestCase
     }
 
     /**
-     * ✅ Liste des utilisateurs accessible pour ROLE_ADMIN
+     * Liste des utilisateurs accessible pour ROLE_ADMIN
      */
     public function testListUsersAllowedForAdmin(): void
     {

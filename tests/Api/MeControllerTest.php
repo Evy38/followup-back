@@ -28,7 +28,7 @@ class MeControllerTest extends WebTestCase
     public function testMeRequiresAuthentication(): void
     {
         $client = static::createClient();
-        $this->cleanDatabase(); // ✅ Appelé APRÈS createClient()
+        $this->cleanDatabase(); // Appelé APRÈS createClient()
 
         $client->request('GET', '/api/me');
 
@@ -68,7 +68,7 @@ class MeControllerTest extends WebTestCase
         $this->cleanDatabase();
 
         $user = new User();
-        $user->setEmail('verified_' . uniqid() . '@test.com'); // ✅ Email unique
+        $user->setEmail('verified_' . uniqid() . '@test.com'); // Email unique
         $user->setIsVerified(true);
         $user->setRoles(['ROLE_USER']);
 
