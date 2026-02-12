@@ -70,7 +70,7 @@ class MeController extends AbstractController
                 'roles' => $user->getRoles(),
                 'isOAuth' => $user->isOauthUser(),
                 'consentRgpd' => $user->getConsentRgpd(),
-                'consentRgpdAt' => $user->getConsentRgpdAt(),
+                'consentRgpdAt' => $user->getConsentRgpdAt()?->format(DATE_ATOM),
             ],
         ], Response::HTTP_OK);
     }

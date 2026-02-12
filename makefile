@@ -108,6 +108,10 @@ cache-clear: ## Vide le cache Symfony
 	@echo "$(YELLOW)🧹 Nettoyage du cache...$(NC)"
 	docker compose exec php bin/console cache:clear
 	docker compose exec php bin/console cache:clear --env=test
+	docker exec -it followup-php php bin/console cache:clear
+	docker exec -it followup-php rm -rf var/cache/*
+	docker restart followup-php
+	docker-compose restart
 	@echo "$(GREEN)✅ Cache vidé$(NC)"
 
 cache-warmup: cache-clear ## Vide et réchauffe le cache

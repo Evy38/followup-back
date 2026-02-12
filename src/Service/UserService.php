@@ -34,7 +34,7 @@ class UserService
 
     public function getAll(): array
     {
-        return $this->repository->findAll();
+        return $this->repository->findBy(['deletedAt' => null]);
     }
 
     public function getById(int $id): User
@@ -149,11 +149,18 @@ class UserService
         $user = $this->getById($id);
 
         try {
-            $this->repository->remove($user, true);
+            $user->softDelete();
+            $this->repository->save($user, true);
         } catch (DBALException | ORMException $e) {
             throw new BadRequestHttpException(
                 "Impossible de supprimer cet utilisateur pour le moment."
             );
         }
     }
+
+    public function save(User $user): void
+    {
+        $this->repository->save($user, true);
+    }
+
 }

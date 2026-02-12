@@ -93,17 +93,17 @@ class UserController extends AbstractController
         return $this->json($updatedUser, context: ['groups' => ['user:read']]);
     }
 
-    /**
-     * Liste tous les utilisateurs (réservé aux administrateurs).
-     * 
-     * @return JsonResponse La liste des utilisateurs
-     */
-    #[Route('', name: 'api_users_list', methods: ['GET'])]
-    #[IsGranted('ROLE_ADMIN')]
-    public function list(): JsonResponse
+    #[Route('/consent', methods: ['POST'])]
+    public function acceptConsent(): JsonResponse
     {
-        $users = $this->userService->getAll();
+        /** @var User $user */
+        $user = $this->getUser();
+        $user->setConsentRgpd(true);
+        $user->setConsentRgpdAt(new \DateTimeImmutable());
 
-        return $this->json($users, context: ['groups' => ['user:read']]);
+        $this->userService->save($user);
+
+        return $this->json(['message' => 'Consentement enregistré']);
     }
+
 }
