@@ -13,23 +13,29 @@ use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\Exception\ORMException;
 
+
 class UserService
 {
     private UserRepository $repository;
     private UserPasswordHasherInterface $hasher;
     private EntityManagerInterface $em;
     private EmailVerificationService $emailVerificationService;
+    private SecurityEmailService $securityEmailService;
+
 
     public function __construct(
         UserRepository $repository,
         UserPasswordHasherInterface $hasher,
         EntityManagerInterface $em,
-        EmailVerificationService $emailVerificationService
+        EmailVerificationService $emailVerificationService,
+        SecurityEmailService $securityEmailService
     ) {
         $this->repository = $repository;
         $this->hasher = $hasher;
         $this->em = $em;
         $this->emailVerificationService = $emailVerificationService;
+        $this->securityEmailService = $securityEmailService;
+
     }
 
     public function getAll(): array
@@ -142,6 +148,12 @@ class UserService
         }
 
         $this->repository->save($user, true);
+        $this->repository->save($user, true);
+
+        $this->securityEmailService->sendPasswordChangedEmail($user);
+
+        return $user;
+
 
         return $user;
     }
