@@ -13,6 +13,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use Doctrine\DBAL\Types\Types;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
@@ -100,7 +101,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(nullable: true)]
     #[Groups(['user:read'])]
+
     private ?\DateTimeImmutable $consentRgpdAt = null;
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $deletionRequestedAt = null;
+
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $deletedAt = null;
+
 
     public function __construct()
     {
@@ -367,4 +376,50 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->consentRgpdAt = $consentRgpdAt;
         return $this;
     }
+
+    public function getDeletionRequestedAt(): ?\DateTimeImmutable
+    {
+        return $this->deletionRequestedAt;
+    }
+
+    public function setDeletionRequestedAt(?\DateTimeImmutable $date): self
+    {
+        $this->deletionRequestedAt = $date;
+        return $this;
+    }
+
+
+    public function getDeletedAt(): ?\DateTimeImmutable
+    {
+        return $this->deletedAt;
+    }
+
+    public function setDeletedAt(?\DateTimeImmutable $date): self
+    {
+        $this->deletedAt = $date;
+        return $this;
+    }
+
+    public function isDeleted(): bool
+    {
+        return $this->deletedAt !== null;
+    }
+
+    public function requestDeletion(): void
+    {
+        $this->deletionRequestedAt = new \DateTimeImmutable();
+    }
+
+
+    public function softDelete(): void
+    {
+        $this->deletedAt = new \DateTimeImmutable();
+    }
+
+    public function isActive(): bool
+    {
+        return $this->deletedAt === null;
+    }
+
+
 }
