@@ -83,12 +83,20 @@ class UserController extends AbstractController
             $userData->setLastName($data['lastName']);
         }
 
-        if (isset($data['password'])) {
-            $userData->setPassword($data['password']);
+        $currentPassword = $data['currentPassword'] ?? null;
+        $newPassword = $data['newPassword'] ?? null;
+
+        if ($newPassword !== null) {
+            $userData->setPassword($newPassword);
         }
 
         // Délégation au service pour la logique métier
-        $updatedUser = $this->userService->update($currentUser->getId(), $userData);
+        $updatedUser = $this->userService->update(
+            $currentUser->getId(),
+            $userData,
+            $currentPassword
+        );
+
 
         return $this->json($updatedUser, context: ['groups' => ['user:read']]);
     }
@@ -105,5 +113,19 @@ class UserController extends AbstractController
 
         return $this->json(['message' => 'Consentement enregistré']);
     }
+
+    #[Route('/profile', name: 'api_user_delete_profile', methods: ['DELETE'])]
+    public function deleteProfile(): JsonResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        $this->userService->delete($user->getId());
+
+        return $this->json([
+            'message' => 'Compte supprimé avec succès.'
+        ]);
+    }
+
 
 }

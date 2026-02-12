@@ -104,10 +104,9 @@ class UserService
         return $user;
     }
 
-    public function update(int $id, User $data): User
+    public function update(int $id, User $data, ?string $currentPassword = null): User
     {
         $user = $this->getById($id);
-
 
         if ($data->getEmail()) {
             if ($this->repository->existsByEmail($data->getEmail(), $id)) {
@@ -124,25 +123,29 @@ class UserService
             $user->setLastName($data->getLastName());
         }
 
-        if ($data->getRoles()) {
-            $user->setRoles($data->getRoles());
-        }
-
         if ($data->getPassword()) {
+
+            if ($user->isOauthUser()) {
+                throw new BadRequestHttpException("Impossible de modifier le mot de passe pour un compte OAuth.");
+            }
+
+            if ($currentPassword === null) {
+                throw new BadRequestHttpException("Ancien mot de passe requis.");
+            }
+
+            if (!$this->hasher->isPasswordValid($user, $currentPassword)) {
+                throw new BadRequestHttpException("Ancien mot de passe incorrect.");
+            }
+
             $hashedPassword = $this->hasher->hashPassword($user, $data->getPassword());
             $user->setPassword($hashedPassword);
         }
 
-        try {
-            $this->repository->save($user, true);
-        } catch (DBALException | ORMException $e) {
-            throw new BadRequestHttpException(
-                "Erreur lors de la mise à jour de l’utilisateur."
-            );
-        }
+        $this->repository->save($user, true);
 
         return $user;
     }
+
 
     public function delete(int $id): void
     {
