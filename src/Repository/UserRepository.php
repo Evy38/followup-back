@@ -9,10 +9,6 @@ use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 
-/**
- * Repository = couche d’accès aux données
- * Permet de manipuler la base de données sans écrire de SQL.
- */
 class UserRepository extends ServiceEntityRepository implements PasswordUpgraderInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -20,9 +16,6 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         parent::__construct($registry, User::class);
     }
 
-    /**
-     * 🔁 Méthode Symfony : met à jour le hash du mot de passe si nécessaire.
-     */
     public function upgradePassword(PasswordAuthenticatedUserInterface $user, string $newHashedPassword): void
     {
         if (!$user instanceof User) {
@@ -34,11 +27,6 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $this->getEntityManager()->flush();
     }
 
-    /**
-     * Méthode générique : sauvegarde (création ou mise à jour)
-     * $flush = true => exécute tout de suite la requête SQL
-     * $flush = false => enregistre dans le cache Doctrine, mais n’envoie pas encore à la BDD
-     */
     public function save(object $entity, bool $flush = false): void
     {
         $this->getEntityManager()->persist($entity);
@@ -48,9 +36,6 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         }
     }
 
-    /**
-     * Supprime un utilisateur
-     */
     public function remove(object $entity, bool $flush = false): void
     {
         $this->getEntityManager()->remove($entity);
@@ -60,18 +45,11 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         }
     }
 
-    /**
-     * 🔍 Trouve un utilisateur par son email
-     */
     public function findByEmail(string $email): ?User
     {
         return $this->findOneBy(['email' => $email]);
     }
 
-    /**
-     * 🧩 Vérifie si un email existe déjà dans la BDD
-     * Si $excludeId est donné → ignore cet utilisateur (utile en mode "update")
-     */
     public function existsByEmail(string $email, ?int $excludeId = null): bool
     {
         $qb = $this->createQueryBuilder('u')
@@ -81,10 +59,46 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
 
         if ($excludeId) {
             $qb->andWhere('u.id != :id')
-               ->setParameter('id', $excludeId);
+                ->setParameter('id', $excludeId);
         }
 
-        // getSingleScalarResult() renvoie un nombre → on le convertit en booléen
         return (int) $qb->getQuery()->getSingleScalarResult() > 0;
+    }
+
+    public function findAllDeleted(): array
+    {
+        return $this->createQueryBuilder('u')
+            ->where('u.deletedAt IS NOT NULL')
+            ->orderBy('u.deletedAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findPendingDeletion(): array
+    {
+        return $this->createQueryBuilder('u')
+            ->where('u.deletionRequestedAt IS NOT NULL')
+            ->andWhere('u.deletedAt IS NOT NULL')
+            ->orderBy('u.deletionRequestedAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countActiveUsers(): int
+    {
+        return (int) $this->createQueryBuilder('u')
+            ->select('COUNT(u.id)')
+            ->where('u.deletedAt IS NULL')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function countDeletedUsers(): int
+    {
+        return (int) $this->createQueryBuilder('u')
+            ->select('COUNT(u.id)')
+            ->where('u.deletedAt IS NOT NULL')
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 }

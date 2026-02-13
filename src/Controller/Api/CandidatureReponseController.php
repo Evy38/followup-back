@@ -3,6 +3,7 @@
 namespace App\Controller\Api;
 
 use App\Entity\Candidature;
+use App\Entity\User;
 use App\Enum\StatutReponse;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -14,11 +15,6 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-/**
- * Contrôleur pour la mise à jour manuelle du statut de réponse d'une candidature.
- * 
- * L'utilisateur peut modifier le statut librement, même avec des entretiens existants.
- */
 #[Route('/api/candidatures')]
 #[IsGranted('ROLE_USER')]
 class CandidatureReponseController extends AbstractController
@@ -28,31 +24,32 @@ class CandidatureReponseController extends AbstractController
     ) {
     }
 
-
     #[Route('/{id}/statut-reponse', name: 'api_candidature_update_statut_reponse', methods: ['PATCH'])]
     public function updateStatutReponse(int $id, Request $request): JsonResponse
     {
-        // 1️⃣ Récupération de la candidature
+        /** @var User $currentUser */
+        $currentUser = $this->getUser();
+
+        if ($currentUser->isDeleted()) {
+            throw new AccessDeniedHttpException('Ce compte est supprimé.');
+        }
+
         $candidature = $this->em->getRepository(Candidature::class)->find($id);
 
         if (!$candidature) {
             throw new NotFoundHttpException('Candidature introuvable.');
         }
 
-        // 2️⃣ Vérification des droits d'accès
-        if ($candidature->getUser() !== $this->getUser()) {
+        if ($candidature->getUser() !== $currentUser) {
             throw new AccessDeniedHttpException('Vous ne pouvez modifier que vos propres candidatures.');
         }
 
-        // 3️⃣ Lecture et validation du payload
         $data = json_decode($request->getContent(), true);
 
         if (!is_array($data) || !isset($data['statutReponse'])) {
             throw new BadRequestHttpException('Le champ "statutReponse" est requis.');
         }
 
-
-        // 5️⃣ Conversion string → Enum
         try {
             $nouveauStatut = StatutReponse::from($data['statutReponse']);
         } catch (\ValueError $e) {
@@ -62,11 +59,9 @@ class CandidatureReponseController extends AbstractController
             );
         }
 
-        // 6️⃣ Mise à jour
         $candidature->setStatutReponse($nouveauStatut);
         $this->em->flush();
 
-        // 7️⃣ Réponse
         return $this->json([
             'id' => $candidature->getId(),
             'statutReponse' => $candidature->getStatutReponse()->value,

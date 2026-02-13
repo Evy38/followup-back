@@ -2,6 +2,7 @@
 
 namespace App\Controller\Api;
 
+use App\Entity\User;
 use App\Repository\CandidatureRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -15,7 +16,14 @@ class MyCandidaturesController extends AbstractController
     #[IsGranted('ROLE_USER')]
     public function index(CandidatureRepository $repo): JsonResponse
     {
+        /** @var User $user */
         $user = $this->getUser();
+
+        if ($user->isDeleted()) {
+            return $this->json([
+                'error' => 'Ce compte est supprimé.'
+            ], 403);
+        }
 
         $candidatures = $repo->findBy(
             ['user' => $user],
@@ -30,4 +38,3 @@ class MyCandidaturesController extends AbstractController
         );
     }
 }
-

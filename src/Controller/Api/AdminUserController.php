@@ -4,9 +4,11 @@ namespace App\Controller\Api;
 
 use App\Entity\User;
 use App\Service\UserService;
+use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -15,14 +17,24 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class AdminUserController extends AbstractController
 {
     public function __construct(
-        private readonly UserService $userService
-    ) {}
+        private readonly UserService $userService,
+        private readonly UserRepository $userRepository
+    ) {
+    }
 
     #[Route('', methods: ['GET'])]
-    public function list(): JsonResponse
+    public function list(Request $request): JsonResponse
     {
+        $filter = $request->query->get('filter', 'active');
+
+        $users = match ($filter) {
+            'deleted' => $this->userRepository->findAllDeleted(),
+            'pending' => $this->userRepository->findPendingDeletion(),
+            default => $this->userService->getAll(),
+        };
+
         return $this->json(
-            $this->userService->getAll(),
+            $users,
             context: ['groups' => ['user:read']]
         );
     }
@@ -30,8 +42,14 @@ class AdminUserController extends AbstractController
     #[Route('/{id}', methods: ['GET'])]
     public function getOne(int $id): JsonResponse
     {
+        $user = $this->userRepository->find($id);
+
+        if (!$user) {
+            throw $this->createNotFoundException("Utilisateur #$id introuvable.");
+        }
+
         return $this->json(
-            $this->userService->getById($id),
+            $user,
             context: ['groups' => ['user:read']]
         );
     }
@@ -41,25 +59,48 @@ class AdminUserController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
 
-        $userData = new User();
+        if (!is_array($data)) {
+            throw new BadRequestHttpException('JSON invalide.');
+        }
+
+        $user = $this->userRepository->find($id);
+
+        if (!$user) {
+            throw $this->createNotFoundException("Utilisateur #$id introuvable.");
+        }
 
         if (isset($data['roles'])) {
-            $userData->setRoles($data['roles']);
+            $user->setRoles($data['roles']);
         }
 
         if (isset($data['isVerified'])) {
-            $userData->setIsVerified($data['isVerified']);
+            $user->setIsVerified((bool) $data['isVerified']);
         }
 
-        $updated = $this->userService->update($id, $userData);
+        if (isset($data['email'])) {
+            $user->setEmail($data['email']);
+        }
 
-        return $this->json($updated, context: ['groups' => ['user:read']]);
+        if (isset($data['firstName'])) {
+            $user->setFirstName($data['firstName']);
+        }
+
+        if (isset($data['lastName'])) {
+            $user->setLastName($data['lastName']);
+        }
+
+        $this->userService->save($user);
+
+        return $this->json($user, context: ['groups' => ['user:read']]);
     }
 
     #[Route('/{id}', methods: ['DELETE'])]
-    public function delete(int $id): JsonResponse
+    public function hardDelete(int $id): JsonResponse
     {
-        $this->userService->delete($id);
-        return $this->json(['message' => 'Utilisateur supprimé']);
+        $this->userService->hardDelete($id);
+
+        return $this->json([
+            'message' => 'Utilisateur supprimé définitivement.'
+        ]);
     }
 }

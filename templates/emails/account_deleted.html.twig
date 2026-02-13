@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Compte supprimé - FollowUp</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px;">
+        <h1 style="color: #6c757d;">👋 Votre compte a été supprimé</h1>
+        
+        <p>Bonjour {{ firstName }},</p>
+        
+        <p>Conformément à votre demande, votre compte FollowUp a été définitivement supprimé le {{ deletedAt|date('d/m/Y à H:i') }}.</p>
+        
+        <p><strong>Qu'est-ce que cela signifie ?</strong></p>
+        <ul>
+            <li>Toutes vos données personnelles ont été effacées</li>
+            <li>Vos candidatures et relances ont été supprimées</li>
+            <li>Vous ne recevrez plus d'emails de notre part</li>
+        </ul>
+        
+        <p>Nous sommes tristes de vous voir partir. Si vous souhaitez nous faire part de vos commentaires 
+        pour améliorer FollowUp, n'hésitez pas à nous contacter.</p>
+        
+        <p>À bientôt peut-être ! 🚀</p>
+        
+        <p style="color: #6c757d; font-size: 14px; margin-top: 30px;">
+            L'équipe FollowUp
+        </p>
+    </div>
+</body>
+</html>

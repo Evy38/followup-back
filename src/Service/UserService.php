@@ -9,33 +9,17 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
-use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use Doctrine\ORM\Exception\ORMException;
-
 
 class UserService
 {
-    private UserRepository $repository;
-    private UserPasswordHasherInterface $hasher;
-    private EntityManagerInterface $em;
-    private EmailVerificationService $emailVerificationService;
-    private SecurityEmailService $securityEmailService;
-
-
     public function __construct(
-        UserRepository $repository,
-        UserPasswordHasherInterface $hasher,
-        EntityManagerInterface $em,
-        EmailVerificationService $emailVerificationService,
-        SecurityEmailService $securityEmailService
+        private readonly UserRepository $repository,
+        private readonly UserPasswordHasherInterface $hasher,
+        private readonly EntityManagerInterface $em,
+        private readonly EmailVerificationService $emailVerificationService,
+        private readonly SecurityEmailService $securityEmailService
     ) {
-        $this->repository = $repository;
-        $this->hasher = $hasher;
-        $this->em = $em;
-        $this->emailVerificationService = $emailVerificationService;
-        $this->securityEmailService = $securityEmailService;
-
     }
 
     public function getAll(): array
@@ -47,16 +31,13 @@ class UserService
     {
         $user = $this->repository->find($id);
 
-        if (!$user) {
+        if (!$user || $user->isDeleted()) {
             throw new NotFoundHttpException("Utilisateur #$id introuvable.");
         }
 
         return $user;
     }
 
-    /**
-     * ➕ Création d’un utilisateur + email de vérification
-     */
     public function create(User $user): User
     {
         if ($this->repository->existsByEmail($user->getEmail())) {
@@ -65,7 +46,7 @@ class UserService
 
         if (!str_ends_with($user->getEmail(), '@gmail.com')) {
             throw new BadRequestHttpException(
-                "Pour FollowUp, l'email doit être une adresse Gmail (ex : monjob.followup@gmail.com)."
+                "Pour FollowUp, l'email doit être une adresse Gmail."
             );
         }
 
@@ -73,32 +54,18 @@ class UserService
             throw new BadRequestHttpException("Mot de passe requis.");
         }
 
-        // Hash mot de passe
         $hashedPassword = $this->hasher->hashPassword($user, $user->getPassword());
         $user->setPassword($hashedPassword);
-
         $user->setIsVerified(false);
 
+        $this->emailVerificationService->generateVerificationToken($user);
+
         try {
-            // 1️⃣ Persist utilisateur (sans flush)
-            $this->repository->save($user, false);
-
-            // 2️⃣ Génération du token (uniquement s'il n'existe pas déjà)
-            if (!$user->getEmailVerificationToken()) {
-                $this->emailVerificationService->generateVerificationToken($user);
-            }
-
-            // 3️⃣ Flush UNIQUE
             $this->repository->save($user, true);
         } catch (UniqueConstraintViolationException $e) {
             throw new ConflictHttpException("Cet email est déjà utilisé.");
-        } catch (DBALException | ORMException $e) {
-            throw new BadRequestHttpException(
-                "Erreur lors de l’enregistrement du nouvel utilisateur."
-            );
         }
 
-        // 4️⃣ Envoi email (hors transaction DB)
         try {
             $this->emailVerificationService->sendVerificationEmail($user);
         } catch (\Throwable $e) {
@@ -114,11 +81,21 @@ class UserService
     {
         $user = $this->getById($id);
 
-        if ($data->getEmail()) {
+        if ($user->isDeleted()) {
+            throw new BadRequestHttpException("Ce compte est supprimé.");
+        }
+
+        if ($data->getEmail() && $data->getEmail() !== $user->getEmail()) {
             if ($this->repository->existsByEmail($data->getEmail(), $id)) {
                 throw new ConflictHttpException("Cet email est déjà utilisé.");
             }
-            $user->setEmail($data->getEmail());
+
+            $user->setPendingEmail($data->getEmail());
+            $this->emailVerificationService->generateVerificationToken($user);
+            $this->repository->save($user, true);
+            $this->emailVerificationService->sendVerificationEmail($user);
+
+            return $user;
         }
 
         if ($data->getFirstName() !== null) {
@@ -130,9 +107,10 @@ class UserService
         }
 
         if ($data->getPassword()) {
-
             if ($user->isOauthUser()) {
-                throw new BadRequestHttpException("Impossible de modifier le mot de passe pour un compte OAuth.");
+                throw new BadRequestHttpException(
+                    "Impossible de modifier le mot de passe pour un compte OAuth."
+                );
             }
 
             if ($currentPassword === null) {
@@ -145,31 +123,62 @@ class UserService
 
             $hashedPassword = $this->hasher->hashPassword($user, $data->getPassword());
             $user->setPassword($hashedPassword);
+
+            $this->repository->save($user, true);
+
+            try {
+                $this->securityEmailService->sendPasswordChangedEmail($user);
+            } catch (\Throwable $e) {
+            }
+
+            return $user;
         }
 
         $this->repository->save($user, true);
-        $this->repository->save($user, true);
-
-        $this->securityEmailService->sendPasswordChangedEmail($user);
-
-        return $user;
-
 
         return $user;
     }
 
-
-    public function delete(int $id): void
+    public function requestDeletion(User $user): void
     {
-        $user = $this->getById($id);
+        if ($user->isDeleted()) {
+            throw new BadRequestHttpException("Ce compte est déjà supprimé.");
+        }
+
+        $user->requestDeletion();
+        $user->softDelete();
+
+        $this->repository->save($user, true);
 
         try {
-            $user->softDelete();
-            $this->repository->save($user, true);
-        } catch (DBALException | ORMException $e) {
-            throw new BadRequestHttpException(
-                "Impossible de supprimer cet utilisateur pour le moment."
-            );
+            $this->securityEmailService->sendAccountDeletionRequestEmail($user);
+        } catch (\Throwable $e) {
+            // Log mais ne bloque pas
+        }
+    }
+
+    public function hardDelete(int $id): void
+    {
+        $user = $this->repository->find($id);
+
+        if (!$user) {
+            throw new NotFoundHttpException("Utilisateur #$id introuvable.");
+        }
+
+        if (!$user->isDeleted()) {
+            throw new BadRequestHttpException("Le compte doit être soft deleted avant suppression définitive.");
+        }
+
+        $email = $user->getEmail();
+        $firstName = $user->getFirstName() ?? 'Utilisateur';
+
+        $this->em->remove($user);
+        $this->em->flush();
+
+        try {
+            $this->securityEmailService->sendAccountDeletionConfirmationEmail($email, $firstName);
+        } catch (\Throwable $e) {
+            // Log mais ne bloque pas
         }
     }
 
@@ -177,5 +186,4 @@ class UserService
     {
         $this->repository->save($user, true);
     }
-
 }

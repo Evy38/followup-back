@@ -43,6 +43,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['user:read', 'user:write'])]
     private ?string $email = null;
 
+    #[ORM\Column(length: 180, nullable: true)]
+    private ?string $pendingEmail = null;
+
     #[ORM\Column(length: 100, nullable: true)]
     #[Groups(['user:read', 'user:write'])]
     private ?string $firstName = null;
@@ -109,6 +112,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $deletedAt = null;
+
+
 
 
     public function __construct()
@@ -419,6 +424,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function isActive(): bool
     {
         return $this->deletedAt === null;
+    }
+
+    public function getPendingEmail(): ?string
+    {
+        return $this->pendingEmail;
+    }
+
+    public function setPendingEmail(?string $pendingEmail): self
+    {
+        $this->pendingEmail = $pendingEmail !== null
+            ? strtolower(trim($pendingEmail))
+            : null;
+
+        return $this;
     }
 
 

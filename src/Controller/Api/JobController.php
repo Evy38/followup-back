@@ -22,7 +22,6 @@ class JobController extends AbstractController
         $poste = $request->query->get('poste', 'developer');
         $contrat = $request->query->get('contrat');
         
-        // Utilise searchAll pour récupérer toutes les offres
         return $this->json(
             $this->adzunaService->searchAll($poste, $ville, $contrat)
         );
