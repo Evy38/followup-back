@@ -107,10 +107,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     private ?\DateTimeImmutable $consentRgpdAt = null;
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[Groups(['user:read'])]
     private ?\DateTimeImmutable $deletionRequestedAt = null;
 
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[Groups(['user:read'])]
     private ?\DateTimeImmutable $deletedAt = null;
 
 

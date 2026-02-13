@@ -146,7 +146,6 @@ class UserService
         }
 
         $user->requestDeletion();
-        $user->softDelete();
 
         $this->repository->save($user, true);
 
@@ -165,15 +164,19 @@ class UserService
             throw new NotFoundHttpException("Utilisateur #$id introuvable.");
         }
 
-        if (!$user->isDeleted()) {
-            throw new BadRequestHttpException("Le compte doit être soft deleted avant suppression définitive.");
+        // L'utilisateur doit avoir demandé la suppression
+        if (!$user->getDeletionRequestedAt()) {
+            throw new BadRequestHttpException(
+                "Le compte doit demander une suppression avant confirmation."
+            );
         }
+
+        // Marquer comme supprimé (confirmation admin)
+        $user->setDeletedAt(new \DateTimeImmutable());
+        $this->repository->save($user, true);
 
         $email = $user->getEmail();
         $firstName = $user->getFirstName() ?? 'Utilisateur';
-
-        $this->em->remove($user);
-        $this->em->flush();
 
         try {
             $this->securityEmailService->sendAccountDeletionConfirmationEmail($email, $firstName);
