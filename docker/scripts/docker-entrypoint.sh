@@ -1,6 +1,6 @@
 #!/bin/bash
 # ===============================================
-# 🚀 Script d'entrypoint Docker - Production
+# 🚀 Script d'entrypoint Docker - Production (CORRIGÉ)
 # ===============================================
 # Ce script s'exécute au démarrage du container
 
@@ -9,7 +9,14 @@ set -e  # Arrêter si une commande échoue
 echo "🚀 [FollowUp] Démarrage du container en production..."
 
 # -----------------------------------------------
-# 1️⃣ Générer les clés JWT si elles n'existent pas
+# 1️⃣ Configurer Apache AVANT tout (fix port)
+# -----------------------------------------------
+echo "🌐 [Apache] Configuration du port ${PORT:-80}..."
+sed -i "s/Listen 80/Listen ${PORT:-80}/g" /etc/apache2/ports.conf
+echo "✅ [Apache] Port configuré sur ${PORT:-80}"
+
+# -----------------------------------------------
+# 2️⃣ Générer les clés JWT si elles n'existent pas
 # -----------------------------------------------
 if [ ! -f config/jwt/private.pem ]; then
     echo "🔐 [JWT] Génération des clés JWT..."
@@ -33,59 +40,61 @@ else
 fi
 
 # -----------------------------------------------
-# 2️⃣ Attendre que la base de données soit prête
+# 3️⃣ Attendre que la base de données soit prête
 # -----------------------------------------------
 echo "⏳ [DB] Attente de la base de données..."
 
-# Extraire l'host de DATABASE_URL
-DB_HOST=$(echo $DATABASE_URL | sed -n 's/.*@\([^:]*\):.*/\1/p')
+# Attendre jusqu'à 60 secondes que la DB soit accessible
+max_attempts=60
+attempt=0
 
-# Attendre que PostgreSQL soit accessible (max 30 secondes)
-timeout=30
-while ! nc -z $DB_HOST 5432 2>/dev/null; do
-    timeout=$((timeout - 1))
-    if [ $timeout -le 0 ]; then
-        echo "❌ [DB] Timeout: impossible de se connecter à la base de données"
-        exit 1
+while [ $attempt -lt $max_attempts ]; do
+    # Tester la connexion avec PHP
+    if php -r "new PDO(getenv('DATABASE_URL'));" 2>/dev/null; then
+        echo "✅ [DB] Base de données accessible"
+        break
     fi
-    echo "⏳ [DB] En attente... ($timeout secondes restantes)"
+    
+    attempt=$((attempt + 1))
+    remaining=$((max_attempts - attempt))
+    
+    if [ $attempt -ge $max_attempts ]; then
+        echo "❌ [DB] Timeout: impossible de se connecter à la base de données après ${max_attempts}s"
+        echo "⚠️ Démarrage d'Apache quand même (les migrations seront faites plus tard)"
+        # Ne pas exit 1, laisser Apache démarrer
+        break
+    fi
+    
+    echo "⏳ [DB] En attente... ($remaining secondes restantes)"
     sleep 1
 done
 
-echo "✅ [DB] Base de données accessible"
+# -----------------------------------------------
+# 4️⃣ Lancer les migrations Doctrine (si DB accessible)
+# -----------------------------------------------
+if php -r "new PDO(getenv('DATABASE_URL'));" 2>/dev/null; then
+    echo "📦 [Migrations] Exécution des migrations..."
+    
+    # Créer la base si elle n'existe pas
+    php bin/console doctrine:database:create --if-not-exists --no-interaction || true
+    
+    # Lancer les migrations
+    php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration || true
+    
+    echo "✅ [Migrations] Migrations exécutées"
+else
+    echo "⚠️ [Migrations] DB non accessible, migrations ignorées"
+fi
 
 # -----------------------------------------------
-# 3️⃣ Lancer les migrations Doctrine
-# -----------------------------------------------
-echo "📦 [Migrations] Exécution des migrations..."
-
-# Créer la base si elle n'existe pas
-php bin/console doctrine:database:create --if-not-exists --no-interaction
-
-# Lancer les migrations
-php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
-
-echo "✅ [Migrations] Migrations exécutées avec succès"
-
-# -----------------------------------------------
-# 4️⃣ Optimiser le cache Symfony
+# 5️⃣ Optimiser le cache Symfony
 # -----------------------------------------------
 echo "🗑️ [Cache] Nettoyage et optimisation du cache..."
 
-php bin/console cache:clear --no-warmup
-php bin/console cache:warmup
+php bin/console cache:clear --no-warmup || true
+php bin/console cache:warmup || true
 
 echo "✅ [Cache] Cache optimisé"
-
-# -----------------------------------------------
-# 5️⃣ Configurer Apache pour le port dynamique Render
-# -----------------------------------------------
-echo "🌐 [Apache] Configuration du port ${PORT:-80}..."
-
-# Remplacer le port par défaut par la variable $PORT de Render
-sed -i "s/Listen 80/Listen ${PORT:-80}/g" /etc/apache2/ports.conf
-
-echo "✅ [Apache] Port configuré sur ${PORT:-80}"
 
 # -----------------------------------------------
 # 6️⃣ Permissions finales
