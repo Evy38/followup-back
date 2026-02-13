@@ -308,7 +308,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->resetPasswordTokenExpiresAt > new \DateTimeImmutable();
     }
 
-    public function isVerified(): bool
+    public function getIsVerified(): bool
     {
         return $this->isVerified;
     }

@@ -41,7 +41,7 @@ class OAuthUserService
             $needsUpdate = true;
         }
 
-        if (!$user->isVerified()) {
+        if (!$user->getIsVerified()) {
             $user->setIsVerified(true);
             $user->setEmailVerificationToken(null);
             $user->setEmailVerificationTokenExpiresAt(null);

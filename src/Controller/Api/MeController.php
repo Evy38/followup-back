@@ -32,7 +32,7 @@ class MeController extends AbstractController
             ], Response::HTTP_FORBIDDEN);
         }
 
-        if (!$user->isVerified()) {
+        if (!$user->getIsVerified()) {
             return $this->json([
                 'authenticated' => true,
                 'verified' => false,

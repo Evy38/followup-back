@@ -41,11 +41,18 @@ class JobController extends AbstractController
             $jobs = $this->adzunaService->search($poste, $ville, $page, $contrat);
         }
         
-        return $this->json(
-            $jobs,
-            Response::HTTP_OK,
-            [],
-            ['groups' => ['job:read']]
+        // Réponse avec metadata de pagination pour infinite scroll
+        $hasMore = count($jobs) >= 50;  // 50 = RESULTS_PER_PAGE
+        
+        return $this->json([
+            'data' => $jobs,
+            'pagination' => [
+                'page' => $page,
+                'pageSize' => count($jobs),
+                'hasMore' => $hasMore,
+                'nextPage' => $hasMore ? $page + 1 : null,
+            ]
+        ], Response::HTTP_OK, [], ['groups' => ['job:read']]
         )->setSharedMaxAge(self::CACHE_TTL);
     }
 

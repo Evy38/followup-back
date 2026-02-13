@@ -40,7 +40,7 @@ class JwtAuthenticatedUserListener
             throw new AccessDeniedHttpException('Compte supprimé.');
         }
 
-        if (!$user->isVerified()) {
+        if (!$user->getIsVerified()) {
             throw new AccessDeniedHttpException('Email non vérifié.');
         }
     }
