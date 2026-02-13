@@ -21,8 +21,8 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  */
 class AdzunaService
 {
-    private const RESULTS_PER_PAGE = 100;
-    private const MAX_PAGES = 5;
+    private const RESULTS_PER_PAGE = 50;  // Réduit pour infinite scroll
+    private const MAX_PAGES = 10;          // Augmenté pour plus de données
     private const API_BASE_URL = 'https://api.adzuna.com/v1/api/jobs';
 
     public function __construct(

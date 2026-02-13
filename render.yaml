@@ -1,0 +1,103 @@
+# ===============================================
+# 🚀 Configuration Render - FollowUp Backend
+# ===============================================
+# Infrastructure as Code pour le déploiement
+
+services:
+  # -----------------------------------------------
+  # Service Web - Backend Symfony
+  # -----------------------------------------------
+  - type: web
+    name: followup-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile.render
+    region: frankfurt  # EU (proche de la France)
+    plan: free  # Plan gratuit
+    
+    # Branche à déployer
+    branch: main
+    
+    # Health check pour vérifier que l'app tourne
+    healthCheckPath: /api
+    
+    # Variables d'environnement
+    envVars:
+      # ===== Symfony Core =====
+      - key: APP_ENV
+        value: prod
+      
+      - key: APP_DEBUG
+        value: 0
+      
+      - key: APP_SECRET
+        generateValue: true  # Génère un secret aléatoire sécurisé
+      
+      # ===== Base de données PostgreSQL =====
+      # Render va automatiquement créer cette variable avec l'URL de la DB
+      - key: DATABASE_URL
+        fromDatabase:
+          name: followup-db
+          property: connectionString
+      
+      # ===== JWT Authentication =====
+      - key: JWT_SECRET_KEY
+        value: /var/www/html/config/jwt/private.pem
+      
+      - key: JWT_PUBLIC_KEY
+        value: /var/www/html/config/jwt/public.pem
+      
+      - key: JWT_PASSPHRASE
+        sync: false  # À configurer manuellement dans le dashboard Render
+      
+      # ===== CORS =====
+      - key: CORS_ALLOW_ORIGIN
+        sync: false  # URL du frontend (à définir après déploiement front)
+      
+      # ===== URLs Frontend =====
+      - key: FRONTEND_URL
+        sync: false  # URL du frontend déployé
+      
+      - key: FRONT_URL
+        sync: false  # Même valeur que FRONTEND_URL
+      
+      # ===== Messenger (synchrone en prod pour commencer) =====
+      - key: MESSENGER_TRANSPORT_DSN
+        value: sync://
+      
+      # ===== OAuth Google =====
+      - key: GOOGLE_CLIENT_ID
+        sync: false  # Tes credentials Google (à mettre dans le dashboard)
+      
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      
+      - key: GOOGLE_REDIRECT_URI
+        sync: false  # URL de callback (https://ton-backend.onrender.com/auth/google/callback)
+      
+      # ===== Mailer (Gmail en prod) =====
+      - key: MAILER_DSN
+        sync: false  # Ton MAILER_DSN Gmail
+      
+      # ===== API Adzuna =====
+      - key: ADZUNA_APP_ID
+        value: 27d622d1
+      
+      - key: ADZUNA_APP_KEY
+        value: 6f4fa54fa72e6fc3dbcb2742c1b262b1
+      
+      - key: ADZUNA_COUNTRY
+        value: fr
+      
+      # ===== Redis (optionnel - on peut s'en passer pour commencer) =====
+      # - key: REDIS_URL
+      #   value: redis://red-xxx:6379  # À configurer si tu actives Redis
+
+# -----------------------------------------------
+# Base de données PostgreSQL
+# -----------------------------------------------
+databases:
+  - name: followup-db
+    databaseName: followup_production
+    user: followup_user
+    plan: free  # Plan gratuit (max 90 jours d'inactivité avant suppression)
+    region: frankfurt  # Même région que le backend pour la latence

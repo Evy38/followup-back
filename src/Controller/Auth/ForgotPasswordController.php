@@ -16,20 +16,6 @@ use Symfony\Component\Mime\Address;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
-/**
- * Contrôleur de réinitialisation de mot de passe oublié.
- * 
- * Workflow sécurisé :
- * 1. Génération d'un token unique à usage unique (validité 1h)
- * 2. Envoi d'un email avec le lien de réinitialisation
- * 3. Validation du token et changement du mot de passe
- * 
- * Mesures de sécurité :
- * - Réponse identique que l'utilisateur existe ou non (timing attack)
- * - Token cryptographiquement sécurisé (64 caractères hexadécimaux)
- * - Expiration automatique après 1h
- * - Suppression du token après utilisation
- */
 class ForgotPasswordController extends AbstractController
 {
     public function __construct(
@@ -40,16 +26,6 @@ class ForgotPasswordController extends AbstractController
     ) {
     }
 
-    /**
-     * Demande de réinitialisation de mot de passe.
-     * 
-     * Génère un token et envoie un email avec le lien de réinitialisation.
-     * Pour des raisons de sécurité, renvoie toujours le même message
-     * (même si l'utilisateur n'existe pas).
-     * 
-     * @param Request $request Contient l'email de l'utilisateur
-     * @return JsonResponse Message de confirmation générique
-     */
     #[Route('/api/password/request', name: 'api_password_request', methods: ['POST'])]
     public function requestPasswordReset(Request $request): JsonResponse
     {
@@ -67,15 +43,18 @@ class ForgotPasswordController extends AbstractController
 
         $user = $this->userRepository->findOneBy(['email' => $email]);
 
-        // Pour éviter l'énumération d'utilisateurs (timing attack),
-        // on renvoie toujours le même message
         $genericMessage = 'Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.';
 
-        if (!$user) {
+        if (!$user || $user->isDeleted()) {
             return new JsonResponse(['message' => $genericMessage], Response::HTTP_OK);
         }
 
-        // Génération d'un token cryptographiquement sécurisé
+        if ($user->isOauthUser()) {
+            return new JsonResponse([
+                'message' => 'Ce compte utilise Google pour se connecter. Aucun mot de passe n\'est défini.'
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
         $token = bin2hex(random_bytes(32));
         $expiresAt = new \DateTimeImmutable('+1 hour');
 
@@ -84,14 +63,11 @@ class ForgotPasswordController extends AbstractController
 
         $this->em->flush();
 
-        // Construction de l'URL de réinitialisation
         $resetUrl = $this->getParameter('frontend_url') . '/reset-password?token=' . $token;
 
-        // Envoi de l'email
         try {
             $this->sendResetEmail($user->getEmail(), $user, $resetUrl);
         } catch (TransportExceptionInterface $e) {
-            // On log l'erreur mais on ne révèle pas au client que l'envoi a échoué
             $this->container->get('logger')->error(
                 'Échec envoi email réinitialisation : ' . $e->getMessage(),
                 ['email' => $user->getEmail()]
@@ -101,17 +77,6 @@ class ForgotPasswordController extends AbstractController
         return new JsonResponse(['message' => $genericMessage], Response::HTTP_OK);
     }
 
-    /**
-     * Réinitialisation du mot de passe avec le token.
-     * 
-     * Valide le token, vérifie l'expiration, et change le mot de passe.
-     * Le token est supprimé après utilisation.
-     * 
-     * @param Request $request Contient le token et le nouveau mot de passe
-     * @return JsonResponse Message de succès
-     * 
-     * @throws BadRequestHttpException Si le token est invalide/expiré ou le mot de passe non conforme
-     */
     #[Route('/api/password/reset', name: 'api_password_reset', methods: ['POST'])]
     public function resetPassword(Request $request): JsonResponse
     {
@@ -125,30 +90,25 @@ class ForgotPasswordController extends AbstractController
         $newPassword = (string) $data['newPassword'];
         $confirmPassword = $data['confirmPassword'] ?? null;
 
-        // Validation de la correspondance des mots de passe
         if ($confirmPassword !== null && $newPassword !== (string) $confirmPassword) {
             throw new BadRequestHttpException('Les mots de passe ne correspondent pas.');
         }
 
-        // Validation de la complexité du mot de passe
         if (!$this->isPasswordValid($newPassword)) {
             throw new BadRequestHttpException(
                 'Le mot de passe doit contenir au moins 8 caractères, une majuscule et un chiffre.'
             );
         }
 
-        // Recherche de l'utilisateur par le token
         $user = $this->userRepository->findOneBy(['resetPasswordToken' => $token]);
 
-        if (!$user || !$user->isResetPasswordTokenValid()) {
+        if (!$user || !$user->isResetPasswordTokenValid() || $user->isDeleted()) {
             throw new BadRequestHttpException('Token invalide ou expiré.');
         }
 
-        // Changement du mot de passe
         $hashedPassword = $this->passwordHasher->hashPassword($user, $newPassword);
         $user->setPassword($hashedPassword);
 
-        // Suppression du token utilisé (usage unique)
         $user->setResetPasswordToken(null);
         $user->setResetPasswordTokenExpiresAt(null);
 
@@ -159,24 +119,11 @@ class ForgotPasswordController extends AbstractController
         ], Response::HTTP_OK);
     }
 
-    /**
-     * Valide la complexité du mot de passe.
-     * 
-     * Règles :
-     * - Minimum 8 caractères
-     * - Au moins 1 majuscule
-     * - Au moins 1 chiffre
-     */
     private function isPasswordValid(string $password): bool
     {
         return (bool) preg_match('/^(?=.*[A-Z])(?=.*\d).{8,}$/', $password);
     }
 
-    /**
-     * Envoie l'email de réinitialisation de mot de passe.
-     * 
-     * @throws TransportExceptionInterface Si l'envoi échoue
-     */
     private function sendResetEmail(string $emailAddress, object $user, string $resetUrl): void
     {
         $email = (new TemplatedEmail())

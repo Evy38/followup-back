@@ -1,0 +1,106 @@
+# ===============================================
+# 🚀 Dockerfile Production - FollowUp Backend
+# ===============================================
+# Multi-stage build pour optimiser la taille de l'image
+
+# -----------------------------------------------
+# Stage 1: Builder (installation dépendances)
+# -----------------------------------------------
+FROM php:8.3-apache AS builder
+
+# Variables d'environnement pour le build
+ENV APP_ENV=prod \
+    APP_DEBUG=0 \
+    COMPOSER_ALLOW_SUPERUSER=1
+
+# Installer dépendances système + extensions PHP
+RUN apt-get update && apt-get install -y \
+    git unzip libicu-dev libzip-dev libxml2-dev libpq-dev \
+    && docker-php-ext-install pdo pdo_pgsql pdo_mysql intl zip opcache \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Installer Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Copier les fichiers de configuration Composer
+WORKDIR /var/www/html
+COPY composer.json composer.lock ./
+
+# Installer les dépendances PHP (sans dev)
+RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
+
+# -----------------------------------------------
+# Stage 2: Runtime (image finale)
+# -----------------------------------------------
+FROM php:8.3-apache
+
+# Variables d'environnement de production
+ENV APP_ENV=prod \
+    APP_DEBUG=0 \
+    COMPOSER_ALLOW_SUPERUSER=1
+
+# Installer UNIQUEMENT les dépendances runtime nécessaires
+RUN apt-get update && apt-get install -y \
+    libicu-dev libzip-dev libpq-dev \
+    && docker-php-ext-install pdo pdo_pgsql intl zip opcache \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Activer mod_rewrite pour Symfony
+RUN a2enmod rewrite
+
+# Configuration PHP optimisée pour production
+RUN { \
+    echo 'opcache.enable=1'; \
+    echo 'opcache.memory_consumption=256'; \
+    echo 'opcache.max_accelerated_files=20000'; \
+    echo 'opcache.validate_timestamps=0'; \
+    echo 'realpath_cache_size=4096K'; \
+    echo 'realpath_cache_ttl=600'; \
+    echo 'memory_limit=512M'; \
+    echo 'max_execution_time=60'; \
+} > /usr/local/etc/php/conf.d/symfony-prod.ini
+
+# Configuration Apache pour Symfony
+RUN { \
+    echo '<VirtualHost *:${PORT}>'; \
+    echo '    ServerName localhost'; \
+    echo '    DocumentRoot /var/www/html/public'; \
+    echo '    <Directory /var/www/html/public>'; \
+    echo '        AllowOverride All'; \
+    echo '        Require all granted'; \
+    echo '        FallbackResource /index.php'; \
+    echo '    </Directory>'; \
+    echo '    ErrorLog /var/log/apache2/error.log'; \
+    echo '    CustomLog /var/log/apache2/access.log combined'; \
+    echo '</VirtualHost>'; \
+} > /etc/apache2/sites-available/000-default.conf
+
+# Créer le répertoire de travail
+WORKDIR /var/www/html
+
+# Copier les dépendances depuis le builder
+COPY --from=builder /var/www/html/vendor ./vendor
+
+# Copier tout le code source
+COPY . .
+
+# Copier Composer pour les commandes Symfony
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Créer les répertoires nécessaires avec bonnes permissions
+RUN mkdir -p var/cache var/log config/jwt public/uploads \
+    && chown -R www-data:www-data var config/jwt public/uploads \
+    && chmod -R 775 var config/jwt public/uploads
+
+# Script d'entrypoint pour la génération des clés JWT et migrations
+COPY docker/scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Exposer le port (Render utilise la variable $PORT)
+EXPOSE ${PORT:-80}
+
+# Point d'entrée personnalisé
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+
+# Commande par défaut: démarrer Apache en foreground
+CMD ["apache2-foreground"]

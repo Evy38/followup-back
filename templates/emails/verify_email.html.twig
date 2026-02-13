@@ -1,23 +1,38 @@
 <!DOCTYPE html>
-<html lang="fr">
-<body>
-    <p>Bonjour {{ user.firstName ?? 'utilisateur' }},</p>
-
-    <p>
-        Merci pour votre inscription sur FollowUp.
-        Pour activer votre compte, veuillez confirmer votre adresse email en cliquant sur le lien ci-dessous :
-    </p>
-
-    <p>
-        <a href="{{ verificationUrl }}">Confirmer mon adresse email</a>
-    </p>
-
-    <p>
-        Ce lien est valable jusqu’au {{ expiresAt|date('d/m/Y H:i') }}.
-    </p>
-
-    <p>
-        Si vous n’êtes pas à l’origine de cette inscription, ignorez cet email.
-    </p>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Vérification d'email - FollowUp</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px;">
+        <h1 style="color: #007bff;">✉️ Confirmez votre adresse email</h1>
+        
+        {% if user.pendingEmail %}
+            <p>Bonjour {{ user.firstName ?? 'Utilisateur' }},</p>
+            <p>Vous avez demandé à modifier votre adresse email pour :</p>
+            <p style="font-weight: bold; color: #007bff;">{{ user.pendingEmail }}</p>
+            <p>Veuillez cliquer sur le bouton ci-dessous pour confirmer cette modification :</p>
+        {% else %}
+            <p>Bonjour {{ user.firstName ?? 'Utilisateur' }},</p>
+            <p>Bienvenue sur FollowUp ! 🎉</p>
+            <p>Pour activer votre compte, veuillez confirmer votre adresse email en cliquant sur le bouton ci-dessous :</p>
+        {% endif %}
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{ verificationUrl }}" 
+               style="background-color: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                Confirmer mon email
+            </a>
+        </div>
+        
+        <p style="color: #6c757d; font-size: 14px;">
+            Ce lien expire le {{ expiresAt|date('d/m/Y à H:i') }}.
+        </p>
+        
+        <p style="color: #6c757d; font-size: 14px;">
+            Si vous n'avez pas effectué cette demande, vous pouvez ignorer cet email.
+        </p>
+    </div>
 </body>
 </html>

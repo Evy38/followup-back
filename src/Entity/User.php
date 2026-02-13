@@ -13,6 +13,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use Doctrine\DBAL\Types\Types;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
@@ -41,6 +42,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\Length(max: 180, maxMessage: "Email trop long.")]
     #[Groups(['user:read', 'user:write'])]
     private ?string $email = null;
+
+    #[ORM\Column(length: 180, nullable: true)]
+    private ?string $pendingEmail = null;
 
     #[ORM\Column(length: 100, nullable: true)]
     #[Groups(['user:read', 'user:write'])]
@@ -93,6 +97,26 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     #[ORM\OneToMany(targetEntity: Candidature::class, mappedBy: 'user')]
     private Collection $candidatures;
+
+    #[ORM\Column(type: 'boolean')]
+    #[Groups(['user:read', 'user:write'])]
+    private bool $consentRgpd = false;
+
+    #[ORM\Column(nullable: true)]
+    #[Groups(['user:read'])]
+
+    private ?\DateTimeImmutable $consentRgpdAt = null;
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[Groups(['user:read'])]
+    private ?\DateTimeImmutable $deletionRequestedAt = null;
+
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[Groups(['user:read'])]
+    private ?\DateTimeImmutable $deletedAt = null;
+
+
+
 
     public function __construct()
     {
@@ -174,8 +198,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $data = (array) $this;
         // Protection contre les utilisateurs OAuth sans mot de passe
-        $data["\0" . self::class . "\0password"] = $this->password 
-            ? hash('crc32c', $this->password) 
+        $data["\0" . self::class . "\0password"] = $this->password
+            ? hash('crc32c', $this->password)
             : null;
 
         return $data;
@@ -284,7 +308,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->resetPasswordTokenExpiresAt > new \DateTimeImmutable();
     }
 
-    public function isVerified(): bool
+    public function getIsVerified(): bool
     {
         return $this->isVerified;
     }
@@ -337,4 +361,86 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         return $this->googleId !== null;
     }
+
+    public function getConsentRgpd(): bool
+    {
+        return $this->consentRgpd;
+    }
+
+    public function setConsentRgpd(bool $consentRgpd): self
+    {
+        $this->consentRgpd = $consentRgpd;
+        return $this;
+    }
+
+    public function getConsentRgpdAt(): ?\DateTimeImmutable
+    {
+        return $this->consentRgpdAt;
+    }
+
+    public function setConsentRgpdAt(?\DateTimeImmutable $consentRgpdAt): self
+    {
+        $this->consentRgpdAt = $consentRgpdAt;
+        return $this;
+    }
+
+    public function getDeletionRequestedAt(): ?\DateTimeImmutable
+    {
+        return $this->deletionRequestedAt;
+    }
+
+    public function setDeletionRequestedAt(?\DateTimeImmutable $date): self
+    {
+        $this->deletionRequestedAt = $date;
+        return $this;
+    }
+
+
+    public function getDeletedAt(): ?\DateTimeImmutable
+    {
+        return $this->deletedAt;
+    }
+
+    public function setDeletedAt(?\DateTimeImmutable $date): self
+    {
+        $this->deletedAt = $date;
+        return $this;
+    }
+
+    public function isDeleted(): bool
+    {
+        return $this->deletedAt !== null;
+    }
+
+    public function requestDeletion(): void
+    {
+        $this->deletionRequestedAt = new \DateTimeImmutable();
+    }
+
+
+    public function softDelete(): void
+    {
+        $this->deletedAt = new \DateTimeImmutable();
+    }
+
+    public function isActive(): bool
+    {
+        return $this->deletedAt === null;
+    }
+
+    public function getPendingEmail(): ?string
+    {
+        return $this->pendingEmail;
+    }
+
+    public function setPendingEmail(?string $pendingEmail): self
+    {
+        $this->pendingEmail = $pendingEmail !== null
+            ? strtolower(trim($pendingEmail))
+            : null;
+
+        return $this;
+    }
+
+
 }

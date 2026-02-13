@@ -68,7 +68,7 @@ jobs:
         run: |
           echo "🚀 Déploiement backend vers SIT"
           echo "📦 Artefacts prêts"
-          echo "✅ Déploiement SIT simulé"
+          echo "Déploiement SIT simulé"
 
   deploy-uat:
     name: Deploy to UAT
@@ -88,7 +88,7 @@ jobs:
         run: |
           echo "🚀 Déploiement backend vers UAT"
           echo "📦 Artefacts prêts"
-          echo "✅ Déploiement UAT simulé"
+          echo "Déploiement UAT simulé"
 
   deploy-prod:
     name: Deploy to Production
@@ -108,16 +108,16 @@ jobs:
         run: |
           echo "💾 Backup base de données"
           echo "💾 Backup code applicatif"
-          echo "✅ Backup simulé"
+          echo "Backup simulé"
 
       - name: 🚀 Deploy PROD (simulation)
         run: |
           echo "🚀 Déploiement backend vers PROD"
           echo "📦 Artefacts prêts"
-          echo "✅ Déploiement PROD simulé"
+          echo "Déploiement PROD simulé"
 
       - name: 🧪 Post-deploy checks
         run: |
           echo "🧪 Vérification API /health"
           echo "🧪 Connexion DB"
-          echo "✅ Vérifications simulées OK"
+          echo "Vérifications simulées OK"

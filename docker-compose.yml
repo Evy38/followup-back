@@ -42,6 +42,21 @@ services:
       - db
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    container_name: followup-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   mailhog:
     image: mailhog/mailhog:latest
     container_name: followup-mailhog
@@ -50,18 +65,6 @@ services:
       - "8025:8025" # Interface web
     restart: unless-stopped
 
-  # messenger:
-  #   build:
-  #     context: .
-  #     dockerfile: docker/php/Dockerfile
-  #   container_name: followup-messenger
-  #   command: php bin/console messenger:consume async --time-limit=3600
-  #   volumes:
-  #     - ./:/var/www/html
-  #   depends_on:
-  #     - db
-  #     - mailhog
-  #   restart: unless-stopped
-
 volumes:
   db_data:
+  redis_data:

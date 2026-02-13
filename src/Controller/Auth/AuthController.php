@@ -16,13 +16,11 @@ class AuthController extends AbstractController
     public function google(GoogleAuthService $googleAuthService): RedirectResponse
     {
         $client = $googleAuthService->getClient();
-
-        // URL de connexion Google
         $authUrl = $client->createAuthUrl();
 
-        // Redirection vers Google
         return $this->redirect($authUrl);
     }
+
     #[Route('/auth/google/callback', name: 'auth_google_callback')]
     public function googleCallback(
         Request $request,
@@ -39,15 +37,12 @@ class AuthController extends AbstractController
             return $this->redirect($frontendUrl . '/login?error=no_code');
         }
 
-        // Récupération du token Google
         $token = $client->fetchAccessTokenWithAuthCode($code);
 
         if (isset($token['error'])) {
             return $this->redirect($frontendUrl . '/login?error=token');
-
         }
 
-        // Infos user via Google
         $oauth = new \Google\Service\Oauth2($client);
         $googleUser = $oauth->userinfo->get();
 
@@ -56,18 +51,14 @@ class AuthController extends AbstractController
         $lastName = $googleUser->familyName;
         $googleId = $googleUser->id;
 
-        // Chercher user existant
+        try {
+            $user = $oauthUserService->getOrCreateFromGoogle($email, $firstName, $lastName, $googleId);
+        } catch (\RuntimeException $e) {
+            return $this->redirect($frontendUrl . '/login?error=account_deleted');
+        }
 
-        // Délégation à OAuthUserService pour la gestion utilisateur OAuth
-        $user = $oauthUserService->getOrCreateFromGoogle($email, $firstName, $lastName, $googleId);
-
-        // Générer JWT FollowUp
         $jwt = $jwtManager->create($user);
 
-        // ✅ Redirect vers ton composant Angular qui stocke en localStorage
         return $this->redirect($frontendUrl . '/google-callback?token=' . urlencode($jwt));
-
-
     }
-
 }

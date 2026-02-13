@@ -1,0 +1,70 @@
+# ===============================================
+# 🚀 .dockerignore - Optimisation du build Docker
+# ===============================================
+# Fichiers à exclure lors du build de l'image Docker
+
+# ===== Git et versioning =====
+.git
+.gitignore
+.gitattributes
+
+# ===== Documentation =====
+README.md
+CHANGELOG.md
+LICENSE
+*.md
+
+# ===== CI/CD =====
+.github
+.gitlab-ci.yml
+
+# ===== Docker (dev) =====
+docker-compose.yml
+docker-compose.*.yml
+docker/
+Dockerfile
+.dockerignore
+
+# ===== Environnements =====
+.env
+.env.local
+.env.*.local
+.env.test
+
+# ===== Cache et logs =====
+var/cache/*
+var/log/*
+var/sessions/*
+
+# ===== Tests =====
+tests/
+phpunit.xml
+phpunit.xml.dist
+.phpunit.result.cache
+
+# ===== Dépendances (seront installées dans le Dockerfile) =====
+vendor/
+node_modules/
+
+# ===== IDE =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ===== Système =====
+.DS_Store
+Thumbs.db
+
+# ===== Fichiers temporaires =====
+*.tmp
+*.bak
+*.cache
+
+# ===== Uploads et données (ne pas inclure dans l'image) =====
+public/uploads/*
+public/media/*
+
+# ===== JWT Keys (générées au runtime) =====
+config/jwt/*.pem

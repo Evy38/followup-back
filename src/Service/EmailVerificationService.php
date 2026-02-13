@@ -21,23 +21,24 @@ class EmailVerificationService
     }
 
     /**
-     * Génère le token et l’attache à l’utilisateur
+     * Génère un nouveau token de vérification
      * ⚠️ NE FAIT AUCUN flush
+     * ⚠️ Ne touche PAS à isVerified
      */
     public function generateVerificationToken(User $user): void
     {
-        // Ne régénère le token que s'il n'existe pas ou est expiré
-        if (!$user->getEmailVerificationToken() || !$user->isEmailVerificationTokenValid()) {
-            $token = bin2hex(random_bytes(32));
-            $expiresAt = new \DateTimeImmutable('+24 hours');
-            $user->setEmailVerificationToken($token);
-            $user->setEmailVerificationTokenExpiresAt($expiresAt);
-            $user->setIsVerified(false);
-        }
+        // Génération systématique d'un nouveau token
+        $token = bin2hex(random_bytes(32));
+        $expiresAt = new \DateTimeImmutable('+24 hours');
+        
+        $user->setEmailVerificationToken($token);
+        $user->setEmailVerificationTokenExpiresAt($expiresAt);
     }
 
     /**
-     * Envoie l’email de vérification
+     * Envoie l'email de vérification
+     * - À l'inscription : envoie à l'email principal
+     * - Au changement d'email : envoie au pendingEmail
      */
     public function sendVerificationEmail(User $user): void
     {
@@ -49,9 +50,13 @@ class EmailVerificationService
 
         $verificationUrl = $this->frontendUrl . '/verify-email?token=' . $token;
 
+        // Si pendingEmail existe, on envoie là-bas (changement d'email)
+        // Sinon on envoie à l'email principal (inscription)
+        $targetEmail = $user->getPendingEmail() ?? $user->getEmail();
+
         $email = (new TemplatedEmail())
             ->from(new Address('noreply@followup.com', 'FollowUp'))
-            ->to(new Address($user->getEmail()))
+            ->to(new Address($targetEmail))
             ->subject('Confirmez votre adresse email - FollowUp')
             ->htmlTemplate('emails/verify_email.html.twig')
             ->context([
