@@ -15,7 +15,10 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
  * vient d'un appel explicite à bootKernel(). La solution est simple: ne pas appeler bootKernel().
  * À la place, utiliser getContainer() qui charge le kernel implicitement.
  */
-abstract class BaseApiTest extends WebTestCase
+use PHPUnit\Framework\Attributes\CoversNothing;
+
+#[CoversNothing]
+abstract class AbstractApiTestCase extends WebTestCase
 {
     use DatabasePrimer;
 
