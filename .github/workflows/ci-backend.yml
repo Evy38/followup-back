@@ -55,6 +55,14 @@ jobs:
           touch .env
           php bin/console cache:clear
 
+      - name: ⏳ Wait for MySQL
+        run: |
+          for i in {1..30}; do
+          mysqladmin ping -h 127.0.0.1 -u root -proot && break
+          echo "Waiting for MySQL..."
+          sleep 2
+          done
+
       - name: 🗄️ Créer le schéma de base de données
         env:
           APP_ENV: test

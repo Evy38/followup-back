@@ -20,6 +20,9 @@ class BasicTest extends KernelTestCase
     public function testDatabaseConnection(): void
     {
         $conn = $this->entityManager->getConnection();
-        $this->assertTrue($conn->isConnected());
+        $result = $conn->fetchOne('SELECT 1');
+
+        $this->assertEquals(1, $result);
     }
+
 }
