@@ -19,12 +19,13 @@ LICENSE
 .gitlab-ci.yml
 
 # ===== Docker (dev) =====
-# Exclure les fichiers Docker de dev, mais GARDER docker/scripts/
 docker-compose.yml
 docker-compose.*.yml
 docker/php/
 docker/db/
-!docker/scripts/
+# On garde docker/scripts/ pour le script d'entrypoint
+Dockerfile
+.dockerignore
 
 # ===== Environnements =====
 .env
