@@ -1,159 +1,163 @@
-# Plan de Tests - FollowUp Backend
-
-**Projet** : FollowUp - Plateforme de suivi de candidatures  
-**Candidat** : [Votre nom]  
-**Date** : Février 2026
+# 📋 PLAN DE TESTS - Application FollowUp
+## Concepteur Développeur d'Applications - Titre Professionnel CDA
 
 ---
 
-## 1. Environnement de tests
+## 🎯 CONTEXTE
 
-### Configuration
-- **Base de données** : `followup_test` (MySQL 8.0)
-- **Framework** : PHPUnit 11.5 + Symfony WebTestCase
-- **Isolation** : Nettoyage automatique avant chaque test
-- **Exécution** : `docker compose exec php ./vendor/bin/phpunit`
-
-### Technologies
-- Symfony 7.3 + API Platform 4.2
-- Doctrine ORM 3.5 + PHP 8.2
+**Application :** FollowUp - Gestionnaire de candidatures d'emploi  
+**Stack technique :** Symfony 7 (PHP 8.2) + Angular 18  
+**Base de données :** MySQL 8.0  
+**Architecture :** API REST + JWT Authentication  
 
 ---
 
-## 2. Stratégie de tests
+## 📊 SYNTHÈSE DES TESTS RÉALISÉS
 
-### Répartition par type
+### Tests Back-End (PHP Symfony)
 
-| Type | Nombre | Objectif |
-|------|--------|----------|
-| **Tests unitaires** | 23 | Valider la logique métier isolée |
-| **Tests d'intégration** | 30 | Tester les endpoints API complets |
-| **Tests de sécurité** | 8 | Vérifier authentification/autorisation |
-| **TOTAL** | **56 tests** | Couverture fonctionnelle complète |
-
----
-
-## 3. Tests unitaires (23 tests)
-
-### Services testés
-- **UserService** (5 tests) : Création, mise à jour, suppression, hashage bcrypt
-- **EmailVerificationService** (5 tests) : Génération token, envoi email, gestion expiration
-- **OAuthUserService** (3 tests) : Création utilisateur OAuth, vérification automatique
-- **GoogleAuthService** (1 test) : Configuration Google Client
-- **AdzunaService** (1 test) : Transformation données API → DTO
-
-### Repositories testés
-- **UserRepository** (3 tests) : CRUD de base (save, find, remove)
-
-### DTOs testés
-- **JobOfferDTO** (1 test) : Validation structure PHP 8.1
-
-### Infrastructure
-- **DatabaseTestCase** (1 test) : Connexion base de données
-- **BasicTest** (1 test) : Environnement de tests fonctionnel
+| Type de test | Nombre | Couverture | Statut |
+|--------------|--------|------------|--------|
+| Tests unitaires | 5 | Services métier | ✅ 100% |
+| Tests d'intégration | 12 | Endpoints API | ✅ 100% |
+| Tests de sécurité | Inclus | JWT, autorisations | ✅ 100% |
+| **TOTAL** | **17** | **43 assertions** | ✅ **OK** |
 
 ---
 
-## 4. Tests d'intégration API (30 tests)
+## 🧪 DÉTAIL DES TESTS UNITAIRES (5 tests)
 
-### Authentification & Autorisation (11 tests)
-- `/api/register` : Inscription, validation email, erreurs
-- `/api/password/request` : Demande reset (anti-énumération)
-- `/api/password/reset` : Changement mot de passe sécurisé
-- `/api/verify-email` : Vérification email, gestion expiration
-- `/api/verify-email/resend` : Renvoi email de confirmation
+### Fichier : `tests/Service/UserServiceTest.php`
 
-### Gestion utilisateurs (8 tests)
-- `/api/user/profile` (GET) : Récupération profil authentifié
-- `/api/user/profile` (PUT) : Mise à jour profil
-- `/api/user` (GET) : Liste users (ROLE_ADMIN uniquement)
-- `/api/me` (GET) : Statut authentification + vérification email
+**Objectif :** Tester la logique métier du service UserService de manière isolée
 
-### Recherche d'emplois (3 tests)
-- `/api/jobs` : Recherche offres via API Adzuna (authentification requise)
+| # | Test | Ce qui est vérifié |
+|---|------|-------------------|
+| 1 | `test_create_should_hash_password` | Le mot de passe est bien hashé à la création |
+| 2 | `test_create_should_throw_exception_if_email_exists` | Exception levée si email déjà utilisé |
+| 3 | `test_create_should_throw_exception_if_email_not_gmail` | Règle métier : email doit être Gmail |
+| 4 | `test_create_should_generate_verification_token` | Token de vérification généré automatiquement |
+| 5 | `test_getById_should_throw_exception_if_user_not_found` | Exception levée si user inexistant |
+
+**Approche technique :**
+- Utilisation de **mocks** pour isoler les dépendances
+- Pattern **AAA** (Arrange, Act, Assert)
+- Framework : **PHPUnit 11.5**
 
 ---
 
-## 5. Tests de sécurité (8 tests intégrés)
+## 🌐 DÉTAIL DES TESTS D'INTÉGRATION (12 tests)
+
+### 1. Tests d'Inscription - `RegisterApiTest.php` (4 tests)
+
+**Endpoint testé :** `POST /api/register`
+
+| Test | Scénario | Code HTTP attendu |
+|------|----------|-------------------|
+| `test_register_with_valid_data_should_create_user` | Inscription avec données valides | 201 Created |
+| `test_register_with_existing_email_should_return_409` | Email déjà utilisé | 409 Conflict |
+| `test_register_with_non_gmail_email_should_return_400` | Email non Gmail | 400 Bad Request |
+| `test_register_with_missing_data_should_return_400` | Données manquantes | 400 Bad Request |
+
+**Vérifications :**
+- ✅ Utilisateur créé en base de données
+- ✅ Mot de passe hashé
+- ✅ Token de vérification généré
+- ✅ Validation des entrées
+
+---
+
+### 2. Tests d'Authentification JWT - `AuthApiTest.php` (4 tests)
+
+**Endpoint testé :** `POST /api/login_check`
+
+| Test | Scénario | Code HTTP attendu |
+|------|----------|-------------------|
+| `test_login_with_valid_credentials_should_return_jwt_token` | Connexion valide | 200 OK + Token JWT |
+| `test_login_with_invalid_password_should_return_401` | Mot de passe incorrect | 401 Unauthorized |
+| `test_login_with_non_existent_user_should_return_401` | Utilisateur inexistant | 401 Unauthorized |
+| `test_login_with_missing_credentials_should_return_400` | Identifiants manquants | 400 Bad Request |
+
+**Vérifications :**
+- ✅ Token JWT retourné avec 3 parties (header.payload.signature)
+- ✅ Authentification refusée avec mauvais identifiants
+- ✅ Format JSON correct
+
+---
+
+### 3. Tests de Sécurité - `CandidatureApiTest.php` (4 tests)
+
+**Endpoint testé :** `GET /api/my-candidatures`
+
+| Test | Scénario | Code HTTP attendu |
+|------|----------|-------------------|
+| `test_authenticated_user_can_get_their_candidatures` | Accès avec token JWT valide | 200 OK |
+| `test_unauthenticated_user_cannot_access_candidatures` | Accès sans token | 401 Unauthorized |
+| `test_user_with_invalid_token_cannot_access_candidatures` | Token invalide | 401 Unauthorized |
+| `test_user_can_only_see_their_own_candidatures` | Isolation des données | 200 OK (1 résultat) |
+
+**Vérifications de sécurité :**
+- ✅ Authentification JWT obligatoire
+- ✅ Token invalide refusé
+- ✅ **Isolation des données** : User A ne voit PAS les candidatures de User B
+- ✅ Protection des données personnelles (RGPD)
+
+---
+
+## 🔒 TESTS DE SÉCURITÉ (conformes REAC)
+
+### Vulnérabilités testées
+
+| Vulnérabilité | Protection testée | Résultat |
+|---------------|-------------------|----------|
+| **Accès non autorisé** | JWT obligatoire sur routes protégées | ✅ Bloqué (401) |
+| **Token JWT invalide** | Vérification signature token | ✅ Bloqué (401) |
+| **Injection SQL** | Doctrine ORM + requêtes préparées | ✅ Protégé |
+| **Validation entrées** | Validation Symfony (email, password) | ✅ Validé (400) |
+| **Fuite de données** | Isolation user par user | ✅ Protégé |
 
 ### Conformité OWASP Top 10
 
-| Vulnérabilité | Tests |
-|---------------|-------|
-| **A01 - Broken Access Control** | Vérification RBAC (admin/user) |
-| **A02 - Cryptographic Failures** | Hashage bcrypt des mots de passe |
-| **A03 - Injection** | Validation stricte des inputs (email, password) |
-| **A07 - Authentication Failures** | JWT requis sur tous les endpoints protégés |
-
-### Points testés
-- ✅ Authentification JWT obligatoire
-- ✅ Autorisation basée sur les rôles (RBAC)
-- ✅ Validation des entrées (format email, complexité password)
-- ✅ Anti-énumération des utilisateurs
-- ✅ Tokens sécurisés (expiration + usage unique)
-- ✅ Protection CSRF via API stateless
+- ✅ **A01:2021 - Broken Access Control** : Tests d'autorisation
+- ✅ **A02:2021 - Cryptographic Failures** : Hashage bcrypt
+- ✅ **A03:2021 - Injection** : ORM Doctrine
+- ✅ **A07:2021 - Authentication Failures** : Tests JWT
 
 ---
 
-## 6. Exécution et résultats
+## 🛠️ ENVIRONNEMENT DE TESTS
 
-### Commandes
+### Configuration
+
+```yaml
+Base de données de test : MySQL (followup_test)
+Framework de tests : PHPUnit 11.5
+Trait personnalisé : DatabasePrimer (reset BDD avant tests)
+Emails : Désactivés (MAILER_DSN=null://)
+```
+
+### Commandes d'exécution
+
 ```bash
 # Tous les tests
-composer test
+docker compose exec php ./vendor/bin/phpunit --testdox
 
-# Avec couverture de code
-composer test-coverage
+# Tests d'intégration uniquement
+docker compose exec php ./vendor/bin/phpunit tests/Api --testdox
 
-# Tests spécifiques
-./vendor/bin/phpunit tests/Service/
-./vendor/bin/phpunit tests/Api/
+# Tests unitaires uniquement
+docker compose exec php ./vendor/bin/phpunit tests/Service --testdox
 ```
-
-### Résultats attendus
-```
-PHPUnit 11.5.0
-
-Time: 00:15.234, Memory: 48.00 MB
-
-OK (56 tests, 187 assertions)
-```
-
-### Couverture
-- **Objectif** : 70% minimum
-- **Atteint** : ~75%
-- **Services critiques** : 85%+
 
 ---
 
-## 7. Conformité REAC CDA
+## 📈 RÉSULTATS
 
-### Compétence professionnelle n°9
-**"Préparer et exécuter les plans de tests d'une application"**
-
-| Critère de performance | État |
-|------------------------|------|
-| Plan de tests couvre l'ensemble des fonctionnalités | ✅ 56 tests |
-| Environnement de tests créé | ✅ Base followup_test |
-| Tests d'intégration exécutés | ✅ 30 tests API |
-| Tests de sécurité réalisés | ✅ 8 tests OWASP |
-| Résultats conformes aux attendus | ✅ 100% de réussite |
-
-### Référence
-- **REAC** : TP-01281 v04 (24/05/2023)
-- **Activité Type 3** : Préparer le déploiement d'une application sécurisée
-- **Standards** : ISTQB, OWASP Top 10 (2021)
+```
+Tests: 17, Assertions: 43
+Status: OK ✅
+Temps d'exécution: ~11 secondes
+Mémoire: 48 MB
+```
 
 ---
-
-## 8. Points forts
-
-✅ **Automatisation complète** : Tous les tests s'exécutent via PHPUnit  
-✅ **Isolation garantie** : Chaque test recrée son contexte (pas d'effets de bord)  
-✅ **Documentation claire** : PHPDoc sur chaque test avec cas d'usage  
-✅ **Sécurité prioritaire** : 8 tests spécifiques conformes OWASP  
-✅ **Rapidité d'exécution** : < 20 secondes pour 56 tests  
-
----
-
-**Document rédigé dans le cadre du titre professionnel Concepteur Développeur d'Applications (CDA)**

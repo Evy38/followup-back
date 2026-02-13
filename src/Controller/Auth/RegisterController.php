@@ -8,19 +8,10 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-/**
- * Contrôleur d'inscription utilisateur.
- * 
- * Workflow :
- * 1. Validation des données d'entrée
- * 2. Création de l'utilisateur via UserService
- * 3. Envoi automatique de l'email de vérification
- */
 class RegisterController extends AbstractController
 {
     public function __construct(
@@ -29,37 +20,28 @@ class RegisterController extends AbstractController
     ) {
     }
 
-    /**
-     * Inscription d'un nouvel utilisateur.
-     * 
-     * Payload attendu :
-     * - email (requis, format Gmail)
-     * - password (requis, min 8 caractères, 1 majuscule, 1 chiffre)
-     * - firstName (optionnel)
-     * - lastName (optionnel)
-     * 
-     * @param Request $request Contient les données d'inscription
-     * @return JsonResponse Message de succès avec statut HTTP 201
-     * 
-     * @throws BadRequestHttpException Si les données sont invalides
-     * @throws ConflictHttpException Si l'email existe déjà
-     */
     #[Route('/api/register', name: 'api_register', methods: ['POST'])]
     public function register(Request $request): JsonResponse
     {
-        // 1️⃣ Validation du payload JSON
         $data = json_decode($request->getContent(), true);
 
         if (!is_array($data) || !isset($data['email'], $data['password'])) {
-              throw new BadRequestHttpException('Email et mot de passe requis.');
+            return new JsonResponse(
+                ['message' => 'Email et mot de passe requis.'],
+                Response::HTTP_BAD_REQUEST
+            );
         }
 
-        // 2️⃣ Construction de l'entité User
         $user = new User();
         $user->setEmail(strtolower(trim($data['email'])));
         $user->setPassword($data['password']);
         $user->setRoles(['ROLE_USER']);
         $user->setIsVerified(false);
+
+        if (($data['consentRgpd'] ?? false) === true) {
+            $user->setConsentRgpd(true);
+            $user->setConsentRgpdAt(new \DateTimeImmutable());
+        }
 
         if (!empty($data['firstName'] ?? null)) {
             $user->setFirstName($data['firstName']);
@@ -69,7 +51,6 @@ class RegisterController extends AbstractController
             $user->setLastName($data['lastName']);
         }
 
-        // 3️⃣ Validation des contraintes de l'entité
         $errors = $this->validator->validate($user);
 
         if (count($errors) > 0) {
@@ -77,10 +58,10 @@ class RegisterController extends AbstractController
             foreach ($errors as $error) {
                 $errorMessages[$error->getPropertyPath()] = $error->getMessage();
             }
+
             return new JsonResponse($errorMessages, Response::HTTP_BAD_REQUEST);
         }
 
-        // 4️⃣ Création de l'utilisateur (hashage du mot de passe + envoi email)
         try {
             $this->userService->create($user);
 
@@ -89,22 +70,15 @@ class RegisterController extends AbstractController
             ], Response::HTTP_CREATED);
 
         } catch (ConflictHttpException $e) {
-            // Email déjà utilisé
-            throw $e;
-
-        } catch (BadRequestHttpException $e) {
-            // Erreur métier (ex: email non Gmail)
-            throw $e;
-
-        } catch (\Throwable $e) {
-            // Erreur inattendue : on log mais on ne révèle pas les détails
-            $this->container->get('logger')->error(
-                'Erreur lors de l\'inscription : ' . $e->getMessage(),
-                ['exception' => $e]
+            return new JsonResponse(
+                ['message' => $e->getMessage()],
+                Response::HTTP_CONFLICT
             );
 
-            throw new BadRequestHttpException(
-                'Une erreur est survenue lors de la création du compte. Veuillez réessayer.'
+        } catch (\Throwable $e) {
+            return new JsonResponse(
+                ['message' => 'Une erreur est survenue lors de la création du compte. Veuillez réessayer.'],
+                Response::HTTP_BAD_REQUEST
             );
         }
     }

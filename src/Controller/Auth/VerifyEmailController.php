@@ -18,40 +18,37 @@ class VerifyEmailController extends AbstractController
         UserRepository $userRepository,
         EntityManagerInterface $em
     ): JsonResponse {
-
         $token = $request->query->get('token');
 
         if (!$token) {
             return new JsonResponse(['error' => 'Token manquant'], 400);
         }
 
-
         $user = $userRepository->findOneBy([
             'emailVerificationToken' => $token
         ]);
 
-        if (!$user) {
-            // Vérification idempotente : l'utilisateur a-t-il déjà été vérifié ?
-            $userVerified = $userRepository->findOneBy([
-                'isVerified' => true,
-                'emailVerificationToken' => null
-            ]);
-            if ($userVerified) {
-                return new JsonResponse([
-                    'message' => 'Email déjà confirmé.'
-                ], 200);
-            }
-
-            return new JsonResponse(['error' => 'Token invalide'], 400);
+        if (!$user || $user->isDeleted()) {
+            return new JsonResponse(['error' => 'Token invalide ou expiré'], 400);
         }
 
-        $expiresAt = $user->getEmailVerificationTokenExpiresAt();
-
-        if (!$expiresAt || $expiresAt < new \DateTimeImmutable()) {
+        if (!$user->isEmailVerificationTokenValid()) {
             return new JsonResponse(['error' => 'Token expiré'], 400);
         }
 
-        // ✅ VALIDATION
+        if ($user->getPendingEmail()) {
+            $user->setEmail($user->getPendingEmail());
+            $user->setPendingEmail(null);
+            $user->setEmailVerificationToken(null);
+            $user->setEmailVerificationTokenExpiresAt(null);
+
+            $em->flush();
+
+            return new JsonResponse([
+                'message' => 'Nouvel email confirmé avec succès.'
+            ], 200);
+        }
+
         $user->setIsVerified(true);
         $user->setEmailVerificationToken(null);
         $user->setEmailVerificationTokenExpiresAt(null);
@@ -59,7 +56,7 @@ class VerifyEmailController extends AbstractController
         $em->flush();
 
         return new JsonResponse([
-            'message' => 'Email confirmé'
+            'message' => 'Email confirmé avec succès.'
         ], 200);
     }
 
@@ -81,10 +78,9 @@ class VerifyEmailController extends AbstractController
             'email' => strtolower(trim($email))
         ]);
 
-        if (!$user) {
+        if (!$user || $user->isDeleted()) {
             return new JsonResponse(['error' => 'Utilisateur non trouvé'], 404);
         }
-
 
         if ($user->isVerified()) {
             return new JsonResponse([
@@ -92,18 +88,14 @@ class VerifyEmailController extends AbstractController
             ], 400);
         }
 
-        // ✅ 1. Génération / régénération du token
         $emailVerificationService->generateVerificationToken($user);
 
-        // ✅ 2. Persistance
         $em->flush();
 
-        // ✅ 3. Envoi de l’email
         $emailVerificationService->sendVerificationEmail($user);
 
         return new JsonResponse([
             'message' => 'Email de confirmation renvoyé.'
         ], 200);
     }
-
 }

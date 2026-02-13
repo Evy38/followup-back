@@ -2,9 +2,9 @@ name: CI Backend Symfony
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   backend:
@@ -30,15 +30,21 @@ jobs:
       - name: 📥 Checkout du code
         uses: actions/checkout@v4
 
-      - name: 🐘 Setup PHP 
+      - name: 🐘 Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: "8.3"
           extensions: mbstring, pdo_mysql
           coverage: none
 
       - name: 📦 Installer les dépendances Composer
         run: composer install --no-interaction --prefer-dist --no-scripts
+
+      - name: 🔐 Generate JWT keys for CI
+        run: |
+          mkdir -p config/jwt
+          openssl genrsa -out config/jwt/private.pem 2048
+          openssl rsa -in config/jwt/private.pem -pubout -out config/jwt/public.pem
 
       - name: ⚙️ Préparer l'environnement Symfony
         env:
@@ -48,6 +54,14 @@ jobs:
         run: |
           touch .env
           php bin/console cache:clear
+
+      - name: ⏳ Wait for MySQL
+        run: |
+          for i in {1..30}; do
+          mysqladmin ping -h 127.0.0.1 -u root -proot && break
+          echo "Waiting for MySQL..."
+          sleep 2
+          done
 
       - name: 🗄️ Créer le schéma de base de données
         env:
@@ -68,9 +82,9 @@ jobs:
       - name: 🧪 Lancer les tests PHPUnit
         env:
           APP_ENV: test
-          APP_SECRET: ${{ secrets.APP_SECRET }}
+          APP_SECRET: "ci_secret"
           DATABASE_URL: "mysql://root:root@127.0.0.1:3306/followup_test?serverVersion=8.0"
-          JWT_PASSPHRASE: ${{ secrets.JWT_PASSPHRASE }}
+          JWT_PASSPHRASE: ""
           MAILER_DSN: "null://null"
           MESSENGER_TRANSPORT_DSN: "sync://"
           CORS_ALLOW_ORIGIN: "*"

@@ -91,6 +91,8 @@ security:
 
         # 🔓 PUBLIC : OAuth Google
         - { path: ^/auth/google, roles: PUBLIC_ACCESS }
+        
+        - { path: ^/api/me/consent, roles: IS_AUTHENTICATED_FULLY }
 
         # 🔒 PRIVÉ : tout le reste de l’API
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }

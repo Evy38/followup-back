@@ -32,10 +32,19 @@ class JwtAuthenticatedUserListener
     {
         $user = $event->getToken()->getUser();
 
-        // Vérification de sécurité : l'utilisateur doit être une instance de User
         if (!$user instanceof User) {
-            throw new AccessDeniedHttpException('Token JWT invalide : utilisateur non reconnu.');
+            throw new AccessDeniedHttpException('Utilisateur invalide.');
         }
 
+        if ($user->isDeleted()) {
+            throw new AccessDeniedHttpException('Compte supprimé.');
+        }
+
+        if (!$user->getIsVerified()) {
+            throw new AccessDeniedHttpException('Email non vérifié.');
+        }
     }
+
+
+
 }

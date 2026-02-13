@@ -34,7 +34,7 @@ class AppFixtures extends Fixture
 
         $manager->flush();
 
-        echo "✅ Fixtures chargées avec succès !\n";
+        echo "Fixtures chargées avec succès !\n";
         echo "📊 Utilisateurs : " . count($users) . "\n";
         echo "📊 Entreprises : " . count($entreprises) . "\n";
         echo "📊 Candidatures : " . count($candidatures) . "\n";
@@ -46,43 +46,61 @@ class AppFixtures extends Fixture
     {
         $users = [];
 
+        // ===== ADMIN =====
         $admin = (new User())
             ->setEmail('admin@followup.com')
-            ->setPassword($this->passwordHasher->hashPassword(new User(), 'Admin123!'))
+            ->setPassword(
+                $this->passwordHasher->hashPassword(new User(), 'Admin123!')
+            )
             ->setFirstName('Admin')
             ->setLastName('FollowUp')
             ->setRoles(['ROLE_ADMIN', 'ROLE_USER'])
-            ->setIsVerified(true);
+            ->setIsVerified(true)
+            ->setConsentRgpd(true)
+            ->setConsentRgpdAt(new \DateTimeImmutable());
 
         $manager->persist($admin);
         $users[] = $admin;
 
+        // ===== USER ACTIF =====
         $user = (new User())
             ->setEmail('julien.dev@gmail.com')
-            ->setPassword($this->passwordHasher->hashPassword(new User(), 'User123!'))
+            ->setPassword(
+                $this->passwordHasher->hashPassword(new User(), 'User123!')
+            )
             ->setFirstName('Julien')
             ->setLastName('Dupont')
             ->setRoles(['ROLE_USER'])
-            ->setIsVerified(true);
+            ->setIsVerified(true)
+            ->setConsentRgpd(true)
+            ->setConsentRgpdAt(new \DateTimeImmutable());
 
         $manager->persist($user);
         $users[] = $user;
 
+        // ===== USER EN ATTENTE DE VALIDATION EMAIL =====
         $newUser = (new User())
             ->setEmail('marie.test@gmail.com')
-            ->setPassword($this->passwordHasher->hashPassword(new User(), 'User123!'))
+            ->setPassword(
+                $this->passwordHasher->hashPassword(new User(), 'User123!')
+            )
             ->setFirstName('Marie')
             ->setLastName('Martin')
             ->setRoles(['ROLE_USER'])
             ->setIsVerified(false)
             ->setEmailVerificationToken(bin2hex(random_bytes(32)))
-            ->setEmailVerificationTokenExpiresAt(new \DateTimeImmutable('+24 hours'));
+            ->setEmailVerificationTokenExpiresAt(
+                new \DateTimeImmutable('+24 hours')
+            )
+            ->setConsentRgpd(true)
+            ->setConsentRgpdAt(new \DateTimeImmutable());
 
         $manager->persist($newUser);
         $users[] = $newUser;
 
         return $users;
     }
+
 
     /* ========================= ENTREPRISES ========================= */
 
@@ -156,7 +174,7 @@ class AppFixtures extends Fixture
             [
                 'entreprise' => $entreprises[0],
                 'poste' => 'Développeur Full Stack',
-                'statut' => StatutReponse::ATTENTE, // ✅ Enum PHP natif
+                'statut' => StatutReponse::ATTENTE, // Enum PHP natif
                 'date' => '-3 days',
                 'lien' => 'https://careers.accenture.com/fr-fr/job-123',
             ],
@@ -283,7 +301,7 @@ class AppFixtures extends Fixture
             $candidature->setExternalOfferId(
                 'FIXTURE-' . strtoupper(bin2hex(random_bytes(6)))
             );
-            $candidature->setStatutReponse($data['statut']); 
+            $candidature->setStatutReponse($data['statut']);
             $candidature->setDateCandidature(new \DateTimeImmutable($data['date']));
             $candidature->setLienAnnonce($data['lien']);
 
@@ -298,13 +316,13 @@ class AppFixtures extends Fixture
 
     private function createEntretiens(ObjectManager $manager, array $candidatures): void
     {
-        // ⚠️ CORRECTION IMPORTANTE : Utiliser DateTime au lieu de DateTimeImmutable
+        //  Utiliser DateTime au lieu de DateTimeImmutable
         // pour les types 'date' et 'time' de Doctrine
-        
+
         // Entretien prévu (futur)
         $entretienPrevu = new Entretien();
         $entretienPrevu->setCandidature($candidatures[4]); // "Développeur API REST"
-        $entretienPrevu->setStatut(StatutEntretien::PREVU); // ✅ Enum correctement typé
+        $entretienPrevu->setStatut(StatutEntretien::PREVU); // Enum correctement typé
         $entretienPrevu->setDateEntretien(new \DateTime('+3 days'));
         $entretienPrevu->setHeureEntretien(new \DateTime('10:00'));
         $manager->persist($entretienPrevu);
@@ -320,8 +338,8 @@ class AppFixtures extends Fixture
         // Entretien passé - résultat positif (engagé)
         $entretienEngage = new Entretien();
         $entretienEngage->setCandidature($candidatures[6]); // "Développeur Senior Symfony"
-        $entretienEngage->setStatut(StatutEntretien::PASSE); // ✅ Enum
-        $entretienEngage->setResultat(ResultatEntretien::ENGAGE); // ✅ Enum
+        $entretienEngage->setStatut(StatutEntretien::PASSE); // Enum
+        $entretienEngage->setResultat(ResultatEntretien::ENGAGE); // Enum
         $entretienEngage->setDateEntretien(new \DateTime('-25 days'));
         $entretienEngage->setHeureEntretien(new \DateTime('09:00'));
         $manager->persist($entretienEngage);
