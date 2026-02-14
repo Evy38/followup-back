@@ -4,7 +4,6 @@
 # Infrastructure as Code pour le déploiement
 
 services:
-  # -----------------------------------------------
   # Service Web - Backend Symfony
   # -----------------------------------------------
   - type: web
@@ -19,6 +18,8 @@ services:
     
     # Health check pour vérifier que l'app tourne
     healthCheckPath: /api
+    
+    # ⚠️ Les migrations doivent être configurées dans le Dockerfile ou via le dashboard Render
     
     # Variables d'environnement
     envVars:
