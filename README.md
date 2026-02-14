@@ -32,7 +32,7 @@ Ce projet démontre les compétences du **Titre Professionnel CDA** (TP-01281 v0
 ### **Activité Type 1 : Développer la partie back-end d'une application web**
 - Concevoir et développer une **API REST sécurisée** (Symfony 7.3 + API Platform 4.2)
 - Implémenter une **architecture en couches** (Controller/Service/Repository/Entity)
-- Garantir la **persistance des données** (Doctrine ORM + MySQL 8.0)
+- Garantir la **persistance des données** (Doctrine ORM + PostgreSQL 16)
 - Respecter les **bonnes pratiques** (SOLID, DRY, Clean Code)
 
 ### **Activité Type 3 : Préparer le déploiement d'une application sécurisée**
@@ -276,7 +276,7 @@ docker compose exec php ./vendor/bin/phpunit tests/Api/
 | **Langage** | PHP | 8.2 |
 | **Framework** | Symfony | 7.3 |
 | **API** | API Platform | 4.2 |
-| **Base de données** | MySQL | 8.0 |
+| **Base de données** | PostgreSQL | 16 |
 | **ORM** | Doctrine | 3.5 |
 | **Authentification** | JWT + OAuth Google | - |
 | **Tests** | PHPUnit | 11.5 |
@@ -431,7 +431,7 @@ docker compose exec php ./vendor/bin/phpunit
 
 - **API** : http://localhost:8000
 - **Documentation Swagger** : http://localhost:8000/api/docs
-- **Base de données** : `localhost:3306` (phpMyAdmin disponible sur le port 8080)
+- **Base de données** : `localhost:5432` (pgAdmin disponible sur le port 8081)
 
 ---
 

@@ -4,7 +4,7 @@
 # ===============================================
 # Ce script s'exécute au démarrage du container
 
-set +e  # Continuer même si une commande échoue (ne pas bloquer le démarrage)
+set -e  # ✅ Arrêter si une commande échoue 
 
 echo "🚀 [FollowUp] Démarrage du container..."
 

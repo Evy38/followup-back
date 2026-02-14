@@ -11,17 +11,16 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      mysql:
-        image: mysql:8.0
+      postgres:
+        image: postgres:16-alpine
         env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: followup_test
-          MYSQL_USER: follow_user
-          MYSQL_PASSWORD: root
+          POSTGRES_USER: follow_user
+          POSTGRES_PASSWORD: root
+          POSTGRES_DB: followup_test
         ports:
-          - 3306:3306
+          - 5432:5432
         options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -u follow_user -proot"
+          --health-cmd="pg_isready -U follow_user"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
@@ -34,7 +33,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.3"
-          extensions: mbstring, pdo_mysql
+          extensions: mbstring, pdo_pgsql, intl  
           coverage: none
 
       - name: 📦 Installer les dépendances Composer
@@ -49,33 +48,33 @@ jobs:
       - name: ⚙️ Préparer l'environnement Symfony
         env:
           APP_ENV: test
-          DATABASE_URL: "mysql://root:root@127.0.0.1:3306/followup_test?serverVersion=8.0"
+          DATABASE_URL: "postgresql://follow_user:root@127.0.0.1:5432/followup_test?serverVersion=16&charset=utf8"  
           MESSENGER_TRANSPORT_DSN: "sync://"
         run: |
           touch .env
           php bin/console cache:clear
 
-      - name: ⏳ Wait for MySQL
+      - name: ⏳ Wait for PostgreSQL  
         run: |
           for i in {1..30}; do
-          mysqladmin ping -h 127.0.0.1 -u root -proot && break
-          echo "Waiting for MySQL..."
-          sleep 2
+            pg_isready -h 127.0.0.1 -U follow_user && break
+            echo "Waiting for PostgreSQL..."
+            sleep 2
           done
 
       - name: 🗄️ Créer le schéma de base de données
         env:
           APP_ENV: test
-          DATABASE_URL: "mysql://root:root@127.0.0.1:3306/followup_test?serverVersion=8.0"
+          DATABASE_URL: "postgresql://follow_user:root@127.0.0.1:5432/followup_test?serverVersion=16&charset=utf8"  
           MESSENGER_TRANSPORT_DSN: "sync://"
         run: |
           php bin/console doctrine:database:create --if-not-exists
-          php bin/console doctrine:schema:create
+          php bin/console doctrine:migrations:migrate --no-interaction  # ✅ Utiliser migrations au lieu de schema:create
 
       - name: 🧩 Vérifier le schéma Doctrine
         env:
           APP_ENV: test
-          DATABASE_URL: "mysql://root:root@127.0.0.1:3306/followup_test?serverVersion=8.0"
+          DATABASE_URL: "postgresql://follow_user:root@127.0.0.1:5432/followup_test?serverVersion=16&charset=utf8" 
           MESSENGER_TRANSPORT_DSN: "sync://"
         run: php bin/console doctrine:schema:validate --skip-sync
 
@@ -83,7 +82,7 @@ jobs:
         env:
           APP_ENV: test
           APP_SECRET: "ci_secret"
-          DATABASE_URL: "mysql://root:root@127.0.0.1:3306/followup_test?serverVersion=8.0"
+          DATABASE_URL: "postgresql://follow_user:root@127.0.0.1:5432/followup_test?serverVersion=16&charset=utf8"  # ✅ PostgreSQL
           JWT_PASSPHRASE: ""
           MAILER_DSN: "null://null"
           MESSENGER_TRANSPORT_DSN: "sync://"

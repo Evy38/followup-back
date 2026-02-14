@@ -7,7 +7,7 @@
 
 **Application :** FollowUp - Gestionnaire de candidatures d'emploi  
 **Stack technique :** Symfony 7 (PHP 8.2) + Angular 18  
-**Base de données :** MySQL 8.0  
+**Base de données :** PostgreSQL 16  
 **Architecture :** API REST + JWT Authentication  
 
 ---
@@ -130,7 +130,7 @@
 ### Configuration
 
 ```yaml
-Base de données de test : MySQL (followup_test)
+Base de données de test : PostgreSQL (followup_test)
 Framework de tests : PHPUnit 11.5
 Trait personnalisé : DatabasePrimer (reset BDD avant tests)
 Emails : Désactivés (MAILER_DSN=null://)

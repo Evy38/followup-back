@@ -11,7 +11,7 @@ Ce document explique le déploiement du backend Symfony FollowUp sur la platefor
 ### Infrastructure
 - **Plateforme** : Render (PaaS - Platform as a Service)
 - **Runtime** : Docker (container)
-- **Base de données** : PostgreSQL 14 (managed par Render)
+- **Base de données** : PostgreSQL 16 (managed par Render)
 - **Région** : Frankfurt (EU) - conformité RGPD
 - **Plan** : Free tier (gratuit)
 
@@ -140,7 +140,7 @@ Dans le dashboard Render → Service → Environment :
 
 | Aspect | Développement (Local) | Production (Render) |
 |--------|----------------------|---------------------|
-| **Base de données** | MySQL 8.0 (Docker) | PostgreSQL 14 (Managed) |
+| **Base de données** | PostgreSQL 16 (Docker) | PostgreSQL 16 (Managed) |
 | **Serveur Web** | Apache (Docker, port 8080) | Apache (Docker, port dynamique) |
 | **Clés JWT** | Générées manuellement | Générées au démarrage |
 | **Cache** | Fichiers (var/cache) | OPcache + Filesystem |

@@ -12,7 +12,7 @@ Objectif : vérifier automatiquement la qualité du backend à chaque PR/push ve
 2. Setup PHP (8.3)
 3. Installation Composer
 4. Préparation Symfony en environnement `test`
-5. Mise en place MySQL de test
+5. Mise en place PostgreSQL de test
 6. Création/validation du schéma Doctrine
 7. Exécution des tests PHPUnit
 

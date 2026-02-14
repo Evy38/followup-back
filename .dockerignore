@@ -21,9 +21,8 @@ LICENSE
 # ===== Docker (dev) =====
 docker-compose.yml
 docker-compose.*.yml
-docker/php/
 docker/db/
-# On garde docker/scripts/ pour le script d'entrypoint
+# On garde docker/php/vhost.conf et docker/scripts/ pour le build
 Dockerfile
 .dockerignore
 
