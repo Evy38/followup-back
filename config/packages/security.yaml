@@ -25,6 +25,14 @@ security:
     firewalls:
 
         # ----------------------------
+        # 🏥 HEALTHCHECK (PUBLIC)
+        # ----------------------------
+        health:
+            pattern: ^/health
+            stateless: true
+            security: false
+
+        # ----------------------------
         # 🔓 ROUTES DEV / DEBUG
         # ----------------------------
         dev:
@@ -91,6 +99,10 @@ security:
 
         # 🔓 PUBLIC : OAuth Google
         - { path: ^/auth/google, roles: PUBLIC_ACCESS }
+        
+        # 🏥 PUBLIC : Healthcheck
+        - { path: ^/health, roles: PUBLIC_ACCESS }
+        - { path: ^/api$, roles: PUBLIC_ACCESS }
         
         - { path: ^/api/me/consent, roles: IS_AUTHENTICATED_FULLY }
 
