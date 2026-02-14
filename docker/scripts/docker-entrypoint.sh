@@ -1,12 +1,12 @@
 #!/bin/bash
 # ===============================================
-# 🚀 Script d'entrypoint Docker - Production (CORRIGÉ)
+# 🚀 Script d'entrypoint Docker - Production
 # ===============================================
 # Ce script s'exécute au démarrage du container
 
-set -e  # Arrêter si une commande échoue
+set +e  # Continuer même si une commande échoue (ne pas bloquer le démarrage)
 
-echo "🚀 [FollowUp] Démarrage du container en production..."
+echo "🚀 [FollowUp] Démarrage du container..."
 
 # -----------------------------------------------
 # 1️⃣ Configurer Apache AVANT tout (fix port)
@@ -40,64 +40,21 @@ else
 fi
 
 # -----------------------------------------------
-# 3️⃣ Attendre que la base de données soit prête
+# 3️⃣ Nettoyer le cache (non-bloquant)
 # -----------------------------------------------
-echo "⏳ [DB] Attente de la base de données..."
-
-# Attendre jusqu'à 60 secondes que la DB soit accessible
-max_attempts=60
-attempt=0
-
-while [ $attempt -lt $max_attempts ]; do
-    # Tester la connexion via une commande Doctrine minimaliste
-    if php bin/console doctrine:migrations:status --no-interaction 2>/dev/null | grep -q "Database"; then
-        echo "✅ [DB] Base de données accessible"
-        break
-    fi
-    
-    attempt=$((attempt + 1))
-    remaining=$((max_attempts - attempt))
-    
-    if [ $attempt -ge $max_attempts ]; then
-        echo "❌ [DB] Timeout: impossible de se connecter à la base de données après ${max_attempts}s"
-        echo "⚠️ Démarrage d'Apache quand même (les migrations seront faites plus tard)"
-        # Ne pas exit 1, laisser Apache démarrer
-        break
-    fi
-    
-    echo "⏳ [DB] En attente... ($remaining secondes restantes)"
-    sleep 1
-done
+echo "🗑️ [Cache] Nettoyage du cache..."
+php bin/console cache:clear --no-warmup 2>&1 | grep -v "PDOException" || true
+echo "✅ [Cache] Cache nettoyé"
 
 # -----------------------------------------------
-# 4️⃣ Lancer les migrations Doctrine (si DB accessible)
+# 4️⃣ ⚠️ Migrations optionnelles
 # -----------------------------------------------
-if php bin/console doctrine:migrations:status --no-interaction 2>/dev/null | grep -q "Database"; then
-    echo "📦 [Migrations] Exécution des migrations..."
-    
-    # Créer la base si elle n'existe pas
-    php bin/console doctrine:database:create --if-not-exists --no-interaction || true
-    
-    # Lancer les migrations
-    php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration || true
-    
-    echo "✅ [Migrations] Migrations exécutées"
-else
-    echo "⚠️ [Migrations] DB non accessible, migrations ignorées"
-fi
+echo "💡 [Database] Les migrations seront exécutées via Render post-deploy hook"
+echo "💡 [Instructions] Pour migrer manuellement : php bin/console doctrine:migrations:migrate"
 
-# -----------------------------------------------
-# 5️⃣ Optimiser le cache Symfony
-# -----------------------------------------------
-echo "🗑️ [Cache] Nettoyage et optimisation du cache..."
-
-php bin/console cache:clear --no-warmup || true
-php bin/console cache:warmup || true
-
-echo "✅ [Cache] Cache optimisé"
-
-# -----------------------------------------------
-# 6️⃣ Permissions finales
+echo ""
+echo "✅ [FollowUp] Conteneur prêt, démarrage d'Apache..."
+echo ""
 # -----------------------------------------------
 echo "🔐 [Permissions] Configuration des permissions..."
 
