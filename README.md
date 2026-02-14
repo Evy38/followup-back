@@ -447,7 +447,7 @@ Documentation interactive disponible : http://localhost:8000/api/docs
 ```
 POST   /api/register           Inscription
 POST   /api/login_check        Connexion (JWT)
-GET    /api/google/auth        Initiation OAuth Google
+GET    /auth/google       Initiation OAuth Google
 GET    /api/google/callback    Callback OAuth
 POST   /api/password/request   Demande reset password
 POST   /api/password/reset     Reset password

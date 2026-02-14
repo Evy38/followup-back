@@ -3,7 +3,7 @@
 nelmio_cors: 
     defaults:
         origin_regex: true
-        allow_origin: ['%env(CORS_ALLOW_ORIGIN)%', 'http://localhost:4200'] # liste des site autorisés à communiquer avec ce back
+        allow_origin: ['%env(CORS_ALLOW_ORIGIN)%', 'http://localhost:4200', 'https://followup-front.onrender.com'] # liste des site autorisés à communiquer avec ce back
         allow_credentials: true # autorise l'envoie des cookies
         allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE'] # liste les types de requêtes autorisées
         allow_headers: ['Content-Type', 'Authorization'] # liste des en-tête authorisées à être envoyées depuis angular : Content-type: permet envoie json // Authorization : permet envoie token Jwt
