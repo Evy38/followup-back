@@ -89,9 +89,11 @@ services:
       - key: ADZUNA_COUNTRY
         value: fr
       
-      # ===== Redis (optionnel - on peut s'en passer pour commencer) =====
-      # - key: REDIS_URL
-      #   value: redis://red-xxx:6379  # À configurer si tu actives Redis
+      # ===== Redis Cloud (OBLIGATOIRE) =====
+      # ⚠️ Cette variable DOIT être configurée dans le dashboard Render
+      # Valeur actuelle : redis://default:LIqgK6yrXzBbGjo7HhMlmf6VIfZdMiaharedis-13990.c300.eu-central-1-1.ec2.cloud.redislabs.com:13990
+      - key: REDIS_URL
+        sync: false
 
 # -----------------------------------------------
 # Base de données PostgreSQL

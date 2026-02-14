@@ -1,0 +1,7 @@
+# Configuration PRODUCTION : Sessions dans Redis
+framework:
+    session:
+        handler_id: Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler
+        cookie_secure: true  # HTTPS uniquement
+        cookie_samesite: lax
+        cookie_httponly: true
