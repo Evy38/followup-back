@@ -49,8 +49,8 @@ max_attempts=60
 attempt=0
 
 while [ $attempt -lt $max_attempts ]; do
-    # Tester la connexion avec PHP
-    if php -r "new PDO(getenv('DATABASE_URL'));" 2>/dev/null; then
+    # Tester la connexion via une commande Doctrine minimaliste
+    if php bin/console doctrine:migrations:status --no-interaction 2>/dev/null | grep -q "Database"; then
         echo "✅ [DB] Base de données accessible"
         break
     fi
@@ -72,7 +72,7 @@ done
 # -----------------------------------------------
 # 4️⃣ Lancer les migrations Doctrine (si DB accessible)
 # -----------------------------------------------
-if php -r "new PDO(getenv('DATABASE_URL'));" 2>/dev/null; then
+if php bin/console doctrine:migrations:status --no-interaction 2>/dev/null | grep -q "Database"; then
     echo "📦 [Migrations] Exécution des migrations..."
     
     # Créer la base si elle n'existe pas
