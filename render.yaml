@@ -90,10 +90,9 @@ services:
         value: fr
       
       # ===== Redis Cloud (OBLIGATOIRE) =====
-      # ⚠️ Cette variable DOIT être configurée dans le dashboard Render
-      # Valeur actuelle : redis://default:LIqgK6yrXzBbGjo7HhMlmf6VIfZdMiaharedis-13990.c300.eu-central-1-1.ec2.cloud.redislabs.com:13990
+      # ✅ À configurer dans le dashboard Render
       - key: REDIS_URL
-        sync: false
+        sync: false  # Configurer manuellement : redis://user:password@host:port
 
 # -----------------------------------------------
 # Base de données PostgreSQL

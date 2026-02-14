@@ -32,7 +32,8 @@ APP_ENV=prod php bin/console cache:clear
 APP_ENV=prod php bin/console cache:warmup
 
 echo "💾 Step 4: Backup (simulation)"
-echo "(simulation) mysqldump -u... -p... followup_prod > backup.sql"
+# pg_dump au lieu de mysqldump
+echo "(simulation) pg_dump -U follow_user -h localhost followup_prod > backup_${TIMESTAMP}.sql"
 
 echo "🚀 Step 5: Deploy (simulation)"
 case $ENVIRONMENT in
@@ -58,5 +59,3 @@ echo "🧪 Step 6: Post-deploy checks (simulation)"
 echo "(simulation) curl https://api-$ENVIRONMENT.followup.com/health"
 
 echo "🎉 Deployment finished (simulation)"
-
-chmod +x deployment/deploy.sh

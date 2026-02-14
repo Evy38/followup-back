@@ -9,7 +9,7 @@ Le backend FollowUp utilise plusieurs environnements pour sécuriser les évolut
 
 - **Accès** : développeurs
 - **URL API** : `http://localhost:8080/api`
-- **DB** : MySQL Docker (local)
+- **DB** : PostgreSQL Docker (local)
 - **Mailer** : Mailhog (dev)
 
 Objectif :
@@ -22,7 +22,7 @@ Objectif :
 
 - **Accès** : équipe dev / test
 - **URL API** : `https://api-sit.followup.com` *(exemple)*
-- **DB** : MySQL dédiée staging *(exemple)*
+- **DB** : PostgreSQL dédiée staging *(exemple)*
 - **Mailer** : désactivé ou sandbox
 
 Objectif :
@@ -48,7 +48,7 @@ Objectif :
 
 - **Accès** : utilisateurs finaux
 - **URL API** : `https://api.followup.com` *(exemple)*
-- **DB** : MySQL production
+- **DB** : PostgreSQL production
 - **Mailer** : réel (SMTP/Provider)
 
 Objectif :

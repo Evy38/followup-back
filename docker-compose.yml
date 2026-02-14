@@ -6,7 +6,6 @@ services:
     container_name: followup-php
     volumes:
       - ./:/var/www/html
-      - ./docker/php/vhost.conf:/etc/apache2/sites-available/000-default.conf
     ports:
       - "8080:80" # accès Symfony via http://localhost:8080
     depends_on:
@@ -14,30 +13,28 @@ services:
     restart: unless-stopped
 
   db:
-    image: mysql:8.0
+    image: postgres:16-alpine
     container_name: followup-db
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-followup_db}
-      MYSQL_USER: ${MYSQL_USER:-follow_user}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-root}
+      POSTGRES_USER: ${POSTGRES_USER:-follow_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}
+      POSTGRES_DB: ${POSTGRES_DB:-followup_db}
       TZ: ${TZ:-Europe/Paris}
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - db_data:/var/lib/mysql
-      - ./docker/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db_data:/var/lib/postgresql/data
+      - ./docker/db/init.sql:/docker-entrypoint-initdb.d/init.sql 
     restart: unless-stopped
 
-  pma:
-    image: phpmyadmin:5
-    container_name: followup-pma
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: followup-pgadmin
     environment:
-      PMA_HOST: ${PMA_HOST:-db}
-      PMA_USER: ${PMA_USER:-root}
-      PMA_PASSWORD: ${PMA_PASSWORD:-root}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-root}
     ports:
-      - "8081:80" # accès phpMyAdmin via http://localhost:8081
+      - "8081:80" # accès pgAdmin via http://localhost:8081
     depends_on:
       - db
     restart: unless-stopped
