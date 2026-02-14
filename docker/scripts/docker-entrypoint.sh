@@ -9,6 +9,17 @@ set +e  # Continuer même si une commande échoue (ne pas bloquer le démarrage)
 echo "🚀 [FollowUp] Démarrage du container..."
 
 # -----------------------------------------------
+# 0️⃣ Créer le fichier .env s'il n'existe pas
+# -----------------------------------------------
+# Symfony s'attend à ce que le fichier .env existe
+# même s'il est vide (les variables viendront de l'environnement du système)
+if [ ! -f .env ]; then
+    echo "📝 [ENV] Création du fichier .env..."
+    touch .env
+    echo "✅ [ENV] Fichier .env créé"
+fi
+
+# -----------------------------------------------
 # 1️⃣ Configurer Apache AVANT tout (fix port)
 # -----------------------------------------------
 echo "🌐 [Apache] Configuration du port ${PORT:-80}..."
