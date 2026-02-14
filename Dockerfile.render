@@ -17,6 +17,9 @@ ENV APP_ENV=prod \
 RUN apt-get update && apt-get install -y \
     git unzip libicu-dev libzip-dev libxml2-dev libpq-dev \
     && docker-php-ext-install pdo pdo_pgsql pdo_mysql intl zip opcache \
+    && docker-php-ext-enable pdo_pgsql \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Installer Composer
@@ -43,6 +46,9 @@ ENV APP_ENV=prod \
 RUN apt-get update && apt-get install -y \
     libicu-dev libzip-dev libpq-dev \
     && docker-php-ext-install pdo pdo_pgsql intl zip opcache \
+    && docker-php-ext-enable pdo_pgsql \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Activer mod_rewrite pour Symfony
@@ -88,8 +94,10 @@ COPY . .
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Créer un fichier .env minimal pour Symfony en production
+# Sans Redis utilisé, mais avec une URL factice pour éviter les erreurs de config
 RUN echo "APP_ENV=prod" > .env \
     && echo "APP_DEBUG=0" >> .env \
+    && echo "REDIS_URL=redis://localhost:6379" >> .env \
     && echo "###> symfony/framework-bundle ###" >> .env \
     && echo "###< symfony/framework-bundle ###" >> .env
 
