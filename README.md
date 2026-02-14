@@ -3,8 +3,8 @@
 **API REST sécurisée de suivi de candidatures d'emploi**  
 Projet de fin de formation – **Titre Professionnel Concepteur Développeur d'Applications (CDA)**
 
-[![Tests](https://img.shields.io/badge/tests-49%20passing-brightgreen)](tests/)
-[![Coverage](https://img.shields.io/badge/coverage-75%25-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-18%20passing-brightgreen)](tests/)
+[![Coverage](https://img.shields.io/badge/coverage-in%20progress-yellow)](tests/)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue)](https://www.php.net/)
 [![Symfony](https://img.shields.io/badge/Symfony-7.3-black)](https://symfony.com/)
 
@@ -67,17 +67,18 @@ Ce projet démontre les compétences du **Titre Professionnel CDA** (TP-01281 v0
 
 ### **Composants principaux**
 
-**Controllers (11 fichiers)**
+**Controllers (13 fichiers)**
 - Reçoivent et valident les requêtes HTTP
 - Gèrent les codes de réponse HTTP (200, 201, 400, 401, 403, 404)
 - Délèguent la logique métier aux services
-- Exemples : `RegisterController`, `ForgotPasswordController`, `CandidatureController`
+- Organisation : Controllers Api (Admin, User, Candidature, Job, Me) + Controllers Auth (Register, Login, Reset Password, Verify Email)
+- Exemples : `RegisterController`, `ForgotPasswordController`, `AdminController`, `MyCandidaturesController`, `CandidatureReponseController`
 
-**Services (8 fichiers)**
+**Services (9 fichiers)**
 - Contiennent la logique métier complexe
 - Centralisent la sécurité (hashage, validation, tokens)
 - Facilitent les tests unitaires
-- Exemples : `UserService`, `RelanceService`, `EmailVerificationService`, `AdzunaService`
+- Exemples : `UserService`, `RelanceService`, `EmailVerificationService`, `AdzunaService`, `GoogleAuthService`, `OAuthUserService`, `CandidatureStatutSyncService`, `SecurityEmailService`, `ContractTypeMapper`
 
 **Repositories (6 fichiers)**
 - Gèrent exclusivement l'accès aux données
@@ -196,47 +197,58 @@ Workflow en 2 étapes :
 
 ### **Stratégie de tests (Plan de tests conforme REAC)**
 
-**56 tests automatisés** répartis en :
+**18 tests automatisés** répartis en :
 
 | Type | Quantité | Exemples |
 |------|----------|----------|
-| **Tests unitaires** | 23 | Services isolés (UserService, RelanceService, EmailVerificationService) |
-| **Tests d'intégration** | 30 | Endpoints API complets (auth, candidatures, profil) |
-| **Tests de sécurité** | 8 | JWT, RBAC, validation inputs, OWASP |
-| **Tests de non-régression** | 3 | Workflows critiques (register, reset password, verify email) |
+| **Tests unitaires** | 5 | UserService isolation (création, validation, email unique) |
+| **Tests d'intégration API** | 12 | Endpoints complets (auth, register, candidatures) |
+| **Tests de non-régression** | 1 | Workflow basique |
 
-**Couverture de code** : ~75% (cible 70% minimum)
+**Couverture de code** : En cours de développement
 
-**Temps d'exécution** : < 15 secondes pour 56 tests
+**Temps d'exécution** : < 5 secondes pour 18 tests
 
 ### **Tests unitaires (exemples)**
 
 ```php
 // Test du service UserService
-public function testCreateUserWithDuplicateEmailThrowsException(): void
+public function test_create_should_hash_password(): void
 {
-    $this->expectException(ConflictHttpException::class);
-    
-    $user1 = new User();
-    $user1->setEmail('duplicate@example.com');
-    $this->userService->create($user1);
-    
-    $user2 = new User();
-    $user2->setEmail('duplicate@example.com');
-    $this->userService->create($user2); // Doit lever une exception
+    // Vérification que le mot de passe est bien hashé à la création
+    // Utilisation de mocks pour les dépendances (Repository, Hasher, EntityManager)
+    $this->assertTrue(...);
+}
+
+public function test_create_user_with_invalid_email(): void
+{
+    // Vérification que la validation échoue avec un email invalide
 }
 ```
 
 ### **Tests d'intégration (exemples)**
 
 ```php
-// Test d'un endpoint protégé
-public function testProfileRequiresAuthentication(): void
+// Test de l'endpoint de candidatures
+public function test_authenticated_user_can_get_their_candidatures(): void
 {
     $client = static::createClient();
-    $client->request('GET', '/api/user/profile');
+    // ... authentification avec JWT
+    $client->request('GET', '/api/candidatures');
     
-    $this->assertResponseStatusCodeSame(Response::HTTP_UNAUTHORIZED);
+    $this->assertResponseStatusCodeSame(Response::HTTP_OK);
+}
+
+// Test de registration
+public function test_user_can_register(): void
+{
+    $client = static::createClient();
+    $client->request('POST', '/api/register', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode([
+        'email' => 'newuser@example.com',
+        'password' => 'Password123'
+    ]));
+    
+    $this->assertResponseStatusCodeSame(Response::HTTP_CREATED);
 }
 ```
 
@@ -246,17 +258,14 @@ public function testProfileRequiresAuthentication(): void
 # Tous les tests
 docker compose exec php ./vendor/bin/phpunit
 
-# Avec couverture de code
-docker compose exec php ./vendor/bin/phpunit --coverage-html coverage/
-
 # Tests spécifiques
-docker compose exec php ./vendor/bin/phpunit tests/Service/
+docker compose exec php ./vendor/bin/phpunit tests/Service/UserServiceTest.php
 docker compose exec php ./vendor/bin/phpunit tests/Api/
 ```
 
 ### **Documentation des tests**
 
-📄 **Plan de tests complet** : [docs/PLAN_DE_TESTS_COURT.md](docs/PLAN_DE_TESTS_COURT.md)
+📄 **Plan de tests complet** : [docs/PLAN_DE_TESTS.md](docs/PLAN_DE_TESTS.md)
 
 ---
 
@@ -528,10 +537,10 @@ curl -X GET http://localhost:8000/api/user/profile \
 
 ## 📚 Documentation complémentaire
 
-- **[Plan de tests](docs/PLAN_DE_TESTS_COURT.md)** - Stratégie de tests et couverture
-- **[Architecture](docs/ARCHITECTURE.md)** - Diagrammes UML et choix techniques
+- **[Plan de tests](docs/PLAN_DE_TESTS.md)** - Stratégie de tests et couverture
 - **[API OpenAPI](http://localhost:8000/api/docs)** - Documentation interactive Swagger
-- **[Guide de déploiement](docs/DEPLOYMENT.md)** - Procédure de mise en production
+- **[Guide de déploiement Render](docs/DEPLOIEMENT-RENDER.md)** - Procédure de mise en production
+- **[Environnements](docs/environments.md)** - Configuration dev/test/prod
 
 ---
 
