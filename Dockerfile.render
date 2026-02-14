@@ -17,8 +17,6 @@ ENV APP_ENV=prod \
 RUN apt-get update && apt-get install -y \
     git unzip libicu-dev libzip-dev libxml2-dev libpq-dev \
     && docker-php-ext-install pdo pdo_pgsql pdo_mysql intl zip opcache \
-    && pecl install redis \
-    && docker-php-ext-enable redis \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Installer Composer
@@ -45,8 +43,6 @@ ENV APP_ENV=prod \
 RUN apt-get update && apt-get install -y \
     libicu-dev libzip-dev libpq-dev \
     && docker-php-ext-install pdo pdo_pgsql intl zip opcache \
-    && pecl install redis \
-    && docker-php-ext-enable redis \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Activer mod_rewrite pour Symfony
