@@ -50,3 +50,21 @@ services:
             $appId: '%env(ADZUNA_APP_ID)%'
             $appKey: '%env(ADZUNA_APP_KEY)%'
             $country: '%env(ADZUNA_COUNTRY)%'
+
+# -----------------------------------------------
+# Services Redis (PRODUCTION uniquement)
+# -----------------------------------------------
+when@prod:
+    services:
+        # Client Redis créé depuis REDIS_URL
+        Redis:
+            class: Redis
+            factory: ['Symfony\Component\Cache\Adapter\RedisAdapter', 'createConnection']
+            arguments:
+                - '%env(REDIS_URL)%'
+
+        # Handler de sessions Redis
+        Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler:
+            arguments:
+                - '@Redis'
+                - { prefix: 'followup_sess_', ttl: 3600 }

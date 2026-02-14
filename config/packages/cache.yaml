@@ -3,16 +3,20 @@ framework:
         # Unique name of your app: used to compute stable namespaces for cache keys.
         prefix_seed: followup_app
 
-        # Use file-based cache in production (no external service required)
+        # Cache par défaut (overridé en dev/prod)
         app: cache.adapter.filesystem
 
-        # Alternative: Redis adapter (requires REDIS_URL to be available)
-        # app: cache.adapter.redis
-        # default_redis_provider: redis://localhost:6379
-
-        # Alternative: APCu (not recommended with heavy random-write workloads as memory fragmentation can cause perf issues)
-        # app: cache.adapter.apcu
-
-        # Namespaced pools use the above "app" backend by default
-        #pools:
-            #my.dedicated.cache: null
+# -----------------------------------------------
+# PRODUCTION : Redis cache
+# -----------------------------------------------
+when@prod:
+    framework:
+        cache:
+            app: cache.adapter.redis
+            default_redis_provider: '%env(REDIS_URL)%'
+            
+            pools:
+                # Cache pour les sessions
+                cache.sessions:
+                    adapter: cache.adapter.redis
+                    provider: '%env(REDIS_URL)%'
