@@ -17,7 +17,7 @@ services:
     branch: main
     
     # Health check pour vérifier que l'app tourne
-    healthCheckPath: /api
+    healthCheckPath: /health
     
     # ⚠️ Les migrations doivent être configurées dans le Dockerfile ou via le dashboard Render
     
