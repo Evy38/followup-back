@@ -58,16 +58,49 @@ php bin/console cache:clear --no-warmup 2>&1 | grep -v "PDOException" || true
 echo "✅ [Cache] Cache nettoyé"
 
 # -----------------------------------------------
-# 4️⃣ Exécuter les migrations
+# 4️⃣ Attendre que la base de données soit prête
 # -----------------------------------------------
-echo "🗄️ [Database] Exécution des migrations..."
+echo "🗄️ [Database] Vérification de la connexion..."
 
-php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
+max_attempts=30
+attempt=0
 
-if [ $? -ne 0 ]; then
-    echo "❌ [Database] Échec des migrations !"
+while [ $attempt -lt $max_attempts ]; do
+    if php bin/console dbal:run-sql "SELECT 1" > /dev/null 2>&1; then
+        echo "✅ [Database] Connexion établie !"
+        break
+    fi
+    
+    attempt=$((attempt + 1))
+    echo "⏳ [Database] Tentative $attempt/$max_attempts - En attente..."
+    sleep 2
+done
+
+if [ $attempt -eq $max_attempts ]; then
+    echo "❌ [Database] Impossible de se connecter à la base de données après $max_attempts tentatives"
+    echo "⚠️  Le conteneur va démarrer mais les migrations n'ont pas été exécutées"
 else
-    echo "✅ [Database] Migrations terminées"
+    # -----------------------------------------------
+    # 5️⃣ Créer la base si elle n'existe pas
+    # -----------------------------------------------
+    echo "🗄️ [Database] Création de la base si nécessaire..."
+    php bin/console doctrine:database:create --if-not-exists --no-interaction 2>&1 | grep -v "already exists" || true
+    
+    # -----------------------------------------------
+    # 6️⃣ Exécuter les migrations
+    # -----------------------------------------------
+    echo "🗄️ [Database] Exécution des migrations..."
+    
+    if php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration; then
+        echo "✅ [Database] Migrations terminées avec succès !"
+        
+        # Afficher le statut des migrations
+        echo "📊 [Database] Statut des migrations :"
+        php bin/console doctrine:migrations:status
+    else
+        echo "❌ [Database] Échec des migrations !"
+        echo "⚠️  Le conteneur va démarrer mais la base peut être incomplète"
+    fi
 fi
 
 
