@@ -58,10 +58,18 @@ php bin/console cache:clear --no-warmup 2>&1 | grep -v "PDOException" || true
 echo "✅ [Cache] Cache nettoyé"
 
 # -----------------------------------------------
-# 4️⃣ ⚠️ Migrations optionnelles
+# 4️⃣ Exécuter les migrations
 # -----------------------------------------------
-echo "💡 [Database] Les migrations seront exécutées via Render post-deploy hook"
-echo "💡 [Instructions] Pour migrer manuellement : php bin/console doctrine:migrations:migrate"
+echo "🗄️ [Database] Exécution des migrations..."
+
+php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration
+
+if [ $? -ne 0 ]; then
+    echo "❌ [Database] Échec des migrations !"
+else
+    echo "✅ [Database] Migrations terminées"
+fi
+
 
 echo ""
 echo "✅ [FollowUp] Conteneur prêt, démarrage d'Apache..."

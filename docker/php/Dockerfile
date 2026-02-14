@@ -3,7 +3,7 @@ FROM php:8.2-apache
 # Installer dépendances système + extensions PHP nécessaires
 RUN apt-get update && apt-get install -y \
     git unzip libicu-dev libzip-dev libxml2-dev libpq-dev \
-    && docker-php-ext-install pdo pdo_mysql intl zip opcache \
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql intl zip opcache \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Activer mod_rewrite pour Symfony
@@ -25,5 +25,21 @@ COPY docker/php/vhost.conf /etc/apache2/sites-available/000-default.conf
 # Définir le dossier de travail
 WORKDIR /var/www/html
 
+# Copier le projet
+COPY . .
+
 # Installer Composer (depuis image officielle)
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Installer dépendances Symfony
+RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+# Copier l’entrypoint
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Utiliser l’entrypoint personnalisé
+ENTRYPOINT ["entrypoint.sh"]
+
+# Démarrer Apache
+CMD ["apache2-foreground"]
