@@ -67,19 +67,17 @@ RUN { \
 } > /usr/local/etc/php/conf.d/symfony-prod.ini
 
 # Configuration Apache pour Symfony
-RUN { \
-    echo '<VirtualHost *:80>'; \
-    echo '    ServerName localhost'; \
-    echo '    DocumentRoot /var/www/html/public'; \
-    echo '    <Directory /var/www/html/public>'; \
-    echo '        AllowOverride All'; \
-    echo '        Require all granted'; \
-    echo '        FallbackResource /index.php'; \
-    echo '    </Directory>'; \
-    echo '    ErrorLog /var/log/apache2/error.log'; \
-    echo '    CustomLog /var/log/apache2/access.log combined'; \
-    echo '</VirtualHost>'; \
-} > /etc/apache2/sites-available/000-default.conf
+RUN echo '<VirtualHost *:80>' > /etc/apache2/sites-available/000-default.conf && \
+    echo '  ServerName localhost' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '  DocumentRoot /var/www/html/public' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '  <Directory /var/www/html/public>' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '    AllowOverride All' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '    Require all granted' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '    FallbackResource /index.php' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '  </Directory>' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '  ErrorLog /var/log/apache2/error.log' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '  CustomLog /var/log/apache2/access.log combined' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '</VirtualHost>' >> /etc/apache2/sites-available/000-default.conf
 
 # Créer le répertoire de travail
 WORKDIR /var/www/html
