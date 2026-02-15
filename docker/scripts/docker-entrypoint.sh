@@ -99,13 +99,26 @@ if [ "$DB_CONNECTED" = "true" ]; then
     # -----------------------------------------------
     echo "📊 [Database] Exécution des migrations..."
     
-    php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration 2>&1 | tail -3 || true
-    echo "✅ [Database] Migrations complétées"
+    if php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration 2>&1; then
+        echo "✅ [Database] Migrations complétées avec succès"
+    else
+        MIGRATION_ERROR=$?
+        echo "❌ [Database] ERREUR migrations (code: $MIGRATION_ERROR)" >&2
+        echo "Les migrations ont échoué, vérifiez les logs" >&2
+    fi
+    
+    # -----------------------------------------------
+    # 8️⃣ Charger les fixtures (données initiales)
+    # -----------------------------------------------
+    if [ -d "src/DataFixtures" ] && [ "$(ls -A src/DataFixtures)" ]; then
+        echo "📦 [Database] Chargement des fixtures..."
+        php bin/console doctrine:fixtures:load --no-interaction 2>&1 || true
+        echo "✅ [Database] Fixtures chargées"
+    fi
 else
     echo "⚠️  [Database] Non connectée - l'app démarrera sans BDD"
     echo "    Elle se connectera automatiquement quand la DB sera accessible"
 fi
-
 
 echo ""
 echo "✅ [FollowUp] Conteneur prêt, démarrage d'Apache..."
@@ -119,7 +132,7 @@ chmod -R 775 /var/www/html/var
 echo "✅ [Permissions] Permissions configurées"
 
 # -----------------------------------------------
-# 7️⃣ Démarrer Apache
+# 9️⃣ Démarrer Apache
 # -----------------------------------------------
 echo "🎉 [FollowUp] Application prête ! Démarrage d'Apache..."
 
