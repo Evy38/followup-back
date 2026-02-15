@@ -26,11 +26,20 @@ rm -f .env
 touch .env
 echo "✅ [ENV] Fichier .env créé (variables lues depuis l'environnement)"
 
+# Régénérer le cache Symfony avec les vraies variables d'environnement
+echo "🔄 [Cache] Régénération du cache Symfony..."
+rm -rf var/cache/prod 2>/dev/null || true
+php bin/console cache:clear --env=prod --no-warmup || true
+php bin/console cache:warmup --env=prod || true
+chown -R www-data:www-data var/cache
+echo "✅ [Cache] Cache régénéré"
+
 # -----------------------------------------------
 # 2️⃣ Configurer Apache AVANT tout (fix port)
 # -----------------------------------------------
 echo "🌐 [Apache] Configuration du port ${PORT:-80}..."
 sed -i "s/Listen 80/Listen ${PORT:-80}/g" /etc/apache2/ports.conf
+sed -i "s/<VirtualHost \*:80>/<VirtualHost *:${PORT:-80}>/g" /etc/apache2/sites-available/000-default.conf
 echo "✅ [Apache] Port configuré sur ${PORT:-80}"
 
 # -----------------------------------------------
