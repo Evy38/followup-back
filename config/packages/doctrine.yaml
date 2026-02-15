@@ -2,6 +2,12 @@ doctrine:
     dbal:
         url: '%env(resolve:DATABASE_URL)%'
         server_version: '16'  # PostgreSQL version - avoid checking DB on startup
+        
+        # SSL Configuration for Render PostgreSQL
+        driver_class: Doctrine\DBAL\Driver\PDO\PostgreSQL\Driver
+        options:
+            # Ensure SSL is properly handled
+            PDO::ATTR_ERRMODE: PDO::ERRMODE_EXCEPTION
 
         mapping_types:
             enum: string
