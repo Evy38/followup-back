@@ -17,15 +17,14 @@ rm -rf /tmp/sf_* 2>/dev/null || true
 echo "✅ [Cache] Cache supprimé"
 
 # -----------------------------------------------
-# 1️⃣ Créer le fichier .env s'il n'existe pas
+# 1️⃣ Recréer le fichier .env (supprimer le placeholder du build)
 # -----------------------------------------------
 # Symfony s'attend à ce que le fichier .env existe
 # même s'il est vide (les variables viendront de l'environnement du système)
-if [ ! -f .env ]; then
-    echo "📝 [ENV] Création du fichier .env..."
-    touch .env
-    echo "✅ [ENV] Fichier .env créé"
-fi
+echo "📝 [ENV] Recréation du fichier .env avec les variables système..."
+rm -f .env
+touch .env
+echo "✅ [ENV] Fichier .env créé (variables lues depuis l'environnement)"
 
 # -----------------------------------------------
 # 2️⃣ Configurer Apache AVANT tout (fix port)
@@ -104,26 +103,21 @@ if [ "$DB_CONNECTED" = "true" ]; then
     else
         MIGRATION_ERROR=$?
         echo "❌ [Database] ERREUR migrations (code: $MIGRATION_ERROR)" >&2
-        echo "Les migrations ont échoué, vérifiez les logs" >&2
+        echo "⚠️  [Database] Continuant malgré l'erreur..." >&2
     fi
     
     # -----------------------------------------------
-    # 8️⃣ Charger les fixtures (données initiales)
+    # 8️⃣ Charger les fixtures (données initiales) - DÉSACTIVÉ EN PROD
     # -----------------------------------------------
-    if [ -d "src/DataFixtures" ] && [ "$(ls -A src/DataFixtures)" ]; then
+    if [ "$APP_ENV" != "prod" ] && [ -d "src/DataFixtures" ] && [ "$(ls -A src/DataFixtures)" ]; then
         echo "📦 [Database] Chargement des fixtures..."
         php bin/console doctrine:fixtures:load --no-interaction 2>&1 || true
         echo "✅ [Database] Fixtures chargées"
     fi
 else
-    echo "❌ [Database] CRITIQUE - Base de données non accessible!" >&2
+    echo "❌ [Database] ATTENTION - Base de données non accessible!" >&2
+    echo "⚠️  L'application démarrera mais les endpoints nécessitant la DB échoueront" >&2
     echo "Vérifier que PostgreSQL tourne sur Render et que DATABASE_URL est correcte" >&2
-    # En production, on fait échouer le déploiement si pas de DB
-    if [ "$APP_ENV" = "prod" ]; then
-        echo "❌ [Database] Arrêt du conteneur - DB requise en production" >&2
-        exit 1
-    fi
-    echo "⚠️  [Database] Continuant en mode dégradé (développement/test)" >&2
 fi
 
 echo ""
