@@ -116,8 +116,14 @@ if [ "$DB_CONNECTED" = "true" ]; then
         echo "✅ [Database] Fixtures chargées"
     fi
 else
-    echo "⚠️  [Database] Non connectée - l'app démarrera sans BDD"
-    echo "    Elle se connectera automatiquement quand la DB sera accessible"
+    echo "❌ [Database] CRITIQUE - Base de données non accessible!" >&2
+    echo "Vérifier que PostgreSQL tourne sur Render et que DATABASE_URL est correcte" >&2
+    # En production, on fait échouer le déploiement si pas de DB
+    if [ "$APP_ENV" = "prod" ]; then
+        echo "❌ [Database] Arrêt du conteneur - DB requise en production" >&2
+        exit 1
+    fi
+    echo "⚠️  [Database] Continuant en mode dégradé (développement/test)" >&2
 fi
 
 echo ""
