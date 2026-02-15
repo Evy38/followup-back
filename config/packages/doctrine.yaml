@@ -1,6 +1,7 @@
 doctrine:
     dbal:
         url: '%env(resolve:DATABASE_URL)%'
+        server_version: '16'  # PostgreSQL version - avoid checking DB on startup
 
         mapping_types:
             enum: string
