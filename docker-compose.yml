@@ -35,6 +35,8 @@ services:
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-root}
     ports:
       - "8081:80" # accès pgAdmin via http://localhost:8081
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
     depends_on:
       - db
     restart: unless-stopped
@@ -65,3 +67,4 @@ services:
 volumes:
   db_data:
   redis_data:
+  pgadmin_data:
