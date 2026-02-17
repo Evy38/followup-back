@@ -16,15 +16,6 @@ rm -rf var/cache/* var/log/* 2>/dev/null || true
 rm -rf /tmp/sf_* 2>/dev/null || true
 echo "✅ [Cache] Cache supprimé"
 
-# -----------------------------------------------
-# 1️⃣ Recréer le fichier .env (supprimer le placeholder du build)
-# -----------------------------------------------
-# Symfony s'attend à ce que le fichier .env existe
-# même s'il est vide (les variables viendront de l'environnement du système)
-echo "📝 [ENV] Recréation du fichier .env avec les variables système..."
-rm -f .env
-touch .env
-echo "✅ [ENV] Fichier .env créé (variables lues depuis l'environnement)"
 
 # Régénérer le cache Symfony avec les vraies variables d'environnement
 echo "🔄 [Cache] Régénération du cache Symfony..."
