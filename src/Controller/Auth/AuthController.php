@@ -64,6 +64,6 @@ class AuthController extends AbstractController
 
         $jwt = $jwtManager->create($user);
 
-        return $this->redirect($frontendUrl . '/auth/google-callback?token=' . urlencode($jwt));
+        return $this->redirect($frontendUrl . '/google/callback?token=' . urlencode($jwt));
     }
 }
