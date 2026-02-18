@@ -99,6 +99,7 @@ security:
 
         # 🔓 PUBLIC : OAuth Google
         - { path: ^/auth/google, roles: PUBLIC_ACCESS }
+        - { path: ^/google/callback, roles: PUBLIC_ACCESS }
         
         # 🏥 PUBLIC : Healthcheck
         - { path: ^/health, roles: PUBLIC_ACCESS }

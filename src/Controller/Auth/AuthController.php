@@ -21,7 +21,7 @@ class AuthController extends AbstractController
         return $this->redirect($authUrl);
     }
 
-    #[Route('/auth/google/callback', name: 'auth_google_callback')]
+    #[Route('/google/callback', name: 'auth_google_callback')]
     public function googleCallback(
         Request $request,
         GoogleAuthService $googleAuthService,
