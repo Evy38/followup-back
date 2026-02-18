@@ -28,6 +28,8 @@ echo "Step 2: Install dependencies (prod)"
 composer install --no-interaction --prefer-dist --no-dev
 
 echo "Step 3: Symfony cache warmup"
+echo "Suppression du dossier var/cache/prod (sécurité)"
+rm -rf var/cache/prod
 APP_ENV=prod php bin/console cache:clear
 APP_ENV=prod php bin/console cache:warmup
 
@@ -35,6 +37,8 @@ echo "💾 Step 4: Backup (simulation)"
 # pg_dump au lieu de mysqldump
 echo "(simulation) pg_dump -U follow_user -h localhost followup_prod > backup_${TIMESTAMP}.sql"
 
+echo "🗂 Vérification de la route google-callback en prod"
+APP_ENV=prod php bin/console debug:router --env=prod | grep google-callback || echo "Route google-callback absente en prod"
 echo "🚀 Step 5: Deploy (simulation)"
 case $ENVIRONMENT in
   sit)

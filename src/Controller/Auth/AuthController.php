@@ -36,12 +36,17 @@ class AuthController extends AbstractController
         if (!$code) {
             return $this->redirect($frontendUrl . '/login?error=no_code');
         }
-
+        error_log("code:" . $code);
+        error_log("Google callback: code received, fetching access token...");
         $token = $client->fetchAccessTokenWithAuthCode($code);
+        error_log(print_r($token, 1));
 
         if (isset($token['error'])) {
+            error_log("Google token error: " . json_encode($token));
             return $this->redirect($frontendUrl . '/login?error=token');
         }
+
+        error_log("Google token received successfully");
 
         $oauth = new \Google\Service\Oauth2($client);
         $googleUser = $oauth->userinfo->get();
