@@ -82,6 +82,7 @@ RUN echo '<VirtualHost *:80>' > /etc/apache2/sites-available/000-default.conf &&
     echo '  </Directory>' >> /etc/apache2/sites-available/000-default.conf && \
     echo '  ErrorLog /var/log/apache2/error.log' >> /etc/apache2/sites-available/000-default.conf && \
     echo '  CustomLog /var/log/apache2/access.log combined' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '  SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1' >> /etc/apache2/sites-available/000-default.conf && \
     echo '</VirtualHost>' >> /etc/apache2/sites-available/000-default.conf
 
 # Créer le répertoire de travail
