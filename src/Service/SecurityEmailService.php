@@ -11,6 +11,7 @@ class SecurityEmailService
 {
     public function __construct(
         private readonly MailerInterface $mailer,
+        private readonly DeferredMailer $deferredMailer,
         private readonly string $frontendUrl
     ) {}
 
@@ -43,7 +44,7 @@ class SecurityEmailService
                 'supportUrl' => $this->frontendUrl . '/support',
             ]);
 
-        $this->mailer->send($email);
+        $this->deferredMailer->queue($email);
     }
 
     public function sendAccountDeletionConfirmationEmail(string $email, string $firstName): void
@@ -58,6 +59,6 @@ class SecurityEmailService
                 'deletedAt' => new \DateTimeImmutable(),
             ]);
 
-        $this->mailer->send($emailMessage);
+        $this->deferredMailer->queue($emailMessage);
     }
 }
