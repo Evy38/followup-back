@@ -96,6 +96,11 @@ COPY . .
 # Copier Composer pour les commandes Symfony
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+# Créer un .env minimal requis par Symfony pour démarrer (les vraies valeurs viennent des env vars Render)
+RUN echo "APP_ENV=prod" > .env \
+    && echo "APP_SECRET=placeholder" >> .env \
+    && echo "DATABASE_URL=postgresql://user:pass@localhost:5432/db" >> .env
+
 # Créer les répertoires nécessaires avec bonnes permissions
 RUN mkdir -p var/cache var/log config/jwt public/uploads \
     && chown -R www-data:www-data var config/jwt public/uploads \
