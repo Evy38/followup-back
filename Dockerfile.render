@@ -64,6 +64,7 @@ RUN { \
     echo 'realpath_cache_ttl=600'; \
     echo 'memory_limit=512M'; \
     echo 'max_execution_time=60'; \
+    echo 'default_socket_timeout=10'; \
 } > /usr/local/etc/php/conf.d/symfony-prod.ini
 
 # Configuration Apache pour Symfony
