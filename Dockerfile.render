@@ -96,20 +96,10 @@ COPY . .
 # Copier Composer pour les commandes Symfony
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# ⚠️ Créer un .env minimal pour permettre au cache de se générer
-RUN echo "APP_ENV=prod" > .env \
-    && echo "APP_SECRET=placeholder" >> .env \
-    && echo "DATABASE_URL=postgresql://user:pass@localhost:5432/db" >> .env
-
 # Créer les répertoires nécessaires avec bonnes permissions
 RUN mkdir -p var/cache var/log config/jwt public/uploads \
     && chown -R www-data:www-data var config/jwt public/uploads \
     && chmod -R 775 var config/jwt public/uploads
-
-# Préchauffer le cache Symfony (sera écrasé au runtime mais permet de valider la config)
-RUN php bin/console cache:clear --no-warmup || true \
-    && php bin/console cache:warmup || true \
-    && chown -R www-data:www-data var/cache
 
 # Script d'entrypoint pour la génération des clés JWT et migrations
 COPY docker/scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
