@@ -189,4 +189,19 @@ class UserService
     {
         $this->repository->save($user, true);
     }
+
+    public function purgeOldDeletedUsers(): int
+    {
+        $users = $this->repository->findPurgeable();
+
+        foreach ($users as $user) {
+            $this->repository->remove($user, false);
+        }
+
+        if (count($users) > 0) {
+            $this->repository->flush();
+        }
+
+        return count($users);
+    }
 }

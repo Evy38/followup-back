@@ -101,4 +101,21 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    public function findPurgeable(): array
+    {
+        $threshold = new \DateTimeImmutable('-1 month');
+
+        return $this->createQueryBuilder('u')
+            ->where('u.deletedAt IS NOT NULL')
+            ->andWhere('u.deletedAt < :threshold')
+            ->setParameter('threshold', $threshold)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function flush(): void
+    {
+        $this->getEntityManager()->flush();
+    }
 }

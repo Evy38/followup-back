@@ -39,6 +39,17 @@ class AdminUserController extends AbstractController
         );
     }
 
+    #[Route('/purge', name: 'admin_users_purge', methods: ['POST'])]
+    public function purge(): JsonResponse
+    {
+        $count = $this->userService->purgeOldDeletedUsers();
+
+        return $this->json([
+            'message' => "$count compte(s) supprimé(s) définitivement.",
+            'purged' => $count,
+        ]);
+    }
+
     #[Route('/{id}', methods: ['GET'])]
     public function getOne(int $id): JsonResponse
     {

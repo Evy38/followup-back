@@ -67,7 +67,7 @@ class Relance
     private ?string $contenu = null;
 
     #[ORM\ManyToOne(inversedBy: 'relances')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     #[Groups(['relance:read'])]
     private ?Candidature $candidature = null;
 

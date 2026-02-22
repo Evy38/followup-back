@@ -75,7 +75,7 @@ class Candidature
     private ?\DateTimeImmutable $dateDerniereRelance = null;
 
     #[ORM\ManyToOne(inversedBy: 'candidatures')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     #[Groups(['candidature:read'])]
     private ?User $user = null;
 

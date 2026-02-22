@@ -64,7 +64,7 @@ class Entretien
     private ?ResultatEntretien $resultat = null;
 
     #[ORM\ManyToOne(inversedBy: 'entretiens')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     #[Groups(['entretien:read', 'entretien:write'])]
     private ?Candidature $candidature = null;
 
