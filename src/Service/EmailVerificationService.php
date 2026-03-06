@@ -7,6 +7,20 @@ use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 
+/**
+ * Gère la vérification d'adresse email lors de l'inscription et du changement d'email.
+ *
+ * Responsabilités :
+ * - Générer un token de vérification sécurisé (64 caractères hex, valable 24h)
+ * - Envoyer l'email de confirmation vers l'adresse cible
+ *
+ * Deux cas d'usage :
+ * - Inscription : envoie le lien de vérification à l'email principal de l'utilisateur
+ * - Changement d'email : envoie le lien à `pendingEmail` (le nouvel email à confirmer)
+ *
+ * Important : `generateVerificationToken()` ne fait aucun flush Doctrine.
+ * C'est la responsabilité de l'appelant d'appeler `save()` avant `sendVerificationEmail()`.
+ */
 class EmailVerificationService
 {
     private MailerInterface $mailer;

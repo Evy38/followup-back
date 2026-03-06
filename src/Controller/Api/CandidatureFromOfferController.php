@@ -21,6 +21,22 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
+/**
+ * Crée une candidature directement depuis une offre d'emploi Adzuna.
+ *
+ * Endpoint :
+ * - POST /api/candidatures/from-offer
+ *
+ * Données attendues (JSON) : externalId, company, redirectUrl, title (optionnel), location (optionnel)
+ *
+ * Comportement :
+ * - Si la candidature existe déjà (même URL + même user), retourne la candidature existante (200)
+ * - Sinon, crée l'entreprise si inconnue, initialise la candidature au statut "Envoyée"
+ *   et génère automatiquement 3 relances (J+7, J+14, J+21)
+ *
+ * @see \App\Service\RelanceService::createDefaultRelances()
+ * @see \App\DTO\CreateCandidatureFromOfferDTO
+ */
 #[Route('/api/candidatures')]
 #[IsGranted('ROLE_USER')]
 class CandidatureFromOfferController extends AbstractController

@@ -10,6 +10,17 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use App\Service\EmailVerificationService;
 
+/**
+ * Gère la vérification d'adresse email après inscription ou changement d'email.
+ *
+ * Endpoints :
+ * - GET  /api/verify-email         Confirme l'email via le token reçu par mail
+ * - POST /api/verify-email/resend  Renvoie l'email de confirmation
+ *
+ * Deux cas couverts par GET /api/verify-email :
+ * - Inscription : active le compte (`isVerified = true`)
+ * - Changement d'email : applique `pendingEmail` comme email principal
+ */
 class VerifyEmailController extends AbstractController
 {
     #[Route('/api/verify-email', name: 'api_verify_email', methods: ['GET'])]

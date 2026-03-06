@@ -15,6 +15,20 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
+/**
+ * Met à jour manuellement le statut de réponse d'une candidature.
+ *
+ * Endpoint :
+ * - PATCH /api/candidatures/{id}/statut-reponse
+ *
+ * Corps attendu : `{ "statutReponse": "attente" | "echanges" | "entretien" | "negative" | "engage" | "annule" }`
+ *
+ * Ce endpoint permet à l'utilisateur de modifier le statutReponse indépendamment
+ * du workflow automatique de synchronisation par entretien.
+ * L'appartenance de la candidature à l'utilisateur connecté est vérifiée.
+ *
+ * @see \App\Enum\StatutReponse
+ */
 #[Route('/api/candidatures')]
 #[IsGranted('ROLE_USER')]
 class CandidatureReponseController extends AbstractController

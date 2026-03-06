@@ -16,6 +16,19 @@ use Symfony\Component\Mime\Address;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
+/**
+ * Gère le workflow de réinitialisation de mot de passe en 2 étapes.
+ *
+ * Endpoints :
+ * - POST /api/password/request   Génère un token (valable 1h) et envoie l'email de reset
+ * - POST /api/password/reset     Valide le token et applique le nouveau mot de passe
+ *
+ * Sécurité :
+ * - Protection anti-énumération : la réponse à `/request` est identique si l'email existe ou non
+ * - Les comptes OAuth (sans mot de passe) ne peuvent pas utiliser ce workflow
+ * - Le token est à usage unique et est effacé après utilisation
+ * - Complexité minimale : 8 caractères, 1 majuscule, 1 chiffre
+ */
 class ForgotPasswordController extends AbstractController
 {
     public function __construct(

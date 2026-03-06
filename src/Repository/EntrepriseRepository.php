@@ -7,6 +7,8 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
+ * Repository pour l'entité Entreprise.
+ *
  * @extends ServiceEntityRepository<Entreprise>
  */
 class EntrepriseRepository extends ServiceEntityRepository
@@ -16,8 +18,12 @@ class EntrepriseRepository extends ServiceEntityRepository
         parent::__construct($registry, Entreprise::class);
     }
 
-  public function findOneByNom(string $nom): ?Entreprise
-{
+    /**
+     * Recherche une entreprise par son nom exact.
+     * Utilisé par CandidatureFromOfferController pour éviter les doublons.
+     */
+    public function findOneByNom(string $nom): ?Entreprise
+    {
     return $this->findOneBy(['nom' => $nom]);
 }
 

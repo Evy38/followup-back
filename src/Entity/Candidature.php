@@ -16,6 +16,18 @@ use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
 use Symfony\Component\Serializer\Annotation\Groups;
 
+/**
+ * Représente une candidature à un poste d'emploi.
+ *
+ * Une candidature est liée à un User, une Entreprise et un Statut.
+ * Elle regroupe les Relances planifiées et les Entretiens associés.
+ * Le champ `statutReponse` (enum StatutReponse) suit l'avancement de la réponse
+ * du recruteur et est synchronisé automatiquement par CandidatureStatutSyncService
+ * lors de la création/modification/suppression d'un entretien.
+ *
+ * @see \App\Service\CandidatureStatutSyncService
+ * @see \App\State\EntretienProcessor
+ */
 #[ORM\Entity(repositoryClass: CandidatureRepository::class)]
 #[ApiResource(
     operations: [

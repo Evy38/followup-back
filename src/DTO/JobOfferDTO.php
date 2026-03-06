@@ -4,6 +4,19 @@ namespace App\DTO;
 
 use Symfony\Component\Serializer\Annotation\Groups;
 
+/**
+ * DTO représentant une offre d'emploi retournée par l'API Adzuna.
+ *
+ * Utilisé comme objet de transfert entre AdzunaService et le JobController.
+ * Sérialisé via le groupe `job:read` pour les réponses de l'API FollowUp.
+ *
+ * Le champ `contractType` est traduit en français par ContractTypeMapper.
+ * Le champ `externalId` sert de référence pour créer une Candidature via
+ * POST /api/candidatures/from-offer.
+ *
+ * @see \App\Service\AdzunaService
+ * @see \App\Service\ContractTypeMapper
+ */
 class JobOfferDTO
 {
     public function __construct(

@@ -11,6 +11,18 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
+/**
+ * Gestion du profil de l'utilisateur authentifié.
+ *
+ * Endpoints :
+ * - GET    /api/user/profile   Retourne le profil complet (groupe user:read)
+ * - PUT    /api/user/profile   Mise à jour (email, prénom, nom, mot de passe)
+ * - DELETE /api/user/profile   Demande de suppression du compte
+ * - POST   /api/user/consent   Enregistre le consentement RGPD
+ *
+ * Toutes les routes nécessitent ROLE_USER (utilisateur authentifié et vérifié).
+ * Délègue la logique métier à {@see \App\Service\UserService}.
+ */
 #[Route('/api/user')]
 #[IsGranted('ROLE_USER')]
 class UserController extends AbstractController

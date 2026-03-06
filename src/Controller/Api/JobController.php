@@ -10,6 +10,21 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\Cache\CacheInterface;
 
+/**
+ * Recherche d'offres d'emploi via l'API externe Adzuna.
+ *
+ * Endpoints :
+ * - GET /api/jobs       Recherche paginée (infinite scroll) — max 5 pages
+ * - GET /api/jobs/all   Récupère toutes les pages disponibles (max 10 pages)
+ *
+ * Paramètres query communs : `poste`, `ville`, `contrat` (optionnel)
+ * Paramètre spécifique à /api/jobs : `page` (1 à 5)
+ *
+ * Les résultats sont mis en cache 2 heures (clé unique par combinaison poste/ville/page/contrat).
+ * En cas d'indisponibilité du cache, l'API Adzuna est interrogée directement.
+ *
+ * @see \App\Service\AdzunaService
+ */
 #[Route('/api/jobs')]
 class JobController extends AbstractController
 {

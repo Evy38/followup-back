@@ -15,6 +15,20 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
+/**
+ * Représente un entretien associé à une candidature.
+ *
+ * Un entretien a un statut ({@see \App\Enum\StatutEntretien} : PREVU ou PASSE)
+ * et, une fois passé, un résultat ({@see \App\Enum\ResultatEntretien} : ENGAGE, NEGATIVE, ATTENTE).
+ *
+ * Toute création, modification ou suppression d'un entretien déclenche
+ * {@see \App\State\EntretienProcessor}, qui synchronise automatiquement
+ * le `statutReponse` de la candidature parente via
+ * {@see \App\Service\CandidatureStatutSyncService}.
+ *
+ * Note : les champs `dateEntretien` et `heureEntretien` sont stockés séparément
+ * (types Doctrine `date` et `time`) car Doctrine utilise `\DateTime` pour ces types.
+ */
 #[ORM\Entity(repositoryClass: EntretienRepository::class)]
 #[ApiResource(
     operations: [

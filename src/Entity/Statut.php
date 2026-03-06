@@ -12,6 +12,15 @@ use ApiPlatform\Metadata\GetCollection;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Serializer\Annotation\Groups;
 
+/**
+ * Représente le statut avancement d'une candidature (ex : "Envoyée", "En cours", "Entretien").
+ *
+ * Les statuts sont des données de référence peuplées par les fixtures.
+ * Ils sont accessibles en lecture seule via l'API pour tous les utilisateurs authentifiés
+ * et permettent de filtrer/classer les candidatures dans le tableau de bord.
+ *
+ * Les valeurs attendues sont définies dans {@see \App\Enum\StatutCandidature}.
+ */
 #[ORM\Entity(repositoryClass: StatutRepository::class)]
 #[ApiResource(
     operations: [

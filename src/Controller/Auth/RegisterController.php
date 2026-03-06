@@ -12,6 +12,17 @@ use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
+/**
+ * Gère l'inscription des nouveaux utilisateurs.
+ *
+ * Endpoint :
+ * - POST /api/register   Crée un compte et envoie un email de vérification
+ *
+ * Le compte est créé avec `isVerified = false`. L'utilisateur doit confirmer
+ * son email avant de pouvoir accéder à l'application.
+ *
+ * @see \App\Service\UserService::create()
+ */
 class RegisterController extends AbstractController
 {
     public function __construct(

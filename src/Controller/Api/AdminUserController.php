@@ -12,6 +12,18 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
+/**
+ * Gestion des utilisateurs réservée à l'administrateur.
+ *
+ * Endpoints :
+ * - GET    /api/admin/users              Liste des utilisateurs (filtres : active, deleted, pending)
+ * - POST   /api/admin/users/purge        Purge définitive des comptes supprimés depuis > 1 mois
+ * - GET    /api/admin/users/{id}         Détail d'un utilisateur
+ * - PUT    /api/admin/users/{id}         Mise à jour (roles, isVerified, email, nom, prénom)
+ * - DELETE /api/admin/users/{id}         Confirmation de suppression définitive
+ *
+ * Toutes les routes nécessitent ROLE_ADMIN.
+ */
 #[Route('/api/admin/users')]
 #[IsGranted('ROLE_ADMIN')]
 class AdminUserController extends AbstractController
@@ -22,6 +34,14 @@ class AdminUserController extends AbstractController
     ) {
     }
 
+    /**
+     * Liste des utilisateurs avec filtrage.
+     *
+     * Paramètre query `filter` :
+     * - `active` (défaut) : comptes non supprimés
+     * - `deleted`         : comptes avec deletedAt non null
+     * - `pending`         : comptes avec deletionRequestedAt non null
+     */
     #[Route('', methods: ['GET'])]
     public function list(Request $request): JsonResponse
     {

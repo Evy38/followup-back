@@ -9,6 +9,15 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
+/**
+ * Retourne les candidatures de l'utilisateur authentifié, triées par date décroissante.
+ *
+ * Endpoint :
+ * - GET /api/my-candidatures   Liste complète des candidatures de l'utilisateur connecté
+ *
+ * Complément à l'endpoint API Platform GET /api/candidatures, optimisé pour le tableau
+ * de bord : retourne uniquement les candidatures du user courant sans avoir à filtrer côté client.
+ */
 #[Route('/api/my-candidatures')]
 class MyCandidaturesController extends AbstractController
 {

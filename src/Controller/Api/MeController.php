@@ -8,6 +8,19 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
+/**
+ * Retourne le profil de l'utilisateur authentifié par JWT.
+ *
+ * Endpoint :
+ * - GET /api/me   Retourne l'état d'authentification et les informations du compte
+ *
+ * Réponses possibles :
+ * - 200 : compte actif et vérifié — renvoie id, email, prénom, nom, rôles, OAuth, consentRGPD
+ * - 401 : aucun JWT valide
+ * - 403 : compte supprimé ou email non vérifié (avec `authenticated: true, verified: false`)
+ *
+ * Ce endpoint est utilisé par le frontend pour vérifier l'état du compte au démarrage.
+ */
 class MeController extends AbstractController
 {
     #[Route('/api/me', name: 'api_me', methods: ['GET'])]

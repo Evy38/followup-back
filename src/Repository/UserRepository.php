@@ -9,6 +9,15 @@ use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 
+/**
+ * Repository pour l'entité User.
+ *
+ * Fournit les méthodes d'accès aux données relatives aux utilisateurs,
+ * notamment pour la gestion du cycle de vie (soft delete, purge) et
+ * les vérifications d'unicité d'email.
+ *
+ * @extends ServiceEntityRepository<User>
+ */
 class UserRepository extends ServiceEntityRepository implements PasswordUpgraderInterface
 {
     public function __construct(ManagerRegistry $registry)
@@ -50,6 +59,12 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         return $this->findOneBy(['email' => $email]);
     }
 
+    /**
+     * Vérifie si un email est déjà utilisé, en excluant optionnellement un utilisateur.
+     *
+     * @param string   $email     Email à vérifier
+     * @param int|null $excludeId Identifiant à exclure de la vérification (mise à jour de profil)
+     */
     public function existsByEmail(string $email, ?int $excludeId = null): bool
     {
         $qb = $this->createQueryBuilder('u')
@@ -74,6 +89,12 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->getResult();
     }
 
+    /**
+     * Retourne les comptes ayant demandé la suppression et déjà soft-deleted.
+     * Utilisé par le tableau de bord admin pour confirmer les suppressions.
+     *
+     * @return User[]
+     */
     public function findPendingDeletion(): array
     {
         return $this->createQueryBuilder('u')
@@ -102,6 +123,11 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->getSingleScalarResult();
     }
 
+    /**
+     * Retourne les comptes soft-deleted depuis plus d'1 mois, éligibles à la purge définitive.
+     *
+     * @return User[]
+     */
     public function findPurgeable(): array
     {
         $threshold = new \DateTimeImmutable('-1 month');

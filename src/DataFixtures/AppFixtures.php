@@ -15,6 +15,22 @@ use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
+/**
+ * Jeu de données de démonstration pour l'environnement de développement.
+ *
+ * Chargement : `php bin/console doctrine:fixtures:load`
+ *
+ * Données générées :
+ * - 3 utilisateurs : admin (ROLE_ADMIN), julien.dev@gmail.com (ROLE_USER actif),
+ *   marie.test@gmail.com (email non vérifié)
+ * - 5 entreprises (Accenture, Capgemini, Sopra Steria, Thales, Orange)
+ * - 6 statuts de candidature (Envoyée, En cours, Relancée, Entretien, Refusée, Acceptée)
+ * - 15 candidatures avec des statuts de réponse variés pour tester tous les cas UI
+ * - 8 entretiens (prévus, passés avec résultats positifs/négatifs/en attente)
+ * - Des relances pour 2 candidatures anciennes
+ *
+ * Mots de passe des comptes de test : `Admin123!` / `User123!`
+ */
 class AppFixtures extends Fixture
 {
     public function __construct(

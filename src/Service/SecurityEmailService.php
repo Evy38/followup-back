@@ -7,6 +7,18 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Mime\Address;
 
+/**
+ * Envoie les emails de sécurité liés aux actions sensibles du compte utilisateur.
+ *
+ * Emails gérés :
+ * - Changement de mot de passe (envoi immédiat via Mailer)
+ * - Demande de suppression de compte (envoi différé via DeferredMailer)
+ * - Confirmation de suppression de compte (envoi différé via DeferredMailer)
+ *
+ * Les emails de suppression sont envoyés en différé via {@see DeferredMailer}
+ * pour ne pas bloquer la réponse HTTP, car le compte est supprimé (ou marqué)
+ * avant l'envoi.
+ */
 class SecurityEmailService
 {
     public function __construct(
@@ -15,6 +27,10 @@ class SecurityEmailService
         private readonly string $frontendUrl
     ) {}
 
+    /**
+     * Notifie l'utilisateur que son mot de passe vient d'être modifié.
+     * Envoi immédiat — utilisé comme alerte de sécurité.
+     */
     public function sendPasswordChangedEmail(User $user): void
     {
         $email = (new TemplatedEmail())
@@ -31,6 +47,10 @@ class SecurityEmailService
         $this->mailer->send($email);
     }
 
+    /**
+     * Confirme à l'utilisateur que sa demande de suppression a bien été reçue.
+     * Envoi différé via DeferredMailer (la requête ne doit pas être bloquée).
+     */
     public function sendAccountDeletionRequestEmail(User $user): void
     {
         $email = (new TemplatedEmail())
@@ -47,6 +67,14 @@ class SecurityEmailService
         $this->deferredMailer->queue($email);
     }
 
+    /**
+     * Informe l'utilisateur que son compte a été définitivement supprimé.
+     * Envoi différé via DeferredMailer. Prend l'email en string car le compte
+     * est supprimé au moment de l'appel et l'entité User peut être effacée.
+     *
+     * @param string $email     Adresse email de l'utilisateur supprimé
+     * @param string $firstName Prénom pour personnaliser l'email
+     */
     public function sendAccountDeletionConfirmationEmail(string $email, string $firstName): void
     {
         $emailMessage = (new TemplatedEmail())

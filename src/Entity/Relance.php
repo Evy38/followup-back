@@ -16,6 +16,18 @@ use ApiPlatform\Metadata\Patch;
 use App\State\RelanceUpdateProcessor;
 use Symfony\Component\Validator\Constraints as Assert;
 
+/**
+ * Représente une action de relance planifiée pour une candidature.
+ *
+ * Trois relances sont automatiquement générées à la création d'une candidature
+ * (J+7, J+14, J+21) par {@see \App\Service\RelanceService}.
+ *
+ * Le champ `rang` (1, 2, 3) identifie l'ordre de la relance dans le plan.
+ * Le champ `type` porte un libellé lisible ("S+1", "S+2", "S+3").
+ * Lorsqu'une relance est marquée comme faite (`faite = true`), la date de réalisation
+ * est automatiquement renseignée et la `dateDerniereRelance` de la candidature est mise
+ * à jour via {@see \App\State\RelanceUpdateProcessor}.
+ */
 #[ORM\Entity(repositoryClass: RelanceRepository::class)]
 #[ApiResource(
     operations: [

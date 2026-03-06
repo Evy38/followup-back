@@ -9,6 +9,19 @@ use App\Service\CandidatureStatutSyncService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
+/**
+ * Processor API Platform pour les opérations sur l'entité Entretien.
+ *
+ * Intercepte les opérations POST, PATCH et DELETE sur `/api/entretiens`
+ * pour garantir la cohérence de la relation bidirectionnelle avec Candidature
+ * et synchroniser automatiquement le `statutReponse` de la candidature.
+ *
+ * Workflow :
+ * - POST / PATCH : persiste l'entretien, puis appelle CandidatureStatutSyncService::syncFromEntretien()
+ * - DELETE       : supprime l'entretien, puis appelle CandidatureStatutSyncService::syncAfterEntretienDeletion()
+ *
+ * @see \App\Service\CandidatureStatutSyncService
+ */
 class EntretienProcessor implements ProcessorInterface
 {
     public function __construct(

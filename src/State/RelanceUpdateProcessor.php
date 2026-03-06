@@ -7,6 +7,17 @@ use ApiPlatform\State\ProcessorInterface;
 use App\Entity\Relance;
 use Doctrine\ORM\EntityManagerInterface;
 
+/**
+ * Processor API Platform pour les opérations PUT et PATCH sur l'entité Relance.
+ *
+ * Intercepte la mise à jour d'une relance pour mettre à jour automatiquement
+ * le champ `dateDerniereRelance` de la candidature parente lorsqu'une relance
+ * est marquée comme faite (`faite = true`).
+ *
+ * Ce processor est enregistré sur les opérations PUT et PATCH de Relance.
+ *
+ * @see \App\Entity\Relance
+ */
 class RelanceUpdateProcessor implements ProcessorInterface
 {
     public function __construct(
