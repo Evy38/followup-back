@@ -1,3 +1,15 @@
+# CI Backend - Intégration Continue
+#
+# Déclenché automatiquement à chaque push ou pull request sur main.
+# Garantit que le code est testé et valide avant toute fusion.
+#
+# Pipeline :
+#   1. Installation des dépendances PHP (Composer)
+#   2. Génération des clés JWT pour les tests
+#   3. Création et migration de la base de données de test (PostgreSQL)
+#   4. Exécution des tests PHPUnit
+#   5. Analyse statique du code (PHPStan)
+
 name: CI Backend Symfony
 
 on:
@@ -89,3 +101,6 @@ jobs:
           CORS_ALLOW_ORIGIN: "*"
           FRONTEND_URL: "http://localhost:3000"
         run: php bin/phpunit
+
+      - name: 🔍 Analyse statique PHPStan
+        run: vendor/bin/phpstan analyse --no-progress

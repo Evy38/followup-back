@@ -1,0 +1,85 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Parameter \#1 \$message of function error_log expects string, true given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Controller/Auth/AuthController.php
+
+		-
+			message: '#^Parameter \#2 \$return of function print_r expects bool, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Controller/Auth/AuthController.php
+
+		-
+			message: '#^Call to an undefined method App\\Entity\\User\:\:isVerified\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Controller/Auth/VerifyEmailController.php
+
+		-
+			message: '#^Property App\\Entity\\Candidature\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/Candidature.php
+
+		-
+			message: '#^Property App\\Entity\\Entreprise\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/Entreprise.php
+
+		-
+			message: '#^Property App\\Entity\\Entretien\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/Entretien.php
+
+		-
+			message: '#^Access to an undefined property App\\Entity\\Relance\:\:\$motsCles\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Entity/Relance.php
+
+		-
+			message: '#^Parameter \#1 \$s of method App\\Entity\\Candidature\:\:setStatut\(\) expects App\\Entity\\Statut, null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Entity/Statut.php
+
+		-
+			message: '#^Property App\\Entity\\Statut\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/Statut.php
+
+		-
+			message: '#^Property App\\Entity\\User\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: '#^Unknown parameter \$reason in call to Deprecated constructor\.$#'
+			identifier: argument.unknown
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: '#^Instanceof between DateTimeImmutable and DateTime will always evaluate to false\.$#'
+			identifier: instanceof.alwaysFalse
+			count: 1
+			path: src/Service/RelanceService.php
+
+		-
+			message: '#^Property App\\Service\\UserService\:\:\$em is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/Service/UserService.php
+
+		-
+			message: '#^Call to function method_exists\(\) with ''Symfony\\\\Component\\\\Dotenv\\\\Dotenv'' and ''bootEnv'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: tests/bootstrap.php

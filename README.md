@@ -67,18 +67,26 @@ Ce projet démontre les compétences du **Titre Professionnel CDA** (TP-01281 v0
 
 ### **Composants principaux**
 
-**Controllers (13 fichiers)**
+**Controllers (14 fichiers)**
 - Reçoivent et valident les requêtes HTTP
 - Gèrent les codes de réponse HTTP (200, 201, 400, 401, 403, 404)
 - Délèguent la logique métier aux services
-- Organisation : Controllers Api (Admin, User, Candidature, Job, Me) + Controllers Auth (Register, Login, Reset Password, Verify Email)
-- Exemples : `RegisterController`, `ForgotPasswordController`, `AdminController`, `MyCandidaturesController`, `CandidatureReponseController`
+- Organisation : Controllers Api (Admin, AdminUser, User, Candidature, Job, Me, Consent) + Controllers Auth (Register, Login, Reset Password, Verify Email) + HealthCheck
+- Exemples : `RegisterController`, `ForgotPasswordController`, `AdminController`, `MyCandidaturesController`, `CandidatureReponseController`, `CandidatureFromOfferController`, `ConsentController`, `HealthCheckController`
 
-**Services (9 fichiers)**
+**Services (10 fichiers)**
 - Contiennent la logique métier complexe
 - Centralisent la sécurité (hashage, validation, tokens)
 - Facilitent les tests unitaires
-- Exemples : `UserService`, `RelanceService`, `EmailVerificationService`, `AdzunaService`, `GoogleAuthService`, `OAuthUserService`, `CandidatureStatutSyncService`, `SecurityEmailService`, `ContractTypeMapper`
+- Exemples : `UserService`, `RelanceService`, `EmailVerificationService`, `AdzunaService`, `GoogleAuthService`, `OAuthUserService`, `CandidatureStatutSyncService`, `SecurityEmailService`, `ContractTypeMapper`, `DeferredMailer`
+
+**State Processors (2 fichiers)**
+- Logique d'état API Platform exécutée à la persistance/suppression des ressources
+- `EntretienProcessor` : synchronise le `statutReponse` de la candidature à la création/modification/suppression d'un entretien
+- `RelanceUpdateProcessor` : gère la mise à jour des relances
+
+**EventListener (1 fichier)**
+- `JwtAuthenticatedUserListener` : enrichit le contexte de sécurité après validation du JWT
 
 **Repositories (6 fichiers)**
 - Gèrent exclusivement l'accès aux données
@@ -87,7 +95,7 @@ Ce projet démontre les compétences du **Titre Professionnel CDA** (TP-01281 v0
 
 **Entities (6 fichiers)**
 - Modèle de données avec annotations Doctrine
-- Utilisation des **PHP 8.1 Enums** (StatutEntretien, ResultatEntretien, StatutReponse)
+- Utilisation des **PHP 8.1 Enums** (StatutEntretien, ResultatEntretien, StatutReponse, StatutCandidature)
 - Relations bidirectionnelles (OneToMany, ManyToOne)
 
 👉 Cette architecture respecte les principes **SOLID** et les standards **Symfony Best Practices**.
@@ -173,16 +181,24 @@ Workflow en 2 étapes :
 ### **Relances automatiques**
 
 - Planification automatique à J+7, J+14, J+21
-- Génération lors de la création de candidature
-- Service dédié : `RelanceService`
-- Workflow : `CandidatureRelancesSubscriber` (Event Doctrine)
+- Générées lors de la création d'une candidature via `POST /api/candidatures/from-offer`
+- Service dédié : `RelanceService::createDefaultRelances()`
+- Mise à jour via `RelanceUpdateProcessor` (State Processor API Platform)
 
 ### **Synchronisation statuts**
 
-- **Listener Doctrine** : `CandidatureStatutSyncService`
-- Synchronise automatiquement :
+- **State Processor** : `EntretienProcessor` (délègue à `CandidatureStatutSyncService`)
+- Synchronise automatiquement à chaque opération sur un entretien :
   - `candidature.statut_reponse` ↔ `entretien.resultat`
   - Mise à jour bidirectionnelle temps réel
+- Mise à jour manuelle possible via `PATCH /api/candidatures/{id}/statut-reponse`
+
+### **RGPD & gestion de compte**
+
+- Consentement RGPD recueilli à l'inscription (champ `consentRgpd`) ou via `POST /api/me/consent` (flux OAuth)
+- **Soft delete** : suppression logique du compte (`deletedAt`), avec demande préalable (`deletionRequestedAt`)
+- Changement d'email sécurisé via `pendingEmail` (validation avant application)
+- Les utilisateurs supprimés sont bloqués sur tous les endpoints protégés
 
 ### **Intégration API externe**
 
@@ -302,35 +318,35 @@ docker compose exec php ./vendor/bin/phpunit tests/Api/
                │ 1:N
         ┌──────▼──────────┐
         │  Candidature    │
-        └────┬───┬───┬────┘
-             │   │   │
-        ┌────┘   │   └────┐
-        │        │        │
-   ┌────▼────┐ ┌▼─────┐ ┌▼────────┐
-   │Entreprise│ │Statut│ │ Relance │
-   └─────────┘ └──────┘ └─────────┘
-        │
-   ┌────▼────────┐
-   │  Entretien  │
-   └─────────────┘
+        └──┬───┬───┬───┬──┘
+           │   │   │   │
+    ┌──────┘   │   │   └──────────┐
+    │          │   │              │
+┌───▼────┐ ┌──▼──┐ ┌▼────────┐ ┌▼───────────┐
+│Entreprise│ │Statut│ │ Relance │ │  Entretien │
+└─────────┘ └─────┘ └─────────┘ └────────────┘
 ```
 
 ### **Entités principales**
 
 **User**
-- Email unique (authentification)
-- Mot de passe hashé (bcrypt)
+- Email unique (authentification, normalisé en minuscules)
+- `pendingEmail` : nouvel email en attente de validation
+- Mot de passe hashé (bcrypt), nullable pour les utilisateurs OAuth
 - Rôles (ROLE_USER, ROLE_ADMIN)
 - Google ID (OAuth optionnel)
-- Tokens de vérification/reset
+- Tokens de vérification email / reset password (avec expiration)
+- `consentRgpd` / `consentRgpdAt` : consentement RGPD horodaté
+- `deletionRequestedAt` / `deletedAt` : soft delete du compte
 
 **Candidature**
 - Entreprise (relation ManyToOne)
 - Date de candidature
 - Titre du poste
-- Statut de réponse (Enum PHP 8.1)
+- Statut de réponse (Enum `StatutReponse` PHP 8.1)
 - Lien vers l'annonce
 - ID externe (Adzuna)
+- `mode` : mode de candidature (ex: `externe`)
 
 **Entretien**
 - Date et heure
@@ -457,19 +473,22 @@ POST   /api/verify-email/resend Renvoi email vérification
 
 **Utilisateurs**
 ```
-GET    /api/me                 Profil utilisateur connecté
-GET    /api/user/profile       Récupération profil
-PUT    /api/user/profile       Mise à jour profil
-GET    /api/user               Liste users (ADMIN)
+GET    /api/me                        Profil utilisateur connecté
+GET    /api/user/profile              Récupération profil
+PUT    /api/user/profile              Mise à jour profil
+GET    /api/user                      Liste users (ADMIN)
+POST   /api/me/consent                Enregistrement consentement RGPD
 ```
 
 **Candidatures**
 ```
-GET    /api/candidatures       Liste des candidatures
-POST   /api/candidatures       Création candidature
-GET    /api/candidatures/{id}  Détail candidature
-PUT    /api/candidatures/{id}  Mise à jour
-DELETE /api/candidatures/{id}  Suppression
+GET    /api/candidatures              Liste des candidatures
+POST   /api/candidatures              Création candidature (API Platform)
+GET    /api/candidatures/{id}         Détail candidature
+PUT    /api/candidatures/{id}         Mise à jour
+DELETE /api/candidatures/{id}         Suppression
+POST   /api/candidatures/from-offer   Création depuis une offre Adzuna
+PATCH  /api/candidatures/{id}/statut-reponse  Mise à jour statut réponse
 ```
 
 **Entretiens**
@@ -485,6 +504,22 @@ DELETE /api/entretiens/{id}    Suppression
 GET    /api/jobs               Recherche offres (Adzuna)
 ```
 
+**Administration**
+```
+GET    /api/admin/dashboard    Statistiques globales (ADMIN)
+GET    /api/admin/users        Liste tous les utilisateurs (ADMIN)
+GET    /api/admin/users/{id}   Détail d'un utilisateur (ADMIN)
+PUT    /api/admin/users/{id}   Modification d'un utilisateur (ADMIN)
+DELETE /api/admin/users/{id}   Suppression d'un utilisateur (ADMIN)
+POST   /api/admin/users/purge  Purge des comptes supprimés (ADMIN)
+```
+
+**Health**
+```
+GET    /health                 Vérification santé de l'API (Render)
+GET    /api                    Message d'index + lien documentation
+```
+
 ### **Exemples de requêtes**
 
 **Inscription**
@@ -492,10 +527,11 @@ GET    /api/jobs               Recherche offres (Adzuna)
 curl -X POST http://localhost:8000/api/register \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "user@example.com",
+    "email": "user@gmail.com",
     "password": "Password123!",
     "firstName": "John",
-    "lastName": "Doe"
+    "lastName": "Doe",
+    "consentRgpd": true
   }'
 ```
 

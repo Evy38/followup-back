@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Informations de profil modifiées - FollowUp</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px;">
+        <h1 style="color: #007bff;">👤 Profil mis à jour</h1>
+
+        <p>Bonjour {{ user.firstName ?? 'Utilisateur' }},</p>
+
+        <p>Vos informations de profil (prénom et/ou nom) ont été modifiées avec succès le {{ changedAt|date('d/m/Y à H:i') }}.</p>
+
+        <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;">
+            <strong>⚠️ Vous n'avez pas effectué cette modification ?</strong>
+            <p style="margin: 10px 0 0 0;">
+                Si vous n'êtes pas à l'origine de ce changement, votre compte est peut-être compromis.
+                Contactez immédiatement notre support :
+            </p>
+            <a href="{{ supportUrl }}" style="color: #007bff;">Contacter le support</a>
+        </div>
+
+        <p style="color: #6c757d; font-size: 14px;">
+            Si c'est bien vous qui avez effectué cette modification, vous pouvez ignorer cet email.
+        </p>
+    </div>
+</body>
+</html>

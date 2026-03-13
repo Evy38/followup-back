@@ -48,6 +48,26 @@ class SecurityEmailService
     }
 
     /**
+     * Notifie l'utilisateur que son prénom ou nom vient d'être modifié.
+     * Envoi immédiat — utilisé comme alerte de sécurité.
+     */
+    public function sendProfileNameChangedEmail(User $user): void
+    {
+        $email = (new TemplatedEmail())
+            ->from(new Address('no-reply@followup.fr', 'FollowUp Sécurité'))
+            ->to($user->getEmail())
+            ->subject('[FollowUp] Vos informations de profil ont été modifiées')
+            ->htmlTemplate('emails/profile_name_changed.html.twig')
+            ->context([
+                'user' => $user,
+                'changedAt' => new \DateTimeImmutable(),
+                'supportUrl' => $this->frontendUrl . '/support',
+            ]);
+
+        $this->mailer->send($email);
+    }
+
+    /**
      * Confirme à l'utilisateur que sa demande de suppression a bien été reçue.
      * Envoi différé via DeferredMailer (la requête ne doit pas être bloquée).
      */

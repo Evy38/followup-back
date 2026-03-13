@@ -1,3 +1,18 @@
+# CD Backend - Déploiement Continu
+#
+# Déclenché manuellement via GitHub Actions (workflow_dispatch).
+# Permet de cibler un environnement spécifique : SIT, UAT ou Production.
+#
+# Stratégie de déploiement :
+#   SIT (System Integration Testing) : environnement de test interne
+#   UAT (User Acceptance Testing)    : validation par les utilisateurs
+#   PROD (Production)                : environnement final avec backup préalable
+#
+# Note : les étapes de déploiement sont simulées (echo) — dans un projet réel,
+# elles utiliseraient SSH, rsync ou une API hébergeur (ex. Render, Railway).
+# Les secrets d'environnement (APP_SECRET, DATABASE_URL) sont stockés dans
+# GitHub Environments pour isoler les accès par environnement.
+
 name: CD Backend Symfony
 
 on:

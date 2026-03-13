@@ -186,7 +186,16 @@ class UserService
             return $user;
         }
 
+        $nameChanged = $data->getFirstName() !== null || $data->getLastName() !== null;
+
         $this->repository->save($user, true);
+
+        if ($nameChanged) {
+            try {
+                $this->securityEmailService->sendProfileNameChangedEmail($user);
+            } catch (\Throwable $e) {
+            }
+        }
 
         return $user;
     }

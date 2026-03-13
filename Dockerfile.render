@@ -1,7 +1,15 @@
 # ===============================================
-# 🚀 Dockerfile Production - FollowUp Backend
+# Dockerfile Production - FollowUp Backend
 # ===============================================
-# Multi-stage build pour optimiser la taille de l'image
+# Utilisé pour le déploiement sur Render (hébergeur cloud).
+# NE PAS confondre avec docker/php/Dockerfile qui sert uniquement au développement local.
+#
+# Multi-stage build :
+#   - Stage "builder" : installe les dépendances Composer
+#   - Stage final     : image allégée avec uniquement le runtime PHP/Apache
+#
+# Au démarrage, docker/scripts/docker-entrypoint.sh gère :
+# les migrations, la génération des clés JWT et les permissions.
 
 # -----------------------------------------------
 # Stage 1: Builder (installation dépendances)
