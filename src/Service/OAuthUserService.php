@@ -50,7 +50,7 @@ class OAuthUserService
         $user = $this->userRepository->findOneBy(['email' => $email]);
 
         if ($user) {
-            if ($user->isDeleted()) {
+            if ($user->isDeleted() || $user->getDeletionRequestedAt() !== null) {
                 throw new \RuntimeException('Ce compte a été supprimé.');
             }
 

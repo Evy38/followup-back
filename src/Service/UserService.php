@@ -38,13 +38,13 @@ class UserService
     }
 
     /**
-     * Retourne tous les utilisateurs actifs (non supprimés).
+     * Retourne tous les utilisateurs (actifs, en attente de suppression et à purger).
      *
      * @return User[]
      */
     public function getAll(): array
     {
-        return $this->repository->findBy(['deletedAt' => null]);
+        return $this->repository->findAll();
     }
 
     /**
