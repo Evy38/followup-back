@@ -6,6 +6,7 @@ use App\Enum\StatutReponse;
 use App\Repository\CandidatureRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
@@ -54,10 +55,11 @@ use Symfony\Component\Serializer\Annotation\Groups;
 class Candidature
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Column(type: 'uuid', unique: true)]
+    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
+    #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
     #[Groups(['candidature:read'])]
-    private ?int $id = null;
+    private ?Uuid $id = null;
 
     #[ORM\Column(type: 'datetime_immutable')]
     #[Groups(['candidature:read'])]
@@ -131,7 +133,7 @@ class Candidature
 
     // ---------------- Getters / Setters ----------------
 
-    public function getId(): ?int
+    public function getId(): ?Uuid
     {
         return $this->id;
     }

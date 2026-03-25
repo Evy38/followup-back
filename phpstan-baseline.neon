@@ -1,37 +1,25 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Parameter \#1 \$message of function error_log expects string, true given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/Auth/AuthController.php
-
-		-
-			message: '#^Parameter \#2 \$return of function print_r expects bool, int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/Auth/AuthController.php
-
-		-
 			message: '#^Call to an undefined method App\\Entity\\User\:\:isVerified\(\)\.$#'
 			identifier: method.notFound
 			count: 1
 			path: src/Controller/Auth/VerifyEmailController.php
 
 		-
-			message: '#^Property App\\Entity\\Candidature\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			message: '#^Property App\\Entity\\Candidature\:\:\$id \(Symfony\\Component\\Uid\\Uuid\|null\) is never assigned Symfony\\Component\\Uid\\Uuid so it can be removed from the property type\.$#'
 			identifier: property.unusedType
 			count: 1
 			path: src/Entity/Candidature.php
 
 		-
-			message: '#^Property App\\Entity\\Entreprise\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			message: '#^Property App\\Entity\\Entreprise\:\:\$id \(Symfony\\Component\\Uid\\Uuid\|null\) is never assigned Symfony\\Component\\Uid\\Uuid so it can be removed from the property type\.$#'
 			identifier: property.unusedType
 			count: 1
 			path: src/Entity/Entreprise.php
 
 		-
-			message: '#^Property App\\Entity\\Entretien\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			message: '#^Property App\\Entity\\Entretien\:\:\$id \(Symfony\\Component\\Uid\\Uuid\|null\) is never assigned Symfony\\Component\\Uid\\Uuid so it can be removed from the property type\.$#'
 			identifier: property.unusedType
 			count: 1
 			path: src/Entity/Entretien.php
@@ -49,13 +37,13 @@ parameters:
 			path: src/Entity/Statut.php
 
 		-
-			message: '#^Property App\\Entity\\Statut\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			message: '#^Property App\\Entity\\Statut\:\:\$id \(Symfony\\Component\\Uid\\Uuid\|null\) is never assigned Symfony\\Component\\Uid\\Uuid so it can be removed from the property type\.$#'
 			identifier: property.unusedType
 			count: 1
 			path: src/Entity/Statut.php
 
 		-
-			message: '#^Property App\\Entity\\User\:\:\$id \(int\|null\) is never assigned int so it can be removed from the property type\.$#'
+			message: '#^Property App\\Entity\\User\:\:\$id \(Symfony\\Component\\Uid\\Uuid\|null\) is never assigned Symfony\\Component\\Uid\\Uuid so it can be removed from the property type\.$#'
 			identifier: property.unusedType
 			count: 1
 			path: src/Entity/User.php

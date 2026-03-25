@@ -38,13 +38,13 @@ class UserService
     }
 
     /**
-     * Retourne tous les utilisateurs actifs (non supprimés).
+     * Retourne tous les utilisateurs (actifs, en attente de suppression et à purger).
      *
      * @return User[]
      */
     public function getAll(): array
     {
-        return $this->repository->findBy(['deletedAt' => null]);
+        return $this->repository->findAll();
     }
 
     /**
@@ -52,7 +52,7 @@ class UserService
      *
      * @throws NotFoundHttpException Si l'utilisateur n'existe pas ou est supprimé
      */
-    public function getById(int $id): User
+    public function getById(string $id): User
     {
         $user = $this->repository->find($id);
 
@@ -122,14 +122,14 @@ class UserService
      * - Changement de prénom/nom : mise à jour directe
      * - Changement de mot de passe : nécessite l'ancien mot de passe ; impossible pour les comptes OAuth
      *
-     * @param int         $id              Identifiant de l'utilisateur à modifier
+     * @param string      $id              Identifiant UUID de l'utilisateur à modifier
      * @param User        $data            Objet User portant les nouvelles valeurs
      * @param string|null $currentPassword Ancien mot de passe en clair (requis pour changer le mot de passe)
      *
      * @throws ConflictHttpException   Si le nouvel email est déjà utilisé
      * @throws BadRequestHttpException Si l'ancien mot de passe est absent ou incorrect, ou si compte OAuth
      */
-    public function update(int $id, User $data, ?string $currentPassword = null): User
+    public function update(string $id, User $data, ?string $currentPassword = null): User
     {
         $user = $this->getById($id);
 
@@ -236,7 +236,7 @@ class UserService
      * @throws NotFoundHttpException   Si l'utilisateur est introuvable
      * @throws BadRequestHttpException Si aucune demande de suppression n'a été faite
      */
-    public function hardDelete(int $id): void
+    public function hardDelete(string $id): void
     {
         $user = $this->repository->find($id);
 
