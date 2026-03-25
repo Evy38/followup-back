@@ -257,8 +257,8 @@ class UserServiceTest extends TestCase
         // ========================================
         
         $this->expectException(NotFoundHttpException::class);
-        $this->expectExceptionMessage("Utilisateur #999 introuvable.");
-        
-        $userService->getById(999); // Chercher un ID qui n'existe pas
+        $this->expectExceptionMessage("Utilisateur #00000000-0000-0000-0000-000000000999 introuvable.");
+
+        $userService->getById('00000000-0000-0000-0000-000000000999'); // Chercher un UUID qui n'existe pas
     }
 }

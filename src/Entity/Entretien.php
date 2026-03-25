@@ -13,6 +13,7 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
@@ -54,10 +55,11 @@ use Symfony\Component\Validator\Constraints as Assert;
 class Entretien
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Column(type: 'uuid', unique: true)]
+    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
+    #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
     #[Groups(['entretien:read', 'candidature:read'])]
-    private ?int $id = null;
+    private ?Uuid $id = null;
 
     #[ORM\Column(type: 'date')]
     #[Groups(['entretien:read', 'entretien:write', 'candidature:read'])]
@@ -84,7 +86,7 @@ class Entretien
 
     // ---------------- Getters / Setters ----------------
 
-    public function getId(): ?int
+    public function getId(): ?Uuid
     {
         return $this->id;
     }

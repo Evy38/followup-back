@@ -14,6 +14,7 @@ use ApiPlatform\Metadata\Delete;
 use Symfony\Component\Serializer\Annotation\Groups;
 use ApiPlatform\Metadata\Patch;
 use App\State\RelanceUpdateProcessor;
+use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
@@ -60,10 +61,11 @@ use Symfony\Component\Validator\Constraints as Assert;
 class Relance
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Column(type: 'uuid', unique: true)]
+    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
+    #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
     #[Groups(['relance:read', 'candidature:read'])]
-    private ?int $id = null;
+    private ?Uuid $id = null;
 
     #[ORM\Column]
     #[Assert\NotNull]
@@ -104,7 +106,7 @@ class Relance
 
     // --- GETTERS / SETTERS ---
 
-    public function getId(): ?int
+    public function getId(): ?Uuid
     {
         return $this->id;
     }

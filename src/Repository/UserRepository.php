@@ -63,9 +63,9 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
      * Vérifie si un email est déjà utilisé, en excluant optionnellement un utilisateur.
      *
      * @param string   $email     Email à vérifier
-     * @param int|null $excludeId Identifiant à exclure de la vérification (mise à jour de profil)
+     * @param string|null $excludeId UUID à exclure de la vérification (mise à jour de profil)
      */
-    public function existsByEmail(string $email, ?int $excludeId = null): bool
+    public function existsByEmail(string $email, ?string $excludeId = null): bool
     {
         $qb = $this->createQueryBuilder('u')
             ->select('COUNT(u.id)')

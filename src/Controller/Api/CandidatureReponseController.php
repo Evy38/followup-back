@@ -39,7 +39,7 @@ class CandidatureReponseController extends AbstractController
     }
 
     #[Route('/{id}/statut-reponse', name: 'api_candidature_update_statut_reponse', methods: ['PATCH'])]
-    public function updateStatutReponse(int $id, Request $request): JsonResponse
+    public function updateStatutReponse(string $id, Request $request): JsonResponse
     {
         /** @var User $currentUser */
         $currentUser = $this->getUser();
@@ -77,7 +77,7 @@ class CandidatureReponseController extends AbstractController
         $this->em->flush();
 
         return $this->json([
-            'id' => $candidature->getId(),
+            'id' => (string) $candidature->getId(),
             'statutReponse' => $candidature->getStatutReponse()->value,
         ]);
     }

@@ -86,7 +86,7 @@ class UserController extends AbstractController
         }
 
         $updatedUser = $this->userService->update(
-            $currentUser->getId(),
+            (string) $currentUser->getId(),
             $userData,
             $currentPassword
         );

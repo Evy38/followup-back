@@ -71,7 +71,7 @@ class AdminUserController extends AbstractController
     }
 
     #[Route('/{id}', methods: ['GET'])]
-    public function getOne(int $id): JsonResponse
+    public function getOne(string $id): JsonResponse
     {
         $user = $this->userRepository->find($id);
 
@@ -86,7 +86,7 @@ class AdminUserController extends AbstractController
     }
 
     #[Route('/{id}', methods: ['PUT'])]
-    public function update(int $id, Request $request): JsonResponse
+    public function update(string $id, Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
 
@@ -126,7 +126,7 @@ class AdminUserController extends AbstractController
     }
 
     #[Route('/{id}', methods: ['DELETE'])]
-    public function hardDelete(int $id): JsonResponse
+    public function hardDelete(string $id): JsonResponse
     {
         $this->userService->hardDelete($id);
 

@@ -77,11 +77,13 @@ jobs:
       - name: 🗄️ Créer le schéma de base de données
         env:
           APP_ENV: test
-          DATABASE_URL: "postgresql://follow_user:root@127.0.0.1:5432/followup_test?serverVersion=16&charset=utf8"  
+          DATABASE_URL: "postgresql://follow_user:root@127.0.0.1:5432/followup_test?serverVersion=16&charset=utf8"
           MESSENGER_TRANSPORT_DSN: "sync://"
         run: |
           php bin/console doctrine:database:create --if-not-exists
-          php bin/console doctrine:migrations:migrate --no-interaction  # ✅ Utiliser migrations au lieu de schema:create
+          php bin/console doctrine:schema:create
+          php bin/console doctrine:migrations:sync-metadata-storage
+          php bin/console doctrine:migrations:version --add --all --no-interaction
 
       - name: 🧩 Vérifier le schéma Doctrine
         env:
@@ -103,4 +105,4 @@ jobs:
         run: php bin/phpunit
 
       - name: 🔍 Analyse statique PHPStan
-        run: vendor/bin/phpstan analyse --no-progress
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=512M
