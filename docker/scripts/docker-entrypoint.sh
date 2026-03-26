@@ -97,7 +97,7 @@ if [ "$DB_CONNECTED" = "true" ]; then
     # 7️⃣ Exécuter les migrations
     # -----------------------------------------------
     echo "📊 [Database] Exécution des migrations..."
-    
+    php bin/console doctrine:migrations:sync-metadata-storage --no-interaction
     if php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration 2>&1; then
         echo "✅ [Database] Migrations complétées avec succès"
     else
