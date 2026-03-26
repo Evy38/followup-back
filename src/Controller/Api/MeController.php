@@ -36,7 +36,7 @@ class MeController extends AbstractController
             ], Response::HTTP_UNAUTHORIZED);
         }
 
-        if ($user->isDeleted()) {
+        if ($user->isDeleted() || $user->getDeletionRequestedAt() !== null) {
             return $this->json([
                 'authenticated' => false,
                 'verified' => false,
@@ -50,7 +50,7 @@ class MeController extends AbstractController
                 'authenticated' => true,
                 'verified' => false,
                 'user' => [
-                    'id' => $user->getId(),
+                    'id' => (string) $user->getId(),
                     'email' => $user->getEmail(),
                     'firstName' => $user->getFirstName(),
                     'lastName' => $user->getLastName(),

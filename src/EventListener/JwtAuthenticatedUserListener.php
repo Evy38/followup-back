@@ -4,7 +4,7 @@ namespace App\EventListener;
 
 use App\Entity\User;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTAuthenticatedEvent;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
 
 /**
  * Event Listener pour la validation post-authentification JWT.
@@ -26,22 +26,22 @@ class JwtAuthenticatedUserListener
      * 
      * @param JWTAuthenticatedEvent $event Contient le token JWT et l'utilisateur
      * 
-     * @throws AccessDeniedHttpException Si l'utilisateur n'est pas une instance valide
+     * @throws CustomUserMessageAuthenticationException Si l'utilisateur n'est pas une instance valide
      */
     public function onJwtAuthenticated(JWTAuthenticatedEvent $event): void
     {
         $user = $event->getToken()->getUser();
 
         if (!$user instanceof User) {
-            throw new AccessDeniedHttpException('Utilisateur invalide.');
+            throw new CustomUserMessageAuthenticationException('Utilisateur invalide.');
         }
 
-        if ($user->isDeleted()) {
-            throw new AccessDeniedHttpException('Compte supprimé.');
+        if ($user->isDeleted() || $user->getDeletionRequestedAt() !== null) {
+            throw new CustomUserMessageAuthenticationException('Compte supprimé.');
         }
 
         if (!$user->getIsVerified()) {
-            throw new AccessDeniedHttpException('Email non vérifié.');
+            throw new CustomUserMessageAuthenticationException('Email non vérifié.');
         }
     }
 
