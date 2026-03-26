@@ -6,6 +6,7 @@
 
 parameters:
     frontend_url: "%env(FRONTEND_URL)%"
+    env(COOKIE_SECURE): 'false'
 
 services:
     _defaults:
