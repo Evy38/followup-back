@@ -79,8 +79,8 @@ class CandidatureApiTest extends WebTestCase
 
         $token = $jwtManager->create($user);
 
+        $client->getCookieJar()->set(new \Symfony\Component\BrowserKit\Cookie('access_token', $token));
         $client->request('GET', '/api/my-candidatures', [], [], [
-            'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
             'CONTENT_TYPE' => 'application/json'
         ]);
 
@@ -165,9 +165,8 @@ class CandidatureApiTest extends WebTestCase
 
         $tokenA = $jwtManager->create($userA);
 
-        $client->request('GET', '/api/my-candidatures', [], [], [
-            'HTTP_AUTHORIZATION' => 'Bearer ' . $tokenA
-        ]);
+        $client->getCookieJar()->set(new \Symfony\Component\BrowserKit\Cookie('access_token', $tokenA));
+        $client->request('GET', '/api/my-candidatures');
 
         $this->assertResponseStatusCodeSame(Response::HTTP_OK);
         $responseData = json_decode($client->getResponse()->getContent(), true);
