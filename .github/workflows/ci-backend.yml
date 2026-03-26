@@ -60,8 +60,9 @@ jobs:
       - name: ⚙️ Préparer l'environnement Symfony
         env:
           APP_ENV: test
-          DATABASE_URL: "postgresql://follow_user:root@127.0.0.1:5432/followup_test?serverVersion=16&charset=utf8"  
+          DATABASE_URL: "postgresql://follow_user:root@127.0.0.1:5432/followup_test?serverVersion=16&charset=utf8"
           MESSENGER_TRANSPORT_DSN: "sync://"
+          COOKIE_SECURE: "false"
         run: |
           touch .env
           php bin/console cache:clear
@@ -79,6 +80,7 @@ jobs:
           APP_ENV: test
           DATABASE_URL: "postgresql://follow_user:root@127.0.0.1:5432/followup_test?serverVersion=16&charset=utf8"
           MESSENGER_TRANSPORT_DSN: "sync://"
+          COOKIE_SECURE: "false"
         run: |
           php bin/console doctrine:database:create --if-not-exists
           php bin/console doctrine:schema:create
@@ -88,8 +90,9 @@ jobs:
       - name: 🧩 Vérifier le schéma Doctrine
         env:
           APP_ENV: test
-          DATABASE_URL: "postgresql://follow_user:root@127.0.0.1:5432/followup_test?serverVersion=16&charset=utf8" 
+          DATABASE_URL: "postgresql://follow_user:root@127.0.0.1:5432/followup_test?serverVersion=16&charset=utf8"
           MESSENGER_TRANSPORT_DSN: "sync://"
+          COOKIE_SECURE: "false"
         run: php bin/console doctrine:schema:validate --skip-sync
 
       - name: 🧪 Lancer les tests PHPUnit
