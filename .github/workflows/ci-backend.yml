@@ -102,6 +102,7 @@ jobs:
           MESSENGER_TRANSPORT_DSN: "sync://"
           CORS_ALLOW_ORIGIN: "*"
           FRONTEND_URL: "http://localhost:3000"
+          COOKIE_SECURE: "false"
         run: php bin/phpunit
 
       - name: 🔍 Analyse statique PHPStan
