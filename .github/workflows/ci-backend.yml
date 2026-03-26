@@ -96,14 +96,16 @@ jobs:
         env:
           APP_ENV: test
           APP_SECRET: "ci_secret"
-          DATABASE_URL: "postgresql://follow_user:root@127.0.0.1:5432/followup_test?serverVersion=16&charset=utf8"  # ✅ PostgreSQL
+          DATABASE_URL: "postgresql://follow_user:root@127.0.0.1:5432/followup_test?serverVersion=16&charset=utf8"
           JWT_PASSPHRASE: ""
           MAILER_DSN: "null://null"
           MESSENGER_TRANSPORT_DSN: "sync://"
           CORS_ALLOW_ORIGIN: "*"
           FRONTEND_URL: "http://localhost:3000"
           COOKIE_SECURE: "false"
-        run: php bin/phpunit
+        run: |
+          php bin/console cache:clear --env=test
+          php bin/phpunit
 
       - name: 🔍 Analyse statique PHPStan
         run: vendor/bin/phpstan analyse --no-progress --memory-limit=512M
