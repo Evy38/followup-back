@@ -21,6 +21,8 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    env:
+      COOKIE_SECURE: "false"
 
     services:
       postgres:
@@ -60,8 +62,9 @@ jobs:
       - name: ⚙️ Préparer l'environnement Symfony
         env:
           APP_ENV: test
-          DATABASE_URL: "postgresql://follow_user:root@127.0.0.1:5432/followup_test?serverVersion=16&charset=utf8"  
+          DATABASE_URL: "postgresql://follow_user:root@127.0.0.1:5432/followup_test?serverVersion=16&charset=utf8"
           MESSENGER_TRANSPORT_DSN: "sync://"
+          COOKIE_SECURE: "false"
         run: |
           touch .env
           php bin/console cache:clear
@@ -79,6 +82,7 @@ jobs:
           APP_ENV: test
           DATABASE_URL: "postgresql://follow_user:root@127.0.0.1:5432/followup_test?serverVersion=16&charset=utf8"
           MESSENGER_TRANSPORT_DSN: "sync://"
+          COOKIE_SECURE: "false"
         run: |
           php bin/console doctrine:database:create --if-not-exists
           php bin/console doctrine:schema:create
@@ -88,21 +92,25 @@ jobs:
       - name: 🧩 Vérifier le schéma Doctrine
         env:
           APP_ENV: test
-          DATABASE_URL: "postgresql://follow_user:root@127.0.0.1:5432/followup_test?serverVersion=16&charset=utf8" 
+          DATABASE_URL: "postgresql://follow_user:root@127.0.0.1:5432/followup_test?serverVersion=16&charset=utf8"
           MESSENGER_TRANSPORT_DSN: "sync://"
+          COOKIE_SECURE: "false"
         run: php bin/console doctrine:schema:validate --skip-sync
 
       - name: 🧪 Lancer les tests PHPUnit
         env:
           APP_ENV: test
           APP_SECRET: "ci_secret"
-          DATABASE_URL: "postgresql://follow_user:root@127.0.0.1:5432/followup_test?serverVersion=16&charset=utf8"  # ✅ PostgreSQL
+          DATABASE_URL: "postgresql://follow_user:root@127.0.0.1:5432/followup_test?serverVersion=16&charset=utf8"
           JWT_PASSPHRASE: ""
           MAILER_DSN: "null://null"
           MESSENGER_TRANSPORT_DSN: "sync://"
           CORS_ALLOW_ORIGIN: "*"
           FRONTEND_URL: "http://localhost:3000"
-        run: php bin/phpunit
+          COOKIE_SECURE: "false"
+        run: |
+          php bin/console cache:clear --env=test
+          php bin/phpunit
 
       - name: 🔍 Analyse statique PHPStan
         run: vendor/bin/phpstan analyse --no-progress --memory-limit=512M
