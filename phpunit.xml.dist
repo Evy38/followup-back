@@ -46,6 +46,9 @@
         <env name="JWT_PUBLIC_KEY" value="%kernel.project_dir%/config/jwt/public.pem"/>
         <env name="JWT_PASSPHRASE" value="mapassphrase"/>
 
+        <!-- Cookies HttpOnly — false en test (pas de HTTPS) -->
+        <env name="COOKIE_SECURE" value="false"/>
+
         <!-- Empêche l'envoi d'e-mails ou de notifications -->
         <env name="MAILER_DSN" value="null://localhost"/>
 
