@@ -5,8 +5,11 @@ nelmio_cors:
         origin_regex: true
         allow_origin: ['%env(CORS_ALLOW_ORIGIN)%'] # liste des site autorisés à communiquer avec ce back
         allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE'] # liste les types de requêtes autorisées
-        allow_headers: ['Content-Type', 'Authorization'] # liste des en-tête authorisées à être envoyées depuis angular : Content-type: permet envoie json // Authorization : permet envoie token Jwt
+        allow_headers: ['Content-Type'] # Authorization retiré : le token passe maintenant en cookie HttpOnly
+        allow_credentials: true # Indispensable pour que les cookies soient envoyés sur les requêtes cross-origin
         expose_headers: ['Link']
         max_age: 3600 # Durée de validité du OK cors pour éviter au nav de redemander l'autorisation à chauqe appel
     paths: # Précise où appliquer les règles
         '^/api/': ~
+        '^/auth/': ~
+        '^/google/': ~

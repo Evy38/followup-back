@@ -4,10 +4,13 @@ namespace App\Controller\Auth;
 
 use App\Service\OAuthUserService;
 use App\Service\GoogleAuthService;
+use Gesdinet\JWTRefreshTokenBundle\Generator\RefreshTokenGeneratorInterface;
+use Gesdinet\JWTRefreshTokenBundle\Model\RefreshTokenManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
@@ -21,32 +24,28 @@ use Symfony\Component\Routing\Annotation\Route;
  * 1. Frontend appelle `/auth/google` → redirection vers Google
  * 2. Google redirige sur `/google/callback?code=...`
  * 3. Le callback échange le code → récupère le profil Google → crée/récupère le User
- * 4. Un JWT FollowUp est généré et transmis au frontend via une redirection
+ * 4. Les cookies HttpOnly access_token + refresh_token sont posés, puis redirection vers le frontend
  */
 class AuthController extends AbstractController
 {
+    public function __construct(
+        private bool $cookieSecure,
+        private RefreshTokenGeneratorInterface $refreshTokenGenerator,
+        private RefreshTokenManagerInterface $refreshTokenManager,
+    ) {}
+
     /**
-     * Initie le flux OAuth Google en redirigeant l'utilisateur vers la page de consentement.
-     *
      * GET /auth/google
      */
     #[Route('/auth/google', name: 'auth_google')]
     public function google(GoogleAuthService $googleAuthService): RedirectResponse
     {
-        $client = $googleAuthService->getClient();
-        $authUrl = $client->createAuthUrl();
-
+        $authUrl = $googleAuthService->getClient()->createAuthUrl();
         return $this->redirect($authUrl);
     }
 
     /**
-     * Reçoit le callback Google OAuth, crée ou met à jour le compte utilisateur,
-     * génère un JWT FollowUp et redirige le frontend avec le token dans l'URL.
-     *
      * GET /google/callback?code=...
-     *
-     * En cas d'erreur (code manquant, token invalide, compte supprimé),
-     * redirige vers `/login?error={raison}`.
      */
     #[Route('/google/callback', name: 'auth_google_callback')]
     public function googleCallback(
@@ -56,38 +55,57 @@ class AuthController extends AbstractController
         JWTTokenManagerInterface $jwtManager
     ): RedirectResponse {
         $frontendUrl = $this->getParameter('frontend_url');
-
         $client = $googleAuthService->getClient();
         $code = $request->query->get('code');
 
         if (!$code) {
             return $this->redirect($frontendUrl . '/login?error=no_code');
         }
-        
+
         $token = $client->fetchAccessTokenWithAuthCode($code);
 
-
         if (isset($token['error'])) {
-          
             return $this->redirect($frontendUrl . '/login?error=token');
         }
 
         $oauth = new \Google\Service\Oauth2($client);
         $googleUser = $oauth->userinfo->get();
 
-        $email = $googleUser->email;
-        $firstName = $googleUser->givenName;
-        $lastName = $googleUser->familyName;
-        $googleId = $googleUser->id;
-
         try {
-            $user = $oauthUserService->getOrCreateFromGoogle($email, $firstName, $lastName, $googleId);
+            $user = $oauthUserService->getOrCreateFromGoogle(
+                $googleUser->email,
+                $googleUser->givenName,
+                $googleUser->familyName,
+                $googleUser->id
+            );
         } catch (\RuntimeException $e) {
             return $this->redirect($frontendUrl . '/google/callback?error=account_deleted');
         }
 
         $jwt = $jwtManager->create($user);
 
-        return $this->redirect($frontendUrl . '/google/callback?token=' . urlencode($jwt));
+        $refreshToken = $this->refreshTokenGenerator->createForUserWithTtl($user, 604800);
+        $this->refreshTokenManager->save($refreshToken);
+
+        $response = new RedirectResponse($frontendUrl . '/google/callback');
+
+        $response->headers->setCookie(Cookie::create('access_token')
+            ->withValue($jwt)
+            ->withHttpOnly(true)
+            ->withSecure($this->cookieSecure)
+            ->withSameSite('lax')
+            ->withPath('/')
+        );
+
+        $response->headers->setCookie(Cookie::create('refresh_token')
+            ->withValue($refreshToken->getRefreshToken())
+            ->withHttpOnly(true)
+            ->withSecure($this->cookieSecure)
+            ->withSameSite('lax')
+            ->withPath('/')
+            ->withExpires(new \DateTimeImmutable('+7 days'))
+        );
+
+        return $response;
     }
 }

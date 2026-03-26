@@ -61,9 +61,17 @@ security:
                 check_path: /api/login_check
                 username_path: email
                 password_path: password
-                success_handler: lexik_jwt_authentication.handler.authentication_success
+                success_handler: App\Security\AuthenticationSuccessHandler
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
 
+
+        # ----------------------------
+        # 🔄 REFRESH TOKEN
+        # ----------------------------
+        refresh:
+            pattern: ^/api/token/refresh
+            stateless: true
+            security: false
 
         # ----------------------------
         # 🔐 FIREWALL PRINCIPAL API
@@ -96,6 +104,9 @@ security:
         # 🔓 PUBLIC : mot de passe oublié / reset
         - { path: ^/api/password/request, roles: PUBLIC_ACCESS }
         - { path: ^/api/password/reset, roles: PUBLIC_ACCESS }
+
+        # 🔓 PUBLIC : refresh token
+        - { path: ^/api/token/refresh, roles: PUBLIC_ACCESS }
 
         # 🔓 PUBLIC : OAuth Google
         - { path: ^/auth/google, roles: PUBLIC_ACCESS }

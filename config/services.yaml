@@ -44,6 +44,15 @@ services:
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
 
+    App\Controller\Auth\AuthController:
+        arguments:
+            $cookieSecure: '%env(bool:COOKIE_SECURE)%'
+
+    App\Security\AuthenticationSuccessHandler:
+        arguments:
+            $cookieSecure: '%env(bool:COOKIE_SECURE)%'
+            $refreshTokenTtl: 604800
+
     App\Service\AdzunaService:
         arguments:
             $httpClient: '@http_client'
