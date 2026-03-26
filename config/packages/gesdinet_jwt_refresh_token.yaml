@@ -1,0 +1,9 @@
+gesdinet_jwt_refresh_token:
+    refresh_token_class: App\Entity\RefreshToken
+    ttl: 604800
+    ttl_update: true
+    cookie:
+        enabled: true
+        same_site: lax
+        http_only: true
+        secure: '%env(bool:COOKIE_SECURE)%'
