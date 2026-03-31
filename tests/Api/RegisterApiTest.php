@@ -66,7 +66,7 @@ class RegisterApiTest extends WebTestCase
             '/api/register',                  // URL
             [],                               // Paramètres GET (vide)
             [],                               // Fichiers (vide)
-            ['CONTENT_TYPE' => 'application/json'], // Headers HTTP
+            ['CONTENT_TYPE' => 'application/json', 'REMOTE_ADDR' => '192.168.1.1'], // Headers HTTP
             json_encode($data)                // Body JSON
         );
         
@@ -121,14 +121,14 @@ class RegisterApiTest extends WebTestCase
         ];
         
         // 🔹 Première inscription : doit réussir
-        $client->request('POST', '/api/register', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode($data));
+        $client->request('POST', '/api/register', [], [], ['CONTENT_TYPE' => 'application/json', 'REMOTE_ADDR' => '192.168.1.2'], json_encode($data));
         $this->assertResponseStatusCodeSame(Response::HTTP_CREATED);
-        
+
         // ========================================
         // 2️⃣ ACT : Tenter de s'inscrire AVEC LE MÊME EMAIL
         // ========================================
-        
-        $client->request('POST', '/api/register', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode($data));
+
+        $client->request('POST', '/api/register', [], [], ['CONTENT_TYPE' => 'application/json', 'REMOTE_ADDR' => '192.168.1.3'], json_encode($data));
         
         // ========================================
         // 3️⃣ ASSERT
@@ -168,12 +168,12 @@ class RegisterApiTest extends WebTestCase
         // 2️⃣ ACT
         // ========================================
         
-        $client->request('POST', '/api/register', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode($data));
-        
+        $client->request('POST', '/api/register', [], [], ['CONTENT_TYPE' => 'application/json', 'REMOTE_ADDR' => '192.168.1.4'], json_encode($data));
+
         // ========================================
         // 3️⃣ ASSERT
         // ========================================
-        
+
         // ✅ La réponse doit être 400 Bad Request
         $this->assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
         
@@ -205,15 +205,15 @@ class RegisterApiTest extends WebTestCase
         // ========================================
         
         $dataWithoutEmail = ['password' => 'SecurePass123'];
-        $client->request('POST', '/api/register', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode($dataWithoutEmail));
+        $client->request('POST', '/api/register', [], [], ['CONTENT_TYPE' => 'application/json', 'REMOTE_ADDR' => '192.168.1.5'], json_encode($dataWithoutEmail));
         $this->assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
-        
+
         // ========================================
         // 2️⃣ ACT + 3️⃣ ASSERT : Test sans mot de passe
         // ========================================
-        
+
         $dataWithoutPassword = ['email' => 'test@gmail.com'];
-        $client->request('POST', '/api/register', [], [], ['CONTENT_TYPE' => 'application/json'], json_encode($dataWithoutPassword));
+        $client->request('POST', '/api/register', [], [], ['CONTENT_TYPE' => 'application/json', 'REMOTE_ADDR' => '192.168.1.6'], json_encode($dataWithoutPassword));
         $this->assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
     }
 }

@@ -3,12 +3,14 @@
 namespace App\Controller\Auth;
 
 use App\Repository\UserRepository;
+use App\Service\EmailVerificationService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Annotation\Route;
-use App\Service\EmailVerificationService;
 
 /**
  * Gère la vérification d'adresse email après inscription ou changement d'email.
@@ -76,8 +78,17 @@ class VerifyEmailController extends AbstractController
         Request $request,
         UserRepository $userRepository,
         EntityManagerInterface $em,
-        EmailVerificationService $emailVerificationService
+        EmailVerificationService $emailVerificationService,
+        RateLimiterFactory $resendVerificationLimiter
     ): JsonResponse {
+        $limiter = $resendVerificationLimiter->create($request->getClientIp());
+        if (!$limiter->consume(1)->isAccepted()) {
+            return new JsonResponse(
+                ['message' => 'Trop de tentatives. Réessayez dans quelques minutes.'],
+                Response::HTTP_TOO_MANY_REQUESTS
+            );
+        }
+
         $data = json_decode($request->getContent(), true);
         $email = $data['email'] ?? null;
 
