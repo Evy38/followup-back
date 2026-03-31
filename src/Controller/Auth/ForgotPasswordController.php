@@ -14,6 +14,7 @@ use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
@@ -35,13 +36,22 @@ class ForgotPasswordController extends AbstractController
         private readonly UserRepository $userRepository,
         private readonly EntityManagerInterface $em,
         private readonly MailerInterface $mailer,
-        private readonly UserPasswordHasherInterface $passwordHasher
+        private readonly UserPasswordHasherInterface $passwordHasher,
+        private readonly RateLimiterFactory $forgotPasswordLimiter
     ) {
     }
 
     #[Route('/api/password/request', name: 'api_password_request', methods: ['POST'])]
     public function requestPasswordReset(Request $request): JsonResponse
     {
+        $limiter = $this->forgotPasswordLimiter->create($request->getClientIp());
+        if (!$limiter->consume(1)->isAccepted()) {
+            return new JsonResponse(
+                ['message' => 'Trop de tentatives. Réessayez dans quelques minutes.'],
+                Response::HTTP_TOO_MANY_REQUESTS
+            );
+        }
+
         $data = json_decode($request->getContent(), true);
 
         if (!is_array($data) || !isset($data['email'])) {
@@ -63,9 +73,7 @@ class ForgotPasswordController extends AbstractController
         }
 
         if ($user->isOauthUser()) {
-            return new JsonResponse([
-                'message' => 'Ce compte utilise Google pour se connecter. Aucun mot de passe n\'est défini.'
-            ], Response::HTTP_BAD_REQUEST);
+            return new JsonResponse(['message' => $genericMessage], Response::HTTP_OK);
         }
 
         $token = bin2hex(random_bytes(32));

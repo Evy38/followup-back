@@ -1,0 +1,25 @@
+framework:
+    rate_limiter:
+        # 5 tentatives de login par IP toutes les 15 minutes
+        login:
+            policy: sliding_window
+            limit: 5
+            interval: '15 minutes'
+
+        # 3 inscriptions par IP par heure
+        register:
+            policy: sliding_window
+            limit: 3
+            interval: '1 hour'
+
+        # 3 demandes de reset de mot de passe par IP par heure
+        forgot_password:
+            policy: sliding_window
+            limit: 3
+            interval: '1 hour'
+
+        # 3 renvois d'email de vérification par IP par heure
+        resend_verification:
+            policy: sliding_window
+            limit: 3
+            interval: '1 hour'
