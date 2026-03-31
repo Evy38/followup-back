@@ -50,6 +50,7 @@ class AdminUserController extends AbstractController
         $users = match ($filter) {
             'deleted' => $this->userRepository->findAllDeleted(),
             'pending' => $this->userRepository->findPendingDeletion(),
+            'all_with_deleted' => $this->userRepository->findAllIncludingDeleted(),
             default => $this->userService->getAll(),
         };
 

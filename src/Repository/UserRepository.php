@@ -90,6 +90,21 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     }
 
     /**
+     * Retourne tous les utilisateurs, y compris ceux supprimés définitivement (deletedAt non null).
+     * Utilisé par l'interface admin pour afficher l'historique complet jusqu'à la purge.
+     *
+     * @return User[]
+     */
+    public function findAllIncludingDeleted(): array
+    {
+        return $this->createQueryBuilder('u')
+            ->orderBy('u.deletedAt', 'ASC')
+            ->addOrderBy('u.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Retourne les comptes ayant demandé la suppression et déjà soft-deleted.
      * Utilisé par le tableau de bord admin pour confirmer les suppressions.
      *
