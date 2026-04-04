@@ -83,7 +83,7 @@ class UserService
 
         if (!str_ends_with($user->getEmail(), '@gmail.com')) {
             throw new BadRequestHttpException(
-                "Pour FollowUp, l'email doit être une adresse Gmail."
+                "FollowUp nécessite une adresse Gmail dédiée à vos recherches d'emploi. Cela vous permet de centraliser vos candidatures et, à terme, de bénéficier de l'analyse automatique de vos emails."
             );
         }
 

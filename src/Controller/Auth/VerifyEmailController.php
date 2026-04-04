@@ -41,12 +41,8 @@ class VerifyEmailController extends AbstractController
             'emailVerificationToken' => $token
         ]);
 
-        if (!$user || $user->isDeleted()) {
-            return new JsonResponse(['error' => 'Token invalide ou expiré'], 400);
-        }
-
-        if (!$user->isEmailVerificationTokenValid()) {
-            return new JsonResponse(['error' => 'Token expiré'], 400);
+        if (!$user || $user->isDeleted() || !$user->isEmailVerificationTokenValid()) {
+            return new JsonResponse(['message' => 'Le lien de vérification est invalide ou a expiré. Veuillez en demander un nouveau.'], 400);
         }
 
         if ($user->getPendingEmail()) {
@@ -100,14 +96,10 @@ class VerifyEmailController extends AbstractController
             'email' => strtolower(trim($email))
         ]);
 
-        if (!$user || $user->isDeleted()) {
-            return new JsonResponse(['error' => 'Utilisateur non trouvé'], 404);
-        }
-
-        if ($user->isVerified()) {
+        if (!$user || $user->isDeleted() || $user->isVerified()) {
             return new JsonResponse([
-                'message' => 'Ce compte est déjà confirmé.'
-            ], 400);
+                'message' => 'Si un compte non confirmé existe avec cet email, un nouveau lien a été envoyé.'
+            ], 200);
         }
 
         $emailVerificationService->generateVerificationToken($user);
