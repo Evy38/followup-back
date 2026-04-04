@@ -20,7 +20,7 @@ use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
  * - Gestion du cycle de vie du compte (demande de suppression, suppression définitive, purge)
  *
  * Règles métier notables :
- * - L'email doit être une adresse Gmail (`@gmail.com`) à la création
+ * - L'email doit être unique à la création
  * - Le changement d'email passe par une étape de confirmation (pendingEmail + token)
  * - La suppression suit un workflow en 2 étapes : demande utilisateur → confirmation admin
  * - La purge supprime définitivement les comptes marqués comme supprimés depuis plus d'1 mois
@@ -67,24 +67,18 @@ class UserService
      * Crée un nouveau compte utilisateur avec vérification d'email.
      *
      * Étapes :
-     * 1. Vérifie l'unicité de l'email et que c'est une adresse Gmail
+     * 1. Vérifie l'unicité de l'email
      * 2. Hache le mot de passe en clair fourni
      * 3. Génère un token de vérification (valable 24h) et persiste l'utilisateur
      * 4. Envoie l'email de confirmation
      *
      * @throws ConflictHttpException   Si l'email est déjà utilisé
-     * @throws BadRequestHttpException Si l'email n'est pas Gmail ou le mot de passe manquant
+     * @throws BadRequestHttpException Si le mot de passe est manquant
      */
     public function create(User $user): User
     {
         if ($this->repository->existsByEmail($user->getEmail())) {
             throw new ConflictHttpException("Cet email est déjà utilisé.");
-        }
-
-        if (!str_ends_with($user->getEmail(), '@gmail.com')) {
-            throw new BadRequestHttpException(
-                "FollowUp nécessite une adresse Gmail dédiée à vos recherches d'emploi. Cela vous permet de centraliser vos candidatures et, à terme, de bénéficier de l'analyse automatique de vos emails."
-            );
         }
 
         if ($user->getPassword() === null) {
