@@ -25,13 +25,13 @@ use Symfony\Component\Routing\Annotation\Route;
  */
 class VerifyEmailController extends AbstractController
 {
-    #[Route('/api/verify-email', name: 'api_verify_email', methods: ['GET'])]
+    #[Route('/api/verify-email', name: 'api_verify_email', methods: ['POST'])]
     public function verifyEmail(
         Request $request,
         UserRepository $userRepository,
         EntityManagerInterface $em
     ): JsonResponse {
-        $token = $request->query->get('token');
+        $token = $request->toArray()['token'] ?? null;
 
         if (!$token) {
             return new JsonResponse(['error' => 'Token manquant'], 400);
