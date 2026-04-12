@@ -10,17 +10,17 @@ use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
-use ApiPlatform\Metadata\Delete;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * Représente une candidature à un poste d'emploi.
  *
- * Une candidature est liée à un User, une Entreprise et un Statut.
+ * Une candidature est liée à un User et une Entreprise.
  * Elle regroupe les Relances planifiées et les Entretiens associés.
  * Le champ `statutReponse` (enum StatutReponse) suit l'avancement de la réponse
  * du recruteur et est synchronisé automatiquement par CandidatureStatutSyncService
@@ -97,11 +97,6 @@ class Candidature
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['candidature:read'])]
     private ?Entreprise $entreprise = null;
-
-    #[ORM\ManyToOne(inversedBy: 'candidatures')]
-    #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['candidature:read'])]
-    private ?Statut $statut = null;
 
     #[ORM\OneToMany(
         mappedBy: 'candidature',
@@ -227,17 +222,6 @@ class Candidature
     public function setEntreprise(Entreprise $e): static
     {
         $this->entreprise = $e;
-        return $this;
-    }
-
-    public function getStatut(): ?Statut
-    {
-        return $this->statut;
-    }
-
-    public function setStatut(Statut $s): static
-    {
-        $this->statut = $s;
         return $this;
     }
 

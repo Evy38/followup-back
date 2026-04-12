@@ -7,7 +7,6 @@ use App\Entity\Entreprise;
 use App\Entity\Entretien;
 use App\Entity\Relance;
 use App\Entity\User;
-use App\Entity\Statut;
 use App\Enum\ResultatEntretien;
 use App\Enum\StatutEntretien;
 use App\Enum\StatutReponse;
@@ -24,7 +23,6 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
  * - 3 utilisateurs : admin (ROLE_ADMIN), julien.dev@gmail.com (ROLE_USER actif),
  *   marie.test@gmail.com (email non vérifié)
  * - 5 entreprises (Accenture, Capgemini, Sopra Steria, Thales, Orange)
- * - 6 statuts de candidature (Envoyée, En cours, Relancée, Entretien, Refusée, Acceptée)
  * - 15 candidatures avec des statuts de réponse variés pour tester tous les cas UI
  * - 8 entretiens (prévus, passés avec résultats positifs/négatifs/en attente)
  * - Des relances pour 2 candidatures anciennes
@@ -42,8 +40,7 @@ class AppFixtures extends Fixture
     {
         $users = $this->createUsers($manager);
         $entreprises = $this->createEntreprises($manager);
-        $statuts = $this->createStatuts($manager);
-        $candidatures = $this->createCandidatures($manager, $users, $entreprises, $statuts);
+        $candidatures = $this->createCandidatures($manager, $users, $entreprises);
 
         $this->createEntretiens($manager, $candidatures);
         $this->createRelances($manager, $candidatures);
@@ -142,44 +139,17 @@ class AppFixtures extends Fixture
         return $entreprises;
     }
 
-    /* ========================= STATUTS ========================= */
-
-    private function createStatuts(ObjectManager $manager): array
-    {
-        $libelles = [
-            'Envoyée',
-            'En cours',
-            'Relancée',
-            'Entretien',
-            'Refusée',
-            'Acceptée',
-        ];
-
-        $statuts = [];
-
-        foreach ($libelles as $libelle) {
-            $statut = new Statut();
-            $statut->setLibelle($libelle);
-
-            $manager->persist($statut);
-            $statuts[] = $statut;
-        }
-
-        return $statuts;
-    }
-
     /* ========================= CANDIDATURES ========================= */
 
     /**
-     * Crée 15 candidatures avec des statuts variés.
-     * 
+     * Crée 15 candidatures avec des statuts de réponse variés.
+     *
      * @return Candidature[] Tableau des candidatures créées
      */
     private function createCandidatures(
         ObjectManager $manager,
         array $users,
-        array $entreprises,
-        array $statuts
+        array $entreprises
     ): array {
         $candidatures = [];
         $user = $users[1]; // Julien Dupont
@@ -313,7 +283,6 @@ class AppFixtures extends Fixture
             $candidature = new Candidature();
             $candidature->setUser($user);
             $candidature->setEntreprise($data['entreprise']);
-            $candidature->setStatut($statuts[array_rand($statuts)]);
             $candidature->setJobTitle($data['poste']);
             $candidature->setExternalOfferId(
                 'FIXTURE-' . strtoupper(bin2hex(random_bytes(6)))

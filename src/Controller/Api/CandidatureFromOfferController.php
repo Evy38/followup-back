@@ -6,18 +6,15 @@ use App\DTO\CreateCandidatureFromOfferDTO;
 use App\Entity\Candidature;
 use App\Entity\Entreprise;
 use App\Entity\User;
-use App\Entity\Statut;
 use App\Enum\StatutReponse;
 use App\Repository\CandidatureRepository;
 use App\Repository\EntrepriseRepository;
-use App\Repository\StatutRepository;
 use App\Service\RelanceService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -44,7 +41,6 @@ class CandidatureFromOfferController extends AbstractController
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly EntrepriseRepository $entrepriseRepository,
-        private readonly StatutRepository $statutRepository,
         private readonly CandidatureRepository $candidatureRepository,
         private readonly RelanceService $relanceService
     ) {
@@ -92,8 +88,7 @@ class CandidatureFromOfferController extends AbstractController
         }
 
         $entreprise = $this->getOrCreateEntreprise($dto->company);
-        $statut = $this->getStatutCandidature();
-        $candidature = $this->createCandidature($user, $entreprise, $statut, $dto);
+        $candidature = $this->createCandidature($user, $entreprise, $dto);
         $this->attachRelances($candidature);
 
         $this->em->persist($candidature);
@@ -115,29 +110,14 @@ class CandidatureFromOfferController extends AbstractController
         return $entreprise;
     }
 
-    private function getStatutCandidature(): Statut
-    {
-        $statut = $this->statutRepository->findOneBy(['libelle' => 'Envoyée']);
-
-        if (!$statut) {
-            throw new BadRequestHttpException(
-                'Le statut "Envoyée" n\'existe pas en base. Vérifiez les fixtures.'
-            );
-        }
-
-        return $statut;
-    }
-
     private function createCandidature(
         User $user,
         Entreprise $entreprise,
-        Statut $statut,
         CreateCandidatureFromOfferDTO $dto
     ): Candidature {
         $candidature = new Candidature();
         $candidature->setUser($user);
         $candidature->setEntreprise($entreprise);
-        $candidature->setStatut($statut);
         $candidature->setDateCandidature(new \DateTimeImmutable());
         $candidature->setLienAnnonce($dto->redirectUrl);
         $candidature->setMode('externe');
