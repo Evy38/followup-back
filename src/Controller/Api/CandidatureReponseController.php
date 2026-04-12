@@ -21,7 +21,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
  * Endpoint :
  * - PATCH /api/candidatures/{id}/statut-reponse
  *
- * Corps attendu : `{ "statutReponse": "attente" | "echanges" | "entretien" | "negative" | "engage" | "annule" }`
+ * Corps attendu : `{ "statutReponse": "attente" | "echanges" | "entretien" | "negative" | "engage" }`
  *
  * Ce endpoint permet à l'utilisateur de modifier le statutReponse indépendamment
  * du workflow automatique de synchronisation par entretien.

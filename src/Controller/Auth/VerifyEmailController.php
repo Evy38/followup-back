@@ -9,7 +9,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
@@ -75,7 +75,7 @@ class VerifyEmailController extends AbstractController
         UserRepository $userRepository,
         EntityManagerInterface $em,
         EmailVerificationService $emailVerificationService,
-        RateLimiterFactory $resendVerificationLimiter
+        RateLimiterFactoryInterface $resendVerificationLimiter
     ): JsonResponse {
         $limiter = $resendVerificationLimiter->create($request->getClientIp());
         if (!$limiter->consume(1)->isAccepted()) {

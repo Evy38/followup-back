@@ -259,13 +259,14 @@ class AppFixtures extends Fixture
                 'lien' => 'https://thalesgroup.com/careers/job-333',
             ],
 
-            // Candidatures annulées
+            // Candidature archivée (sans suite)
             [
                 'entreprise' => $entreprises[4],
                 'poste' => 'DevOps Engineer',
-                'statut' => StatutReponse::ANNULE,
+                'statut' => StatutReponse::ATTENTE,
                 'date' => '-20 days',
                 'lien' => 'https://orange-business.com/job-444',
+                'archived' => true,
             ],
 
             // Candidatures anciennes en attente (relances nécessaires)
@@ -320,6 +321,10 @@ class AppFixtures extends Fixture
             $candidature->setStatutReponse($data['statut']);
             $candidature->setDateCandidature(new \DateTimeImmutable($data['date']));
             $candidature->setLienAnnonce($data['lien']);
+
+            if (!empty($data['archived'])) {
+                $candidature->setArchivedAt(new \DateTimeImmutable());
+            }
 
             $manager->persist($candidature);
             $candidatures[] = $candidature;

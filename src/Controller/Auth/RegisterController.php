@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
-use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -29,7 +29,7 @@ class RegisterController extends AbstractController
     public function __construct(
         private readonly UserService $userService,
         private readonly ValidatorInterface $validator,
-        private readonly RateLimiterFactory $registerLimiter
+        private readonly RateLimiterFactoryInterface $registerLimiter
     ) {
     }
 

@@ -125,6 +125,10 @@ class Candidature
     #[Groups(['candidature:read'])]
     private Collection $entretiens;
 
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(['candidature:read'])]
+    private ?\DateTimeImmutable $archivedAt = null;
+
     public function __construct()
     {
         $this->relances = new ArrayCollection();
@@ -256,6 +260,22 @@ class Candidature
     public function getEntretiens(): Collection
     {
         return $this->entretiens;
+    }
+
+    public function getArchivedAt(): ?\DateTimeImmutable
+    {
+        return $this->archivedAt;
+    }
+
+    public function setArchivedAt(?\DateTimeImmutable $archivedAt): static
+    {
+        $this->archivedAt = $archivedAt;
+        return $this;
+    }
+
+    public function isArchived(): bool
+    {
+        return $this->archivedAt !== null;
     }
 
     public function addRelance(Relance $relance): static

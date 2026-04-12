@@ -10,6 +10,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use App\Service\AuditLogger;
 
 /**
  * Service métier pour la gestion des utilisateurs.
@@ -33,7 +34,8 @@ class UserService
         private readonly UserPasswordHasherInterface $hasher,
         private readonly EntityManagerInterface $em,
         private readonly EmailVerificationService $emailVerificationService,
-        private readonly SecurityEmailService $securityEmailService
+        private readonly SecurityEmailService $securityEmailService,
+        private readonly AuditLogger $auditLogger
     ) {
     }
 
@@ -105,6 +107,8 @@ class UserService
             );
         }
 
+        $this->auditLogger->log('account_created', $user->getEmail());
+
         return $user;
     }
 
@@ -172,6 +176,8 @@ class UserService
 
             $this->repository->save($user, true);
 
+            $this->auditLogger->log('password_changed', $user->getEmail());
+
             try {
                 $this->securityEmailService->sendPasswordChangedEmail($user);
             } catch (\Throwable $e) {
@@ -213,6 +219,8 @@ class UserService
 
         $this->repository->save($user, true);
 
+        $this->auditLogger->log('deletion_requested', $user->getEmail());
+
         try {
             $this->securityEmailService->sendAccountDeletionRequestEmail($user);
         } catch (\Throwable $e) {
@@ -249,6 +257,8 @@ class UserService
         $user->setDeletedAt(new \DateTimeImmutable());
         $this->repository->save($user, true);
 
+        $this->auditLogger->log('account_deleted', $user->getEmail());
+
         $email = $user->getEmail();
         $firstName = $user->getFirstName() ?? 'Utilisateur';
 
@@ -282,6 +292,7 @@ class UserService
 
         if (count($users) > 0) {
             $this->repository->flush();
+            $this->auditLogger->log('accounts_purged', 'admin', ['count' => count($users)]);
         }
 
         return count($users);

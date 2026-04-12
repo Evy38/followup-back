@@ -6,14 +6,16 @@ use App\Entity\User;
 use App\Repository\CandidatureRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 /**
  * Retourne les candidatures de l'utilisateur authentifié, triées par date décroissante.
  *
- * Endpoint :
- * - GET /api/my-candidatures   Liste complète des candidatures de l'utilisateur connecté
+ * Endpoints :
+ * - GET /api/my-candidatures               Candidatures actives (non archivées)
+ * - GET /api/my-candidatures?archived=true Candidatures archivées uniquement
  *
  * Complément à l'endpoint API Platform GET /api/candidatures, optimisé pour le tableau
  * de bord : retourne uniquement les candidatures du user courant sans avoir à filtrer côté client.
@@ -23,7 +25,7 @@ class MyCandidaturesController extends AbstractController
 {
     #[Route('', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
-    public function index(CandidatureRepository $repo): JsonResponse
+    public function index(Request $request, CandidatureRepository $repo): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
@@ -34,10 +36,11 @@ class MyCandidaturesController extends AbstractController
             ], 403);
         }
 
-        $candidatures = $repo->findBy(
-            ['user' => $user],
-            ['dateCandidature' => 'DESC']
-        );
+        $showArchived = $request->query->getBoolean('archived', false);
+
+        $candidatures = $showArchived
+            ? $repo->findArchivedByUser($user)
+            : $repo->findActiveByUser($user);
 
         return $this->json(
             $candidatures,
