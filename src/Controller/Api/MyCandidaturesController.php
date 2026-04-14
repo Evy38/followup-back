@@ -45,7 +45,7 @@ class MyCandidaturesController extends AbstractController
         return $this->json(
             $candidatures,
             200,
-            [],
+            ['Cache-Control' => 'no-store, no-cache, must-revalidate'],
             ['groups' => ['candidature:read']]
         );
     }

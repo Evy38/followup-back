@@ -5,11 +5,11 @@ namespace App\DataFixtures;
 use App\Entity\Candidature;
 use App\Entity\Entreprise;
 use App\Entity\Entretien;
-use App\Entity\Relance;
 use App\Entity\User;
 use App\Enum\ResultatEntretien;
 use App\Enum\StatutEntretien;
 use App\Enum\StatutReponse;
+use App\Service\RelanceService;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -32,7 +32,8 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 class AppFixtures extends Fixture
 {
     public function __construct(
-        private UserPasswordHasherInterface $passwordHasher
+        private UserPasswordHasherInterface $passwordHasher,
+        private RelanceService $relanceService
     ) {
     }
 
@@ -384,17 +385,15 @@ class AppFixtures extends Fixture
 
     private function createRelances(ObjectManager $manager, array $candidatures): void
     {
-        $targets = [$candidatures[10], $candidatures[11]];
+        foreach ($candidatures as $candidature) {
+            // Pas de relances pour les candidatures archivées
+            if ($candidature->isArchived()) {
+                continue;
+            }
 
-        foreach ($targets as $candidature) {
-            foreach ([7, 14, 21] as $i => $days) {
-                $r = new Relance();
-                $r->setCandidature($candidature);
-                $r->setRang($i + 1);
-                $r->setDateRelance(
-                    $candidature->getDateCandidature()->modify("+{$days} days")
-                );
-                $manager->persist($r);
+            $relances = $this->relanceService->createDefaultRelances($candidature);
+            foreach ($relances as $relance) {
+                $manager->persist($relance);
             }
         }
     }

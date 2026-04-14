@@ -181,6 +181,7 @@ class UserService
             try {
                 $this->securityEmailService->sendPasswordChangedEmail($user);
             } catch (\Throwable $e) {
+                $this->auditLogger->log('email_send_failed', $user->getEmail(), ['action' => 'password_changed']);
             }
 
             return $user;
@@ -194,6 +195,7 @@ class UserService
             try {
                 $this->securityEmailService->sendProfileNameChangedEmail($user);
             } catch (\Throwable $e) {
+                $this->auditLogger->log('email_send_failed', $user->getEmail(), ['action' => 'profile_name_changed']);
             }
         }
 

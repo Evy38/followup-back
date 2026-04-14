@@ -15,6 +15,7 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
+use App\State\CandidatureUpdateProcessor;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
@@ -42,6 +43,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
             securityPostDenormalize: "object.getUser() == user or is_granted('ROLE_ADMIN')"
         ),
         new Put(
+            processor: CandidatureUpdateProcessor::class,
             security: "object.getUser() == user or is_granted('ROLE_ADMIN')"
         ),
         new Delete(
@@ -62,7 +64,7 @@ class Candidature
     private ?Uuid $id = null;
 
     #[ORM\Column(type: 'datetime_immutable')]
-    #[Groups(['candidature:read'])]
+    #[Groups(['candidature:read', 'candidature:write'])]
     #[Assert\NotNull]
     private ?\DateTimeImmutable $dateCandidature = null;
 
