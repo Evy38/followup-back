@@ -89,11 +89,13 @@ class AuthController extends AbstractController
 
         $response = new RedirectResponse($frontendUrl . '/google/callback');
 
+        $sameSite = $this->cookieSecure ? Cookie::SAMESITE_NONE : Cookie::SAMESITE_LAX;
+
         $response->headers->setCookie(Cookie::create('access_token')
             ->withValue($jwt)
             ->withHttpOnly(true)
             ->withSecure($this->cookieSecure)
-            ->withSameSite('lax')
+            ->withSameSite($sameSite)
             ->withPath('/')
         );
 
@@ -101,7 +103,7 @@ class AuthController extends AbstractController
             ->withValue($refreshToken->getRefreshToken())
             ->withHttpOnly(true)
             ->withSecure($this->cookieSecure)
-            ->withSameSite('lax')
+            ->withSameSite($sameSite)
             ->withPath('/')
             ->withExpires(new \DateTimeImmutable('+7 days'))
         );
