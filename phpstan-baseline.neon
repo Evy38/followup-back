@@ -25,6 +25,12 @@ parameters:
 			path: src/Entity/Entretien.php
 
 		-
+			message: '#^Property App\\Entity\\Relance\:\:\$id \(Symfony\\Component\\Uid\\Uuid\|null\) is never assigned Symfony\\Component\\Uid\\Uuid so it can be removed from the property type\.$#'
+			identifier: property.unusedType
+			count: 1
+			path: src/Entity/Relance.php
+
+		-
 			message: '#^Property App\\Entity\\User\:\:\$id \(Symfony\\Component\\Uid\\Uuid\|null\) is never assigned Symfony\\Component\\Uid\\Uuid so it can be removed from the property type\.$#'
 			identifier: property.unusedType
 			count: 1

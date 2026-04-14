@@ -35,7 +35,7 @@ class AuthAuditSubscriber implements EventSubscriberInterface
         $email = $passport?->getBadge(\Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge::class)?->getUserIdentifier() ?? 'inconnu';
 
         $this->auditLogger->log('login_failure', $email, [
-            'reason' => $event->getException()?->getMessage(),
+            'reason' => $event->getException()->getMessage(),
         ]);
     }
 }
