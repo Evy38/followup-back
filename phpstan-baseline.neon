@@ -25,24 +25,6 @@ parameters:
 			path: src/Entity/Entretien.php
 
 		-
-			message: '#^Access to an undefined property App\\Entity\\Relance\:\:\$motsCles\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Entity/Relance.php
-
-		-
-			message: '#^Parameter \#1 \$s of method App\\Entity\\Candidature\:\:setStatut\(\) expects App\\Entity\\Statut, null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Entity/Statut.php
-
-		-
-			message: '#^Property App\\Entity\\Statut\:\:\$id \(Symfony\\Component\\Uid\\Uuid\|null\) is never assigned Symfony\\Component\\Uid\\Uuid so it can be removed from the property type\.$#'
-			identifier: property.unusedType
-			count: 1
-			path: src/Entity/Statut.php
-
-		-
 			message: '#^Property App\\Entity\\User\:\:\$id \(Symfony\\Component\\Uid\\Uuid\|null\) is never assigned Symfony\\Component\\Uid\\Uuid so it can be removed from the property type\.$#'
 			identifier: property.unusedType
 			count: 1
