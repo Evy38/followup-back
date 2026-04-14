@@ -144,43 +144,27 @@ class RegisterApiTest extends WebTestCase
     }
 
     /**
-     * 🧪 TEST #3 : Inscription échoue si l'email n'est pas Gmail
-     * 
-     * 🎯 Objectif : Vérifier la règle métier "l'email doit être Gmail"
-     * 
-     * 📌 Ce qu'on teste :
-     * - Une inscription avec un email Yahoo doit échouer (400 Bad Request)
+     * 🧪 TEST #3 : Inscription accepte les emails non-Gmail
+     *
+     * 📌 La restriction Gmail a été retirée — tout domaine valide est accepté.
      */
-    public function test_register_with_non_gmail_email_should_return_400_bad_request(): void
+    public function test_register_with_non_gmail_email_should_succeed(): void
     {
-        // ========================================
-        // 1️⃣ ARRANGE
-        // ========================================
-        
         $client = static::createClient();
-        
+
         $data = [
-            'email' => 'test@yahoo.com', // ❌ Pas un Gmail
-            'password' => 'SecurePass123'
+            'email'       => 'test_' . uniqid() . '@yahoo.com',
+            'password'    => 'SecurePass123!',
+            'firstName'   => 'Test',
+            'lastName'    => 'User',
+            'consentRgpd' => true,
         ];
-        
-        // ========================================
-        // 2️⃣ ACT
-        // ========================================
-        
+
         $client->request('POST', '/api/register', [], [], ['CONTENT_TYPE' => 'application/json', 'REMOTE_ADDR' => '192.168.1.4'], json_encode($data));
 
-        // ========================================
-        // 3️⃣ ASSERT
-        // ========================================
-
-        // ✅ La réponse doit être 400 Bad Request
-        $this->assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
-        
-        // ✅ Vérifier qu'une erreur est retournée (le message exact peut varier selon le catch)
+        $this->assertResponseStatusCodeSame(Response::HTTP_CREATED);
         $responseData = json_decode($client->getResponse()->getContent(), true);
         $this->assertArrayHasKey('message', $responseData);
-        // Note : Le contrôleur catch l'exception et retourne un message générique
     }
 
     /**
