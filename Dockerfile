@@ -52,8 +52,12 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-enable redis \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+<<<<<<< HEAD
 
 RUN a2dismod mpm_event && a2enmod mpm_prefork rewrite
+=======
+RUN a2dismod mpm_event mpm_worker 2>/dev/null; a2enmod mpm_prefork rewrite
+>>>>>>> 698abc3 (fix: disable mpm_event and mpm_worker to prevent Apache MPM conflict)
 
 
 RUN { \
