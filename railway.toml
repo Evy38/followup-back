@@ -1,0 +1,12 @@
+# Configuration Railway - Backend Symfony
+# Railway lit ce fichier pour savoir comment construire et démarrer le service.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 60
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3

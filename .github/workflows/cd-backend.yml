@@ -1,138 +1,71 @@
-# CD Backend - Déploiement Continu
-#
-# Déclenché manuellement via GitHub Actions (workflow_dispatch).
-# Permet de cibler un environnement spécifique : SIT, UAT ou Production.
-#
-# Stratégie de déploiement :
-#   SIT (System Integration Testing) : environnement de test interne
-#   UAT (User Acceptance Testing)    : validation par les utilisateurs
-#   PROD (Production)                : environnement final avec backup préalable
-#
-# Note : les étapes de déploiement sont simulées (echo) — dans un projet réel,
-# elles utiliseraient SSH, rsync ou une API hébergeur (ex. Render, Railway).
-# Les secrets d'environnement (APP_SECRET, DATABASE_URL) sont stockés dans
-# GitHub Environments pour isoler les accès par environnement.
+name: CD Backend - Railway
 
-name: CD Backend Symfony
+# Déploiement automatique sur Railway après validation du CI.
+# Se déclenche uniquement si le CI backend passe avec succès sur main.
+# Peut aussi être déclenché manuellement depuis l'onglet Actions sur GitHub.
+#
+# Prérequis — secrets GitHub à configurer (Settings → Secrets → Actions) :
+#   RAILWAY_DEPLOY_HOOK_BACKEND : URL du deploy hook du service "backend" sur Railway
+#   RAILWAY_DEPLOY_HOOK_WORKER  : URL du deploy hook du service "worker" sur Railway
+#
+# Comment obtenir un deploy hook Railway :
+#   Dashboard Railway → ton projet → service → Settings → Deploy Hooks → Generate
 
 on:
+  # Déclenchement automatique quand le CI passe sur main
+  workflow_run:
+    workflows: ["CI Backend Symfony"]
+    types: [completed]
+    branches: [main]
+
+  # Déclenchement manuel depuis GitHub Actions
   workflow_dispatch:
-    inputs:
-      environment:
-        description: "Target environment"
-        required: true
-        type: choice
-        options:
-          - sit
-          - uat
-          - prod
 
 jobs:
-  build:
-    name: Build backend for ${{ github.event.inputs.environment }}
+  deploy:
+    name: Déployer sur Railway
     runs-on: ubuntu-latest
 
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
+    # En automatique : ne déploie que si le CI a réussi
+    # En manuel : toujours déployer
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
 
-      - name: 🐘 Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: "8.3"
-          extensions: mbstring, pdo_pgsql, intl  
-          coverage: none
-
-      - name: 📦 Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --no-dev
-
-      - name: ⚙️ Prepare Symfony (prod)
-        env:
-          APP_ENV: prod
-          APP_SECRET: ${{ secrets.APP_SECRET }}
-        run: |
-          php bin/console cache:clear
-          php bin/console cache:warmup
-
-      - name: 📦 Upload backend artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-${{ github.event.inputs.environment }}-${{ github.run_number }}
-          path: |
-            .
-            !.git
-            !var/cache
-            !var/log
-          retention-days: 30
-
-  deploy-sit:
-    name: Deploy to SIT
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event.inputs.environment == 'sit'
-    environment:
-      name: sit
+    env:
+      HOOK_BACKEND: ${{ secrets.RAILWAY_DEPLOY_HOOK_BACKEND }}
+      HOOK_WORKER: ${{ secrets.RAILWAY_DEPLOY_HOOK_WORKER }}
 
     steps:
-      - name: 📥 Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-sit-${{ github.run_number }}
-
-      - name: 🚀 Deploy SIT (simulation)
+      - name: Vérifier la présence des secrets
         run: |
-          echo "🚀 Déploiement backend vers SIT"
-          echo "📦 Artefacts prêts"
-          echo "Déploiement SIT simulé"
+          if [ -z "$HOOK_BACKEND" ]; then
+            echo "RAILWAY_DEPLOY_HOOK_BACKEND manquant."
+            echo "Va dans Railway → service backend → Settings → Deploy Hooks"
+            echo "Copie l'URL et ajoute-la dans GitHub → Settings → Secrets → Actions"
+            exit 1
+          fi
+          if [ -z "$HOOK_WORKER" ]; then
+            echo "RAILWAY_DEPLOY_HOOK_WORKER manquant."
+            echo "Va dans Railway → service worker → Settings → Deploy Hooks"
+            echo "Copie l'URL et ajoute-la dans GitHub → Settings → Secrets → Actions"
+            exit 1
+          fi
 
-  deploy-uat:
-    name: Deploy to UAT
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event.inputs.environment == 'uat'
-    environment:
-      name: uat
-
-    steps:
-      - name: 📥 Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-uat-${{ github.run_number }}
-
-      - name: 🚀 Deploy UAT (simulation)
+      - name: Déployer le backend
         run: |
-          echo "🚀 Déploiement backend vers UAT"
-          echo "📦 Artefacts prêts"
-          echo "Déploiement UAT simulé"
+          echo "Déclenchement du déploiement backend..."
+          curl --fail --silent --show-error -X POST "$HOOK_BACKEND"
+          echo "Backend : déploiement déclenché."
 
-  deploy-prod:
-    name: Deploy to Production
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event.inputs.environment == 'prod'
-    environment:
-      name: prod
-
-    steps:
-      - name: 📥 Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-prod-${{ github.run_number }}
-
-      - name: 💾 Backup production (simulated)
+      - name: Déployer le worker Messenger
         run: |
-          echo "💾 Backup base de données"
-          echo "💾 Backup code applicatif"
-          echo "Backup simulé"
+          echo "Déclenchement du déploiement worker..."
+          curl --fail --silent --show-error -X POST "$HOOK_WORKER"
+          echo "Worker : déploiement déclenché."
 
-      - name: 🚀 Deploy PROD (simulation)
+      - name: Résumé
         run: |
-          echo "🚀 Déploiement backend vers PROD"
-          echo "📦 Artefacts prêts"
-          echo "Déploiement PROD simulé"
-
-      - name: 🧪 Post-deploy checks
-        run: |
-          echo "🧪 Vérification API /health"
-          echo "🧪 Connexion DB"
-          echo "Vérifications simulées OK"
+          echo "Les deux services ont été envoyés en déploiement sur Railway."
+          echo "Surveille l'avancement ici : https://railway.app/dashboard"
+          echo "Les logs sont accessibles dans chaque service → onglet Deployments."

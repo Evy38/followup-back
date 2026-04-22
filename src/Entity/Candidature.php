@@ -81,10 +81,9 @@ class Candidature
     #[Groups(['candidature:read', 'candidature:write'])]
     private ?string $mode = null;
 
-    #[ORM\Column(length: 100)]
+    #[ORM\Column(length: 100, nullable: true)]
     #[Groups(['candidature:read'])]
-    #[Assert\NotBlank]
-    private string $externalOfferId;
+    private ?string $externalOfferId = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     #[Groups(['candidature:read'])]
@@ -183,12 +182,12 @@ class Candidature
         return $this;
     }
 
-    public function getExternalOfferId(): string
+    public function getExternalOfferId(): ?string
     {
         return $this->externalOfferId;
     }
 
-    public function setExternalOfferId(string $id): static
+    public function setExternalOfferId(?string $id): static
     {
         $this->externalOfferId = $id;
         return $this;

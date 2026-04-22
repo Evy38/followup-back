@@ -160,6 +160,7 @@ class RegisterApiTest extends WebTestCase
             'consentRgpd' => true,
         ];
 
+
         $client->request('POST', '/api/register', [], [], ['CONTENT_TYPE' => 'application/json', 'REMOTE_ADDR' => '192.168.1.4'], json_encode($data));
 
         $this->assertResponseStatusCodeSame(Response::HTTP_CREATED);

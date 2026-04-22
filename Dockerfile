@@ -1,0 +1,107 @@
+# ===============================================
+# Dockerfile Production - FollowUp Backend
+# ===============================================
+# Utilisé pour le déploiement sur Railway (hébergeur cloud).
+# NE PAS confondre avec docker/php/Dockerfile qui sert uniquement au développement local.
+#
+# Multi-stage build :
+#   - Stage "builder" : installe les dépendances Composer
+#   - Stage final     : image allégée avec uniquement le runtime PHP/Apache
+#
+# Au démarrage, docker/scripts/docker-entrypoint.sh gère :
+# les migrations, la génération des clés JWT et les permissions.
+
+# -----------------------------------------------
+# Stage 1: Builder (installation dépendances)
+# -----------------------------------------------
+FROM php:8.3-apache AS builder
+
+ENV APP_ENV=prod \
+    APP_DEBUG=0 \
+    COMPOSER_ALLOW_SUPERUSER=1
+
+RUN apt-get update && apt-get install -y \
+    git unzip libicu-dev libzip-dev libxml2-dev libpq-dev \
+    && docker-php-ext-install pdo pdo_pgsql intl zip opcache \
+    && docker-php-ext-enable pdo_pgsql \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www/html
+COPY composer.json composer.lock ./
+
+RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
+
+# -----------------------------------------------
+# Stage 2: Runtime (image finale)
+# -----------------------------------------------
+FROM php:8.3-apache
+
+ENV APP_ENV=prod \
+    APP_DEBUG=0 \
+    COMPOSER_ALLOW_SUPERUSER=1
+
+RUN apt-get update && apt-get install -y \
+    libicu-dev libzip-dev libpq-dev \
+    && docker-php-ext-install pdo pdo_pgsql intl zip opcache \
+    && docker-php-ext-enable pdo_pgsql \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN a2enmod rewrite
+
+RUN { \
+    echo 'opcache.enable=1'; \
+    echo 'opcache.memory_consumption=256'; \
+    echo 'opcache.max_accelerated_files=20000'; \
+    echo 'opcache.validate_timestamps=0'; \
+    echo 'realpath_cache_size=4096K'; \
+    echo 'realpath_cache_ttl=600'; \
+    echo 'memory_limit=512M'; \
+    echo 'max_execution_time=60'; \
+    echo 'default_socket_timeout=10'; \
+} > /usr/local/etc/php/conf.d/symfony-prod.ini
+
+RUN echo '<VirtualHost *:80>' > /etc/apache2/sites-available/000-default.conf && \
+    echo '  ServerName localhost' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '  DocumentRoot /var/www/html/public' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '  DirectoryIndex index.php' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '  <Directory /var/www/html/public>' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '    AllowOverride All' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '    Require all granted' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '    FallbackResource /index.php' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '  </Directory>' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '  <Directory /var/www/html>' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '    Options -Indexes' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '    Require all denied' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '  </Directory>' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '  ErrorLog /var/log/apache2/error.log' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '  CustomLog /var/log/apache2/access.log combined' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '  SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1' >> /etc/apache2/sites-available/000-default.conf && \
+    echo '</VirtualHost>' >> /etc/apache2/sites-available/000-default.conf
+
+WORKDIR /var/www/html
+
+COPY --from=builder /var/www/html/vendor ./vendor
+COPY . .
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+RUN echo "APP_ENV=prod" > .env \
+    && echo "APP_SECRET=placeholder" >> .env \
+    && echo "DATABASE_URL=postgresql://user:pass@localhost:5432/db" >> .env
+
+RUN mkdir -p var/cache var/log config/jwt public/uploads \
+    && chown -R www-data:www-data var config/jwt public/uploads \
+    && chmod -R 775 var config/jwt public/uploads
+
+COPY docker/scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+EXPOSE ${PORT:-80}
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["apache2-foreground"]

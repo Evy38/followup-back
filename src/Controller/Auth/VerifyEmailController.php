@@ -76,6 +76,7 @@ class VerifyEmailController extends AbstractController
         EntityManagerInterface $em,
         EmailVerificationService $emailVerificationService,
         RateLimiterFactoryInterface $resendVerificationLimiter
+
     ): JsonResponse {
         $limiter = $resendVerificationLimiter->create($request->getClientIp());
         if (!$limiter->consume(1)->isAccepted()) {
