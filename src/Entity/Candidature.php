@@ -10,17 +10,18 @@ use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
-use ApiPlatform\Metadata\Delete;
+use App\State\CandidatureUpdateProcessor;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * Représente une candidature à un poste d'emploi.
  *
- * Une candidature est liée à un User, une Entreprise et un Statut.
+ * Une candidature est liée à un User et une Entreprise.
  * Elle regroupe les Relances planifiées et les Entretiens associés.
  * Le champ `statutReponse` (enum StatutReponse) suit l'avancement de la réponse
  * du recruteur et est synchronisé automatiquement par CandidatureStatutSyncService
@@ -42,6 +43,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
             securityPostDenormalize: "object.getUser() == user or is_granted('ROLE_ADMIN')"
         ),
         new Put(
+            processor: CandidatureUpdateProcessor::class,
             security: "object.getUser() == user or is_granted('ROLE_ADMIN')"
         ),
         new Delete(
@@ -62,7 +64,7 @@ class Candidature
     private ?Uuid $id = null;
 
     #[ORM\Column(type: 'datetime_immutable')]
-    #[Groups(['candidature:read'])]
+    #[Groups(['candidature:read', 'candidature:write'])]
     #[Assert\NotNull]
     private ?\DateTimeImmutable $dateCandidature = null;
 
@@ -97,11 +99,6 @@ class Candidature
     #[Groups(['candidature:read'])]
     private ?Entreprise $entreprise = null;
 
-    #[ORM\ManyToOne(inversedBy: 'candidatures')]
-    #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['candidature:read'])]
-    private ?Statut $statut = null;
-
     #[ORM\OneToMany(
         mappedBy: 'candidature',
         targetEntity: Relance::class,
@@ -123,6 +120,10 @@ class Candidature
     )]
     #[Groups(['candidature:read'])]
     private Collection $entretiens;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(['candidature:read'])]
+    private ?\DateTimeImmutable $archivedAt = null;
 
     public function __construct()
     {
@@ -225,17 +226,6 @@ class Candidature
         return $this;
     }
 
-    public function getStatut(): ?Statut
-    {
-        return $this->statut;
-    }
-
-    public function setStatut(Statut $s): static
-    {
-        $this->statut = $s;
-        return $this;
-    }
-
     public function getRelances(): Collection
     {
         return $this->relances;
@@ -255,6 +245,22 @@ class Candidature
     public function getEntretiens(): Collection
     {
         return $this->entretiens;
+    }
+
+    public function getArchivedAt(): ?\DateTimeImmutable
+    {
+        return $this->archivedAt;
+    }
+
+    public function setArchivedAt(?\DateTimeImmutable $archivedAt): static
+    {
+        $this->archivedAt = $archivedAt;
+        return $this;
+    }
+
+    public function isArchived(): bool
+    {
+        return $this->archivedAt !== null;
     }
 
     public function addRelance(Relance $relance): static

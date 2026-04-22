@@ -14,7 +14,7 @@ use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
@@ -37,7 +37,7 @@ class ForgotPasswordController extends AbstractController
         private readonly EntityManagerInterface $em,
         private readonly MailerInterface $mailer,
         private readonly UserPasswordHasherInterface $passwordHasher,
-        private readonly RateLimiterFactory $forgotPasswordLimiter
+        private readonly RateLimiterFactoryInterface $forgotPasswordLimiter
     ) {
     }
 

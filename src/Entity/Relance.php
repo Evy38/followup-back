@@ -3,7 +3,6 @@
 namespace App\Entity;
 
 use App\Repository\RelanceRepository;
-use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
@@ -101,7 +100,6 @@ class Relance
 
     public function __construct()
     {
-        $this->motsCles = new ArrayCollection();
     }
 
     // --- GETTERS / SETTERS ---

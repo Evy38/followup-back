@@ -4,12 +4,12 @@ namespace App\Tests\Service;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
+use App\Service\AuditLogger;
 use App\Service\UserService;
 use App\Service\EmailVerificationService;
 use App\Service\SecurityEmailService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -50,16 +50,18 @@ class UserServiceTest extends TestCase
         
         // 🔹 Mock du SecurityEmailService (requis par le constructeur)
         $securityEmailService = $this->createMock(SecurityEmailService::class);
-        
+        $auditLogger = $this->createMock(AuditLogger::class);
+
         // 🔹 Créer le UserService avec tous les mocks
         $userService = new UserService(
             $repository,
             $hasher,
             $em,
             $emailService,
-            $securityEmailService
+            $securityEmailService,
+            $auditLogger
         );
-        
+
         // 🔹 Créer un User avec un mot de passe en clair
         $user = new User();
         $user->setEmail('test@gmail.com');
@@ -100,15 +102,17 @@ class UserServiceTest extends TestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $emailService = $this->createMock(EmailVerificationService::class);
         $securityEmailService = $this->createMock(SecurityEmailService::class);
-        
+        $auditLogger = $this->createMock(AuditLogger::class);
+
         $userService = new UserService(
             $repository,
             $hasher,
             $em,
             $emailService,
-            $securityEmailService
+            $securityEmailService,
+            $auditLogger
         );
-        
+
         $user = new User();
         $user->setEmail('existing@gmail.com');
         $user->setPassword('Password123');
@@ -122,48 +126,6 @@ class UserServiceTest extends TestCase
         $this->expectExceptionMessage("Cet email est déjà utilisé.");
         
         // Cette ligne doit déclencher l'exception
-        $userService->create($user);
-    }
-    
-    /**
-     * 🧪 TEST #3 : Vérifier qu'une exception est levée si l'email n'est pas Gmail
-     * 
-     * 🎯 Objectif : S'assurer que UserService::create() respecte la règle métier
-     */
-    public function test_create_should_throw_exception_if_email_not_gmail(): void
-    {
-        // ========================================
-        // ARRANGE
-        // ========================================
-        
-        $repository = $this->createMock(UserRepository::class);
-        $repository->method('existsByEmail')->willReturn(false); // Email disponible
-        
-        $hasher = $this->createMock(UserPasswordHasherInterface::class);
-        $em = $this->createMock(EntityManagerInterface::class);
-        $emailService = $this->createMock(EmailVerificationService::class);
-        $securityEmailService = $this->createMock(SecurityEmailService::class);
-        
-        $userService = new UserService(
-            $repository,
-            $hasher,
-            $em,
-            $emailService,
-            $securityEmailService
-        );
-        
-        // 🔹 Créer un user avec un email NON Gmail
-        $user = new User();
-        $user->setEmail('test@yahoo.com'); // ❌ Pas un Gmail !
-        $user->setPassword('Password123');
-        
-        // ========================================
-        // ACT + ASSERT
-        // ========================================
-        
-        $this->expectException(BadRequestHttpException::class);
-        $this->expectExceptionMessage("Pour FollowUp, l'email doit être une adresse Gmail.");
-        
         $userService->create($user);
     }
     
@@ -197,19 +159,21 @@ class UserServiceTest extends TestCase
         $emailService->method('sendVerificationEmail'); // void return
         
         $securityEmailService = $this->createMock(SecurityEmailService::class);
-        
+        $auditLogger = $this->createMock(AuditLogger::class);
+
         $userService = new UserService(
             $repository,
             $hasher,
             $em,
             $emailService,
-            $securityEmailService
+            $securityEmailService,
+            $auditLogger
         );
-        
+
         $user = new User();
         $user->setEmail('test@gmail.com');
         $user->setPassword('Password123');
-        
+
         // ========================================
         // ACT
         // ========================================
@@ -243,19 +207,21 @@ class UserServiceTest extends TestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $emailService = $this->createMock(EmailVerificationService::class);
         $securityEmailService = $this->createMock(SecurityEmailService::class);
-        
+        $auditLogger = $this->createMock(AuditLogger::class);
+
         $userService = new UserService(
             $repository,
             $hasher,
             $em,
             $emailService,
-            $securityEmailService
+            $securityEmailService,
+            $auditLogger
         );
-        
+
         // ========================================
         // ACT + ASSERT
         // ========================================
-        
+
         $this->expectException(NotFoundHttpException::class);
         $this->expectExceptionMessage("Utilisateur #00000000-0000-0000-0000-000000000999 introuvable.");
 

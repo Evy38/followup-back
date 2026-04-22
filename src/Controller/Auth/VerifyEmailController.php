@@ -9,7 +9,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
@@ -25,13 +25,13 @@ use Symfony\Component\Routing\Annotation\Route;
  */
 class VerifyEmailController extends AbstractController
 {
-    #[Route('/api/verify-email', name: 'api_verify_email', methods: ['GET'])]
+    #[Route('/api/verify-email', name: 'api_verify_email', methods: ['POST'])]
     public function verifyEmail(
         Request $request,
         UserRepository $userRepository,
         EntityManagerInterface $em
     ): JsonResponse {
-        $token = $request->query->get('token');
+        $token = $request->toArray()['token'] ?? null;
 
         if (!$token) {
             return new JsonResponse(['error' => 'Token manquant'], 400);
@@ -41,12 +41,8 @@ class VerifyEmailController extends AbstractController
             'emailVerificationToken' => $token
         ]);
 
-        if (!$user || $user->isDeleted()) {
-            return new JsonResponse(['error' => 'Token invalide ou expiré'], 400);
-        }
-
-        if (!$user->isEmailVerificationTokenValid()) {
-            return new JsonResponse(['error' => 'Token expiré'], 400);
+        if (!$user || $user->isDeleted() || !$user->isEmailVerificationTokenValid()) {
+            return new JsonResponse(['message' => 'Le lien de vérification est invalide ou a expiré. Veuillez en demander un nouveau.'], 400);
         }
 
         if ($user->getPendingEmail()) {
@@ -79,7 +75,8 @@ class VerifyEmailController extends AbstractController
         UserRepository $userRepository,
         EntityManagerInterface $em,
         EmailVerificationService $emailVerificationService,
-        RateLimiterFactory $resendVerificationLimiter
+        RateLimiterFactoryInterface $resendVerificationLimiter
+
     ): JsonResponse {
         $limiter = $resendVerificationLimiter->create($request->getClientIp());
         if (!$limiter->consume(1)->isAccepted()) {
@@ -100,14 +97,10 @@ class VerifyEmailController extends AbstractController
             'email' => strtolower(trim($email))
         ]);
 
-        if (!$user || $user->isDeleted()) {
-            return new JsonResponse(['error' => 'Utilisateur non trouvé'], 404);
-        }
-
-        if ($user->isVerified()) {
+        if (!$user || $user->isDeleted() || $user->isVerified()) {
             return new JsonResponse([
-                'message' => 'Ce compte est déjà confirmé.'
-            ], 400);
+                'message' => 'Si un compte non confirmé existe avec cet email, un nouveau lien a été envoyé.'
+            ], 200);
         }
 
         $emailVerificationService->generateVerificationToken($user);

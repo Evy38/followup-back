@@ -10,6 +10,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use App\Service\AuditLogger;
 
 /**
  * Service métier pour la gestion des utilisateurs.
@@ -20,7 +21,7 @@ use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
  * - Gestion du cycle de vie du compte (demande de suppression, suppression définitive, purge)
  *
  * Règles métier notables :
- * - L'email doit être une adresse Gmail (`@gmail.com`) à la création
+ * - L'email doit être unique à la création
  * - Le changement d'email passe par une étape de confirmation (pendingEmail + token)
  * - La suppression suit un workflow en 2 étapes : demande utilisateur → confirmation admin
  * - La purge supprime définitivement les comptes marqués comme supprimés depuis plus d'1 mois
@@ -33,7 +34,8 @@ class UserService
         private readonly UserPasswordHasherInterface $hasher,
         private readonly EntityManagerInterface $em,
         private readonly EmailVerificationService $emailVerificationService,
-        private readonly SecurityEmailService $securityEmailService
+        private readonly SecurityEmailService $securityEmailService,
+        private readonly AuditLogger $auditLogger
     ) {
     }
 
@@ -67,24 +69,18 @@ class UserService
      * Crée un nouveau compte utilisateur avec vérification d'email.
      *
      * Étapes :
-     * 1. Vérifie l'unicité de l'email et que c'est une adresse Gmail
+     * 1. Vérifie l'unicité de l'email
      * 2. Hache le mot de passe en clair fourni
      * 3. Génère un token de vérification (valable 24h) et persiste l'utilisateur
      * 4. Envoie l'email de confirmation
      *
      * @throws ConflictHttpException   Si l'email est déjà utilisé
-     * @throws BadRequestHttpException Si l'email n'est pas Gmail ou le mot de passe manquant
+     * @throws BadRequestHttpException Si le mot de passe est manquant
      */
     public function create(User $user): User
     {
         if ($this->repository->existsByEmail($user->getEmail())) {
             throw new ConflictHttpException("Cet email est déjà utilisé.");
-        }
-
-        if (!str_ends_with($user->getEmail(), '@gmail.com')) {
-            throw new BadRequestHttpException(
-                "Pour FollowUp, l'email doit être une adresse Gmail."
-            );
         }
 
         if ($user->getPassword() === null) {
@@ -110,6 +106,8 @@ class UserService
                 "Le compte a été créé mais l'email de confirmation n'a pas pu être envoyé."
             );
         }
+
+        $this->auditLogger->log('account_created', $user->getEmail());
 
         return $user;
     }
@@ -178,9 +176,12 @@ class UserService
 
             $this->repository->save($user, true);
 
+            $this->auditLogger->log('password_changed', $user->getEmail());
+
             try {
                 $this->securityEmailService->sendPasswordChangedEmail($user);
             } catch (\Throwable $e) {
+                $this->auditLogger->log('email_send_failed', $user->getEmail(), ['action' => 'password_changed']);
             }
 
             return $user;
@@ -194,6 +195,7 @@ class UserService
             try {
                 $this->securityEmailService->sendProfileNameChangedEmail($user);
             } catch (\Throwable $e) {
+                $this->auditLogger->log('email_send_failed', $user->getEmail(), ['action' => 'profile_name_changed']);
             }
         }
 
@@ -218,6 +220,8 @@ class UserService
         $user->requestDeletion();
 
         $this->repository->save($user, true);
+
+        $this->auditLogger->log('deletion_requested', $user->getEmail());
 
         try {
             $this->securityEmailService->sendAccountDeletionRequestEmail($user);
@@ -255,6 +259,8 @@ class UserService
         $user->setDeletedAt(new \DateTimeImmutable());
         $this->repository->save($user, true);
 
+        $this->auditLogger->log('account_deleted', $user->getEmail());
+
         $email = $user->getEmail();
         $firstName = $user->getFirstName() ?? 'Utilisateur';
 
@@ -288,6 +294,7 @@ class UserService
 
         if (count($users) > 0) {
             $this->repository->flush();
+            $this->auditLogger->log('accounts_purged', 'admin', ['count' => count($users)]);
         }
 
         return count($users);

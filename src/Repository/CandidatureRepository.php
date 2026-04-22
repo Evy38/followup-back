@@ -34,9 +34,42 @@ class CandidatureRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('c')
             ->where('c.user = :user')
             ->andWhere('c.statutReponse != :attente')
+            ->andWhere('c.archivedAt IS NULL')
             ->setParameter('user', $user)
-            ->setParameter('attente', StatutReponse::ATTENTE->value) // Utilise l'Enum
+            ->setParameter('attente', StatutReponse::ATTENTE->value)
             ->orderBy('c.dateCandidature', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Récupère les candidatures actives (non archivées) d'un utilisateur.
+     *
+     * @return Candidature[]
+     */
+    public function findActiveByUser(User $user): array
+    {
+        return $this->createQueryBuilder('c')
+            ->where('c.user = :user')
+            ->andWhere('c.archivedAt IS NULL')
+            ->setParameter('user', $user)
+            ->orderBy('c.dateCandidature', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Récupère les candidatures archivées d'un utilisateur.
+     *
+     * @return Candidature[]
+     */
+    public function findArchivedByUser(User $user): array
+    {
+        return $this->createQueryBuilder('c')
+            ->where('c.user = :user')
+            ->andWhere('c.archivedAt IS NOT NULL')
+            ->setParameter('user', $user)
+            ->orderBy('c.archivedAt', 'DESC')
             ->getQuery()
             ->getResult();
     }

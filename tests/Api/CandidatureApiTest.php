@@ -5,7 +5,6 @@ namespace App\Tests\Api;
 use App\Entity\Candidature;
 use App\Entity\Entreprise;
 use App\Entity\User;
-use App\Entity\Statut;
 use App\Enum\StatutReponse;
 use App\Tests\DatabasePrimer;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
@@ -23,13 +22,6 @@ class CandidatureApiTest extends WebTestCase
         $entityManager = static::getContainer()->get('doctrine')->getManager();
         $hasher = static::getContainer()->get(UserPasswordHasherInterface::class);
         $jwtManager = static::getContainer()->get(JWTTokenManagerInterface::class);
-
-        // =========================
-        // Création du Statut (obligatoire)
-        // =========================
-        $statut = new Statut();
-        $statut->setLibelle('En cours');
-        $entityManager->persist($statut);
 
         // =========================
         // User
@@ -58,7 +50,6 @@ class CandidatureApiTest extends WebTestCase
         $candidature1 = new Candidature();
         $candidature1->setUser($user);
         $candidature1->setEntreprise($entreprise1);
-        $candidature1->setStatut($statut);
         $candidature1->setJobTitle('Développeur PHP');
         $candidature1->setExternalOfferId('offer_' . uniqid());
         $candidature1->setDateCandidature(new \DateTimeImmutable('2025-01-15'));
@@ -67,7 +58,6 @@ class CandidatureApiTest extends WebTestCase
         $candidature2 = new Candidature();
         $candidature2->setUser($user);
         $candidature2->setEntreprise($entreprise2);
-        $candidature2->setStatut($statut);
         $candidature2->setJobTitle('Lead Developer');
         $candidature2->setExternalOfferId('offer_' . uniqid());
         $candidature2->setDateCandidature(new \DateTimeImmutable('2025-01-20'));
@@ -112,10 +102,6 @@ class CandidatureApiTest extends WebTestCase
         $hasher = static::getContainer()->get(UserPasswordHasherInterface::class);
         $jwtManager = static::getContainer()->get(JWTTokenManagerInterface::class);
 
-        $statut = new Statut();
-        $statut->setLibelle('En cours');
-        $entityManager->persist($statut);
-
         // USER A
         $userA = new User();
         $userA->setEmail('usera_' . uniqid() . '@gmail.com');
@@ -131,7 +117,6 @@ class CandidatureApiTest extends WebTestCase
         $candidatureA = new Candidature();
         $candidatureA->setUser($userA);
         $candidatureA->setEntreprise($entrepriseA);
-        $candidatureA->setStatut($statut);
         $candidatureA->setJobTitle('Candidature de A');
         $candidatureA->setExternalOfferId('offer_' . uniqid());
         $candidatureA->setDateCandidature(new \DateTimeImmutable());
@@ -154,7 +139,6 @@ class CandidatureApiTest extends WebTestCase
         $candidatureB = new Candidature();
         $candidatureB->setUser($userB);
         $candidatureB->setEntreprise($entrepriseB);
-        $candidatureB->setStatut($statut);
         $candidatureB->setJobTitle('Candidature de B');
         $candidatureB->setExternalOfferId('offer_' . uniqid());
         $candidatureB->setDateCandidature(new \DateTimeImmutable());
