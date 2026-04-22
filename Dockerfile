@@ -52,7 +52,7 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-enable redis \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN a2enmod rewrite
+RUN a2dismod mpm_event && a2enmod mpm_prefork rewrite
 
 RUN { \
     echo 'opcache.enable=1'; \
