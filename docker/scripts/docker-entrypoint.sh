@@ -136,5 +136,13 @@ echo "✅ [Permissions] Permissions configurées"
 # -----------------------------------------------
 echo "🎉 [FollowUp] Application prête ! Démarrage d'Apache..."
 
+echo "=== [DEBUG] Modules MPM actifs au runtime ==="
+ls /etc/apache2/mods-enabled/ | grep mpm || echo "(aucun)"
+echo "=== [DEBUG] Tous les fichiers MPM dans apache2 ==="
+find /etc/apache2/ -name '*mpm*' 2>/dev/null || echo "(aucun)"
+echo "=== [DEBUG] LoadModule mpm dans les configs ==="
+grep -rn 'LoadModule.*mpm' /etc/apache2/ 2>/dev/null || echo "(aucun)"
+echo "=== [DEBUG] fin ==="
+
 # Exécuter la commande passée en argument (CMD du Dockerfile)
 exec "$@"
