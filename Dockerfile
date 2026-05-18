@@ -52,8 +52,7 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-enable redis \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN rm -f /etc/apache2/mods-enabled/mpm_event.* \
-    && rm -f /etc/apache2/mods-enabled/mpm_worker.* \
+RUN find /etc/apache2/mods-enabled/ -name 'mpm_*' -delete \
     && a2enmod mpm_prefork rewrite
 
 RUN { \
