@@ -52,8 +52,14 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-enable redis \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN find /etc/apache2/mods-enabled/ -name 'mpm_*' -delete \
-    && a2enmod mpm_prefork rewrite
+RUN echo "=== MPM avant fix ===" \
+    && ls /etc/apache2/mods-enabled/ | grep mpm || echo "(aucun)" \
+    && find /etc/apache2/mods-enabled/ -name 'mpm_*' -delete \
+    && echo "=== MPM apres suppression ===" \
+    && ls /etc/apache2/mods-enabled/ | grep mpm || echo "(aucun)" \
+    && a2enmod mpm_prefork rewrite \
+    && echo "=== MPM apres a2enmod ===" \
+    && ls /etc/apache2/mods-enabled/ | grep mpm || echo "(aucun)"
 
 RUN { \
     echo 'opcache.enable=1'; \
