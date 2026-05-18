@@ -136,13 +136,13 @@ echo "✅ [Permissions] Permissions configurées"
 # -----------------------------------------------
 echo "🎉 [FollowUp] Application prête ! Démarrage d'Apache..."
 
-echo "=== [DEBUG] Modules MPM actifs au runtime ==="
-ls /etc/apache2/mods-enabled/ | grep mpm || echo "(aucun)"
-echo "=== [DEBUG] Tous les fichiers MPM dans apache2 ==="
-find /etc/apache2/ -name '*mpm*' 2>/dev/null || echo "(aucun)"
-echo "=== [DEBUG] LoadModule mpm dans les configs ==="
-grep -rn 'LoadModule.*mpm' /etc/apache2/ 2>/dev/null || echo "(aucun)"
-echo "=== [DEBUG] fin ==="
+# Forcer le bon MPM Apache au runtime (Railway restaure les fichiers de l'image de base)
+echo "🔧 [Apache] Correction des modules MPM..."
+rm -f /etc/apache2/mods-enabled/mpm_event.load
+rm -f /etc/apache2/mods-enabled/mpm_event.conf
+rm -f /etc/apache2/mods-enabled/mpm_worker.load
+rm -f /etc/apache2/mods-enabled/mpm_worker.conf
+echo "✅ [Apache] MPM prefork seul actif"
 
 # Exécuter la commande passée en argument (CMD du Dockerfile)
 exec "$@"
